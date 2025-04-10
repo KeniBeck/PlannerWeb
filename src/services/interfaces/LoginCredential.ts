@@ -4,8 +4,9 @@ export interface LoginCredentials {
 }
 
 export interface AuthResponse {
-  token: string;
+  access_token: string;
   user: UserData;
+  statusCode: number;
 }
 
 export interface UserData {
