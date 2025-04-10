@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Home from './views/Home'
 import Login from './views/Login'
-import Workers from './views/Dashboard/workers/Workers'
+import Dashboard from './views/Dashboard'
 
 
 const App = () => {
@@ -10,7 +10,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path='/workers' element={<Workers></Workers>} />
+        <Route path='/dashboard/*' element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   )

@@ -90,7 +90,7 @@ export default function Workers() {
                         </button>
 
                         <button
-                            className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md"
+                            className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
                             onClick={() => setIsAddWorkerOpen(true)}
                         >
                             <AiOutlineUserAdd className="mr-2" /> Agregar Trabajador
