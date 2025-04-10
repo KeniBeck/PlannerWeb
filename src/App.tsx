@@ -3,6 +3,8 @@ import Home from './views/Home'
 import Login from './views/Login'
 import { ProtectedRoute } from './middleware/ProtectedRoute'
 import Forbidden from './views/Foorbiden'
+import Dashboard from './views/Dashboard'
+
 
 
 const App = () => {
@@ -15,6 +17,7 @@ const App = () => {
           </ProtectedRoute>} />
         <Route path="/login" element={<Login/>} />
         <Route path='/forbidden' element={<Forbidden/>}/>
+        <Route path='/dashboard/*' element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   )
