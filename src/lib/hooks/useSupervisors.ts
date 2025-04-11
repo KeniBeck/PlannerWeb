@@ -1,74 +1,60 @@
 import { useState } from "react";
-import { Supervisor } from "@/core/model/supervisor";
+import { User } from "@/core/model/user";
 
 // Datos de ejemplo para supervisores
-const initialSupervisors: Supervisor[] = [
+const initialSupervisors: User[] = [
   { 
     id: 1, 
     name: "Carlos Mendoza", 
     dni: "12345678", 
     phone: "999888777", 
-    specialty: "Carga y descarga",
-    email: "carlos.mendoza@empresa.com",
-    status: "active",
-    yearsOfExperience: 5
+    cargo: "Carga y descarga",
+    
   },
   { 
     id: 2, 
     name: "Ana Quiroz", 
     dni: "87654321", 
     phone: "987654321", 
-    specialty: "Logística marítima",
-    email: "ana.quiroz@empresa.com",
-    status: "active",
-    yearsOfExperience: 8
+    cargo: "Logística marítima",
   },
   { 
     id: 3, 
     name: "Miguel Paredes", 
     dni: "23456789", 
     phone: "956784321", 
-    specialty: "Operaciones portuarias",
-    email: "miguel.paredes@empresa.com",
-    status: "inactive",
-    yearsOfExperience: 3
+    cargo: "Operaciones portuarias",
   },
   { 
     id: 4, 
     name: "Luisa Vargas", 
     dni: "34567890", 
     phone: "978563412", 
-    specialty: "Seguridad industrial",
-    email: "luisa.vargas@empresa.com",
-    status: "on_leave",
-    yearsOfExperience: 6
-  },
+    cargo: "Gestión de inventarios",},
   { 
     id: 5, 
     name: "Roberto Sánchez", 
     dni: "45678901", 
     phone: "965874123", 
-    specialty: "Operaciones especiales",
-    email: "roberto.sanchez@empresa.com",
-    status: "active",
-    yearsOfExperience: 10
+    cargo: "Operaciones especiales",
+
   }
 ];
 
 export function useSupervisors() {
-  const [supervisors, setSupervisors] = useState<Supervisor[]>(initialSupervisors);
+  const [supervisors, setSupervisors] = useState<User[]>(initialSupervisors);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
   // Agregar un nuevo supervisor
-  const addSupervisor = (newSupervisor: Omit<Supervisor, "id">) => {
+  const addSupervisor = (newSupervisor: Omit<User, "id">) => {
     setLoading(true);
     try {
       // Simulamos una llamada a API
       setTimeout(() => {
         const newId = Math.max(...supervisors.map(supervisor => supervisor.id), 0) + 1;
         const supervisorToAdd = { ...newSupervisor, id: newId };
-        setSupervisors([...supervisors, supervisorToAdd as Supervisor]);
+        setSupervisors([...supervisors, supervisorToAdd as User]);
         setLoading(false);
       }, 500);
     } catch (err) {
@@ -78,7 +64,7 @@ export function useSupervisors() {
   };
 
   // Actualizar un supervisor existente
-  const updateSupervisor = (updatedSupervisor: Supervisor) => {
+  const updateSupervisor = (updatedSupervisor: User) => {
     setLoading(true);
     try {
       // Simulamos una llamada a API

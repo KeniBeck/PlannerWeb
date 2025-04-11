@@ -16,6 +16,9 @@ import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { FaPersonMilitaryPointing } from "react-icons/fa6";
 import { BsBuildingsFill } from "react-icons/bs";
 import Areas from "./areas/Areas";
+import Supervisors from "./supervisors/Supervisors";
+import Services from "./services/Services";
+import Clients from "./clients/Clients";
 
 export default function Dashboard() {
     const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -175,8 +178,9 @@ export default function Dashboard() {
                         <Route path="/workers" element={<Workers />} />
                         <Route path="/areas" element={<Areas />} />
                         <Route path="/operations" element={<div className="text-center p-10 text-gray-600">Operaciones en desarrollo</div>} />
-                        <Route path="/services" element={<div className="text-center p-10 text-gray-600">Servicios en desarrollo</div>} />
+                        <Route path="/services" element={<Services />} />
                         <Route path="/supersvisors" element={<Supervisors />} />
+                        <Route path="/clients" element={<Clients/>} />
                         <Route path="/reports" element={<div className="text-center p-10 text-gray-600">Reportes en desarrollo</div>} />
                         <Route path="/settings" element={<div className="text-center p-10 text-gray-600">Configuración en desarrollo</div>} />
                         <Route path="/profile" element={<div className="text-center p-10 text-gray-600">Perfil en desarrollo</div>} />
