@@ -1,4 +1,3 @@
-import { useWorkers } from "@/lib/hooks/useWorkers";
 import { AddWorkerDialog } from "@/components/ui/AddWorkerDialog";
 import { AiOutlineSearch, AiOutlineUserAdd, AiOutlineDownload, AiOutlineReload } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
@@ -8,17 +7,30 @@ import { WorkersList } from "@/components/ui/WorkerList";
 import { FaultsList } from "@/components/ui/FaultList";
 import { Worker } from "@/core/model/worker";
 import { Fault } from "@/core/model/fault";
+import { useWorkers } from "@/contexts/WorkerContext";
+import { useState } from "react";
 
-export default function Workers() {
+
+export default function  Workers() {
+   
+   
     const {
-        allWorkers,
+        workers,
         availableWorkers,
         assignedWorkers,
         deactivatedWorkers,
-        incapacitatedWorkers,
-        faults
+        incapacitatedWorkers
+        // refreshWorkers,
+        // lastUpdated,
+        // isLoading
     } = useWorkers();
-
+    const [faults] = useState<Fault[]>([
+        //datos de faltas o un arreglo vacío si las obtendrás de otro contexto
+      
+    ]);
+    
+    // Todas las distintas categorías de trabajadores
+    const allWorkers = workers;
     // Hook para el filtrado y búsqueda
     const {
         searchTerm,
@@ -39,6 +51,7 @@ export default function Workers() {
         incapacitatedWorkers,
         faults
     );
+    
 
     // Hook para la vista y acciones
     const {
