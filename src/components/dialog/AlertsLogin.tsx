@@ -87,14 +87,12 @@ export const isLoadingAlert = async (status: boolean) => {
     }
     
     isLoading = true;
-    // Guardar el tiempo de inicio
     loadingStartTime = Date.now();
     
-    // Asegurar que cualquier alerta anterior se cierre primero
-    try {
+ 
+    if (loadingAlert) {
       Swal.close();
-    } catch (e) {
-      console.warn("No hay alertas para cerrar");
+      loadingAlert = null;
     }
     
     loadingAlert = Swal.fire({
@@ -129,6 +127,7 @@ export const isLoadingAlert = async (status: boolean) => {
       loadingAlert = null;
     } catch (e) {
       console.warn("Error al intentar cerrar la alerta de carga:", e);
+      loadingAlert = null; 
     }
   }
 }

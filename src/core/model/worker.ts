@@ -5,11 +5,11 @@ interface Worker {
     name: string;
     phone: string;
     dni: string;
-    startDate: Date;
+    createAt: Date;
     endDate?: Date;
     incapacity?: Incapacity;
     deactivationDate?: Date;
-    area: Area;
+    jobArea: Area;
     status: WorkerStatus;
     code: string;
 }

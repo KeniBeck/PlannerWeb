@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { LoginCredentials, AuthResponse } from "./interfaces/LoginCredential";
 import { getTokenRole, isTokenExpired } from "@/lib/utils/jwtutils";
 import { UserRole } from "@/lib/utils/interfaces/role";
+import api from "./client/axiosConfig";
 
 class AuthService {
   private baseUrl = import.meta.env.VITE_API_URL;
@@ -29,6 +30,7 @@ class AuthService {
   // Método para cerrar sesión
   logout(): void {
     localStorage.removeItem("token");
+    window.dispatchEvent(new CustomEvent("auth:logout"));
   }
 
   // Verificar si el usuario está autenticado
@@ -43,11 +45,7 @@ class AuthService {
         this.logout();
         return false;
       }
-      const response = await axios.get(`${this.baseUrl}/login/validation`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get(`${this.baseUrl}/login/validation`);
       return response.status === 200;
     } catch (error) {
       console.error("Error verificando autenticación:", error);
