@@ -88,7 +88,7 @@ export function FaultsList({ faults }: FaultsListProps) {
             <table className="w-full border-collapse">
                 <thead>
                     <tr className="bg-blue-50 border-b border-blue-100">
-                        <SortableHeader label="ID" sortKey="id" />
+                        <SortableHeader label="Documento" sortKey="worker.dni" />
                         <SortableHeader label="Trabajador" sortKey="worker.name" />
                         <SortableHeader label="Tipo" sortKey="type" />
                         <SortableHeader label="Descripción" sortKey="description" />
@@ -102,7 +102,7 @@ export function FaultsList({ faults }: FaultsListProps) {
                                 key={fault.id}
                                 className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
                             >
-                                <td className="py-3 px-4 text-sm font-medium text-gray-900">{fault.id}</td>
+                                <td className="py-3 px-4 text-sm font-medium text-gray-900">{fault.worker.dni}</td>
                                 <td className="py-3 px-4 text-sm text-gray-800">{fault.worker.name}</td>
                                 <td className="py-3 px-4 text-sm">
                                     <FaultTypeBadge type={fault.type} />

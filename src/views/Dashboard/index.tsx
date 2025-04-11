@@ -15,6 +15,7 @@ import { MdAssignment, MdHomeRepairService } from "react-icons/md";
 import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { FaPersonMilitaryPointing } from "react-icons/fa6";
 import { BsBuildingsFill } from "react-icons/bs";
+import Areas from "./areas/Areas";
 
 export default function Dashboard() {
     const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -172,9 +173,10 @@ export default function Dashboard() {
                     <Routes>
                         <Route path="/" element={<Workers />} />
                         <Route path="/workers" element={<Workers />} />
-                        {/* Aquí puedes agregar más rutas según necesites */}
-                        <Route path="/projects" element={<div className="text-center p-10 text-gray-600">Página de proyectos en desarrollo</div>} />
-                        <Route path="/calendar" element={<div className="text-center p-10 text-gray-600">Calendario en desarrollo</div>} />
+                        <Route path="/areas" element={<Areas />} />
+                        <Route path="/operations" element={<div className="text-center p-10 text-gray-600">Operaciones en desarrollo</div>} />
+                        <Route path="/services" element={<div className="text-center p-10 text-gray-600">Servicios en desarrollo</div>} />
+                        <Route path="/supersvisors" element={<Supervisors />} />
                         <Route path="/reports" element={<div className="text-center p-10 text-gray-600">Reportes en desarrollo</div>} />
                         <Route path="/settings" element={<div className="text-center p-10 text-gray-600">Configuración en desarrollo</div>} />
                         <Route path="/profile" element={<div className="text-center p-10 text-gray-600">Perfil en desarrollo</div>} />
