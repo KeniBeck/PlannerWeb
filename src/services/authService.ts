@@ -1,56 +1,92 @@
-import axios, { AxiosError } from 'axios';
-import { LoginCredentials, AuthResponse } from './interfaces/LoginCredential';
+import axios, { AxiosError } from "axios";
+import { LoginCredentials, AuthResponse } from "./interfaces/LoginCredential";
+import { getTokenRole, isTokenExpired } from "@/lib/utils/jwtutils";
+import { UserRole } from "@/lib/utils/interfaces/role";
 
-
-// Clase de servicio de autenticación
 class AuthService {
-  // URL base desde variables de entorno
-  private baseUrl = import.meta.env.API_URL || 'http://localhost:3000';
-  
-  // Método de login
+  private baseUrl = import.meta.env.VITE_API_URL;
+
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const response = await axios.post<AuthResponse>(
-        `${this.baseUrl}/login`, 
+        `${this.baseUrl}/login`,
         credentials
       );
-      
-      // Guardar el token en localStorage para mantener la sesión
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+
+      if (response.data.access_token) {
+        localStorage.setItem("token", response.data.access_token);
       }
       return response.data;
     } catch (error) {
-        const status = (error as AxiosError).response?.data;
+      const status = (error as AxiosError).response?.data;
       if (axios.isAxiosError(error)) {
-        console.error('Error durante el login:', error.response?.data);
+        console.error("Error durante el login:", error.response?.data);
       }
       throw status;
     }
   }
-  
+
   // Método para cerrar sesión
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
   }
-  
+
   // Verificar si el usuario está autenticado
-  isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return false;
+      }
+
+      if (isTokenExpired(token)) {
+        this.logout();
+        return false;
+      }
+      const response = await axios.get(`${this.baseUrl}/login/validation`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.status === 200;
+    } catch (error) {
+      console.error("Error verificando autenticación:", error);
+      return false;
+    }
   }
-  
+
+  isLocallyAuthenticated(): boolean {
+    const token = this.getToken();
+    return !!token && !isTokenExpired(token);
+  }
+
   // Obtener el token actual
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
+  }
+
+  getUserRole(): UserRole | null {
+    const token = this.getToken();
+    return getTokenRole(token) as UserRole | null;
   }
   
-  // Obtener datos del usuario actual
-  getCurrentUser(): any {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+  hasRole(requiredRoles?: UserRole[]): boolean {
+    const userRole = this.getUserRole();
+    
+    // Si no hay roles requeridos, permitir acceso
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
+    
+    // Si no hay rol de usuario, denegar acceso
+    if (!userRole) {
+      return false;
+    }
+    
+    // Verificar si el rol del usuario está entre los requeridos
+    return requiredRoles.includes(userRole);
   }
 }
 
-// Exportamos una instancia única del servicio
+
 export const authService = new AuthService();

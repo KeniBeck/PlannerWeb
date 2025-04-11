@@ -43,22 +43,17 @@ export function LoginForm() {
       setTimeout(() => {
         StatusCodeAlert(error as any);
       }, 1000);
-   
-      console.error("Login failed:", error);
     }finally{
       isLoadingAlert(false);
     }
-    console.log(values);
   }
 
-  const watchUsername = form.watch("username");
-  const hasValue = watchUsername?.length > 0;
 
   return (
     <div className="w-full h-full flex justify-center items-center rounded-r-2xl bg-gray-200">
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6 w-full px-[80px]"
+        className="space-y-6 w-[80%]"
       >
         <div className="flex flex-col gap-4 justify-center items-center">
           <div className="text-2xl font-semibold font-sans text-[#4463e9]">
