@@ -91,6 +91,7 @@ export function AreasList({ areas, onEdit, onDelete }: AreasListProps) {
   const getWorkersCount = (areaId: number) => {
     // Aquí podríamos obtener el número real de trabajadores por área
     // Por ahora, usamos un número aleatorio como ejemplo
+    console.log("Obteniendo el número de trabajadores para el área:", areaId);
     return Math.floor(Math.random() * 20);
   };
 

@@ -1,6 +1,6 @@
 import { User } from "@/core/model/user";
 import { useState, useMemo } from "react";
-import { BsChevronUp, BsChevronDown, BsThreeDotsVertical, BsPencil, BsTrash } from "react-icons/bs";
+import { BsChevronUp, BsChevronDown } from "react-icons/bs";
 import Pagination from "./Pagination";
 import { compareValues } from "@/lib/utils/sortUtils";
 
@@ -15,7 +15,7 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 }
 
-export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsListProps) {
+export function SupervisorsList({ supervisors }: SupervisorsListProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -51,11 +51,11 @@ export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsLi
     setCurrentPage(pageNumber);
   };
 
-  // Manejo del menú desplegable
-  const toggleDropdown = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
+  // // Manejo del menú desplegable
+  // const toggleDropdown = (id: number, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   setActiveDropdown(activeDropdown === id ? null : id);
+  // };
 
   const handleClickOutside = () => {
     setActiveDropdown(null);

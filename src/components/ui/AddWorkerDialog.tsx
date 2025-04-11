@@ -188,9 +188,9 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
             dni: formData.dni,
             code: formData.code,
             phone: formData.phone,
-            area: selectedArea,
+            jobArea: selectedArea,
             status: WorkerStatus.AVAILABLE,
-            startDate: new Date(),
+            createAt: new Date(),
         };
 
         onAddWorker?.(newWorker);
