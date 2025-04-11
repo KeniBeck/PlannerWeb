@@ -36,7 +36,7 @@ export function LoginForm() {
       isLoadingAlert(false);
       StatusSuccessAlert("Login successful", "Welcome to CargoPlanner!");
       setTimeout(() => {
-        navigate("/");
+        navigate("/dashboard");
       }, 1000); 
     } catch (error) {
       isLoadingAlert(false);

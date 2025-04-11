@@ -1,16 +1,18 @@
-import { ReactNode, useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { isLoadingAlert } from '@/components/dialog/AlertsLogin';
-import { UserRole } from '@/lib/utils/interfaces/role';
-
+import { ReactNode, useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { authService } from "../services/authService";
+import { isLoadingAlert } from "@/components/dialog/AlertsLogin";
+import { UserRole } from "@/lib/utils/interfaces/role";
 
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRoles?: UserRole[];
 }
 
-export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  requiredRoles,
+}: ProtectedRouteProps) {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
@@ -20,9 +22,9 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
     const checkAuthentication = async () => {
       try {
         isLoadingAlert(true);
-        
+
         const hasRequiredRole = authService.hasRole(requiredRoles);
-        
+
         // Si no tiene los roles requeridos, denegar acceso
         if (!hasRequiredRole) {
           setIsAuthenticated(true);
@@ -35,15 +37,15 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
         setIsAuthenticated(isAuth);
         setHasAccess(isAuth && hasRequiredRole);
         isLoadingAlert(false);
-        
+
         return isAuth;
       } catch (error) {
-        console.error('Error verificando autenticación:', error);
+        console.error("Error verificando autenticación:", error);
         setIsAuthenticated(false);
         setHasAccess(false);
       } finally {
         setIsCheckingAuth(false);
-        isLoadingAlert(false);    
+        isLoadingAlert(false);
       }
     };
 
