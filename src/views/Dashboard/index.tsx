@@ -16,7 +16,6 @@ import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { FaPersonMilitaryPointing } from "react-icons/fa6";
 import { BsBuildingsFill } from "react-icons/bs";
 import { LayeredProviders } from "@/contexts/LayeredProviders";
-
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const location = useLocation();
