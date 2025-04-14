@@ -1,6 +1,6 @@
 import  { ReactNode } from 'react';
 import { WorkerProvider } from './WorkerContext';
-// import { FaultProvider } from './FaultContext';
+import { FaultProvider } from './FaultContext';
 // Importar otros providers según necesites
 
 type FeatureType = 'workers' | 'faults' | 'projects'; // Añade más según necesites
@@ -23,7 +23,7 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         content = <WorkerProvider>{content}</WorkerProvider>;
         break;
       case 'faults':
-        // content = <FaultProvider>{content}</FaultProvider>;
+        content = <FaultProvider>{content}</FaultProvider>;
         break;
       case 'projects':
         // content = <ProjectProvider>{content}</ProjectProvider>;
