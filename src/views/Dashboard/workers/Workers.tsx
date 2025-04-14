@@ -17,6 +17,8 @@ import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { WorkersList } from "@/components/ui/WorkerList";
+import { FaultsList } from "@/components/ui/FaultList";
 
 export default function Workers() {
   const {
@@ -402,28 +404,11 @@ export default function Workers() {
       {/* Vista principal usando DataTable */}
       {activeTab && (
         <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-          <div className="bg-white p-4">
-            {currentView.type === 'workers' ? (
-              <DataTable
-                data={currentView.items as Worker[]}
-                columns={workerColumns}
-                actions={workerActions}
-                initialSort={{ key: 'code', direction: 'asc' }}
-                itemsPerPage={10}
-                itemName="trabajadores"
-                emptyMessage="No se encontraron trabajadores"
-              />
+          <div className="bg-white">
+            {currentView.type === "workers" ? (
+              <WorkersList workers={currentView.items as Worker[]} />
             ) : (
-              <DataTable
-                data={currentView.items as Fault[]}
-                columns={faultColumns}
-                actions={faultActions}
-                initialSort={{ key: 'createdAt', direction: 'desc' }}
-                itemsPerPage={5}
-                itemName="faltas"
-                emptyMessage="No se encontraron registros de faltas"
-              />
-
+              <FaultsList />
             )}
           </div>
         </div>
