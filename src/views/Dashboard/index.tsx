@@ -16,6 +16,11 @@ import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { FaPersonMilitaryPointing } from "react-icons/fa6";
 import { BsBuildingsFill } from "react-icons/bs";
 import { LayeredProviders } from "@/contexts/LayeredProviders";
+import Areas from "./areas/Areas";
+import Supervisors from "./supervisors/Supervisors";
+import Services from "./services/Services";
+import Clients from "./clients/Clients";
+
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const location = useLocation();
@@ -193,46 +198,15 @@ export default function Dashboard() {
               }
             />
             {/* Aquí puedes agregar más rutas según necesites */}
-            <Route
-              path="/projects"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Página de proyectos en desarrollo
-                </div>
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Calendario en desarrollo
-                </div>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Reportes en desarrollo
-                </div>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Configuración en desarrollo
-                </div>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Perfil en desarrollo
-                </div>
-              }
-            />
+            <Route path="/operations" element={<div className="text-center p-10 text-gray-600">Operaciones en desarrollo</div>} />
+                        <Route path="/services" element={<Services />} />
+                        <Route path="/supersvisors" element={<Supervisors />} />
+                        <Route path="/reports" element={<div className="text-center p-10 text-gray-600">Reportes en desarrollo</div>} />
+                        <Route path="/clients" element={<Clients />} />
+                        <Route path="/users" element={<div className="text-center p-10 text-gray-600">Usuarios en desarrollo</div>} />
+                        <Route path="/areas" element={<Areas />} />
+                        <Route path="/settings" element={<div className="text-center p-10 text-gray-600">Configuración en desarrollo</div>} />
+                        <Route path="/profile" element={<div className="text-center p-10 text-gray-600">Perfil en desarrollo</div>} />
           </Routes>
         </main>
       </div>
