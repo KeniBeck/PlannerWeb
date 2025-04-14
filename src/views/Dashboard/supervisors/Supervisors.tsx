@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSupervisors } from "@/lib/hooks/useSupervisors";
 import { User } from "@/core/model/user";
-import { SupervisorsList } from "@/components/ui/SupervisorsList";
-import { AiOutlineSearch, AiOutlineUserAdd, AiOutlineDownload, AiOutlineReload } from "react-icons/ai";
+import { AiOutlineSearch } from "react-icons/ai";
+import { BsPencil, BsTrash } from "react-icons/bs";
 import { FiFilter } from "react-icons/fi";
+import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { AddSupervisorDialog } from "@/components/ui/AddSupervisorDialog";
+import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 
 export default function Supervisors() {
   const { supervisors, loading, addSupervisor, updateSupervisor, deleteSupervisor, refreshData } = useSupervisors();
@@ -16,11 +18,18 @@ export default function Supervisors() {
   const [isAddSupervisorOpen, setIsAddSupervisorOpen] = useState(false);
   const [supervisorToEdit, setSupervisorToEdit] = useState<User | undefined>(undefined);
 
-  // Filtrar supervisores según el término de búsqueda
-  const filteredSupervisors = supervisors.filter(supervisor => 
-    (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     supervisor.dni.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     supervisor.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Filtrar supervisores según el término de búsqueda y estado
+  const filteredSupervisors = useMemo(() => 
+    supervisors.filter(supervisor => {
+      // Filtro por búsqueda
+      const matchesSearch = 
+        supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        supervisor.dni.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        supervisor.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      
+      return matchesSearch;
+    }), [supervisors, searchTerm, activeStatus]
   );
 
   // Manejar la edición de un supervisor
@@ -44,7 +53,6 @@ export default function Supervisors() {
 
   // Manejar la eliminación de un supervisor
   const handleDeleteSupervisor = (supervisorId: number) => {
-    // Aquí podrías mostrar una confirmación antes de eliminar
     if (window.confirm("¿Estás seguro de que quieres eliminar este supervisor?")) {
       deleteSupervisor(supervisorId);
       StatusSuccessAlert("Éxito", "Supervisor eliminado correctamente");
@@ -67,44 +75,73 @@ export default function Supervisors() {
     setIsAddSupervisorOpen(true);
   };
 
+  // Definir las columnas para la tabla
+  const columns: TableColumn<User>[] = useMemo(() => [
+    { 
+      header: "ID", 
+      accessor: "id", 
+      className: "font-medium"
+    },
+    { 
+      header: "Nombre", 
+      accessor: "name" 
+    },
+    { 
+      header: "DNI", 
+      accessor: "dni" 
+    },
+    { 
+      header: "Teléfono", 
+      accessor: "phone" 
+    },
+    { 
+      header: "Especialidad", 
+      accessor: "cargo" 
+    },
+  ], []);
+
+  // Definir acciones de la tabla
+  const actions: TableAction<User>[] = useMemo(() => [
+    {
+      label: "Editar",
+      icon: <BsPencil className="h-4 w-4" />,
+      onClick: handleEditSupervisor,
+      className: "text-gray-700"
+    },
+    {
+      label: "Eliminar",
+      icon: <BsTrash className="h-4 w-4" />,
+      onClick: (supervisor) => handleDeleteSupervisor(supervisor.id),
+      className: "text-red-600"
+    }
+  ], []);
+
+  // Definir las columnas para exportar supervisores a Excel
+  const supervisorExportColumns: ExcelColumn[] = useMemo(() => [
+    { header: 'Código', field: 'id' },
+    { header: 'Nombre', field: 'name' },
+    { header: 'DNI', field: 'dni' },
+    { header: 'Teléfono', field: 'phone' },
+    { header: 'Especialidad', field: 'cargo' },
+  ], []);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="rounded-xl shadow-md">
-        {/* Header */}
-        <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md">
-          <div>
-            <h1 className="text-3xl font-bold">Supervisores</h1>
-            <p className="text-blue-100 mt-1 font-light">
-              Administración de supervisores de operaciones
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              title="Exportar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-            >
-              <AiOutlineDownload className="h-5 w-5" />
-            </button>
-
-            <button
-              title="Actualizar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-              onClick={() => refreshData()}
-              disabled={loading}
-            >
-              <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-            </button>
-
-            <button
-              className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
-              onClick={handleAddSupervisor}
-            >
-              <AiOutlineUserAdd className="mr-2" /> Agregar Supervisor
-            </button>
-          </div>
-        </header>
-
+        {/* Header con exportación */}
+        <SectionHeader
+          title="Supervisores"
+          subtitle="Gestión de supervisores"
+          btnAddText="Agregar Supervisor"
+          handleAddArea={handleAddSupervisor}
+          refreshData={() => Promise.resolve(refreshData())}
+          loading={loading}
+          exportData={filteredSupervisors}
+          exportFileName="supervisores"
+          exportColumns={supervisorExportColumns}
+          currentView="supervisors"
+        />
+        
         {/* Filtros */}
         <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
           <div className="flex gap-4 items-center p-2">
@@ -152,23 +189,19 @@ export default function Supervisors() {
         </div>
       </div>
 
-      {/* Vista principal */}
+      {/* Vista principal con DataTable */}
       <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div className="bg-white">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando supervisores...</p>
-              </div>
-            </div>
-          ) : (
-            <SupervisorsList 
-              supervisors={filteredSupervisors} 
-              onEdit={handleEditSupervisor} 
-              onDelete={handleDeleteSupervisor} 
-            />
-          )}
+        <div className="bg-white p-4">
+          <DataTable
+            data={filteredSupervisors}
+            columns={columns}
+            actions={actions}
+            isLoading={loading}
+            itemsPerPage={10}
+            itemName="supervisores"
+            initialSort={{ key: 'id', direction: 'asc' }}
+            emptyMessage="No se encontraron supervisores"
+          />
         </div>
       </div>
 

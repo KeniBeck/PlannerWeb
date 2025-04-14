@@ -1,4 +1,7 @@
-import { AddWorkerDialog } from "@/components/ui/AddWorkerDialog";
+import { useMemo, useState } from "react";
+import { Worker, WorkerStatus } from "@/core/model/worker";
+import { Fault, FaultType } from "@/core/model/fault";
+import { useWorkers } from "@/contexts/WorkerContext";
 import {
   AiOutlineSearch,
   AiOutlineUserAdd,
@@ -8,12 +11,12 @@ import {
 import { FiFilter } from "react-icons/fi";
 import { useWorkersFilter, WorkerViewTab } from "@/lib/hooks/useWorkersFilter";
 import { useWorkersView } from "@/lib/hooks/useWorkersView";
-import { WorkersList } from "@/components/ui/WorkerList";
-import { FaultsList } from "@/components/ui/FaultList";
-import { Worker } from "@/core/model/worker";
-import { Fault } from "@/core/model/fault";
-import { useWorkers } from "@/contexts/WorkerContext";
-import { useState } from "react";
+import { AddWorkerDialog } from "@/components/ui/AddWorkerDialog";
+import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
+import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
+import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export default function Workers() {
   const {
@@ -22,16 +25,16 @@ export default function Workers() {
     assignedWorkers,
     deactivatedWorkers,
     incapacitatedWorkers,
-    // refreshWorkers,
-    // lastUpdated,
-    // isLoading
+    refreshWorkers,
   } = useWorkers();
+
   const [faults] = useState<Fault[]>([
     //datos de faltas o un arreglo vacío si las obtendrás de otro contexto
   ]);
 
   // Todas las distintas categorías de trabajadores
   const allWorkers = workers;
+
   // Hook para el filtrado y búsqueda
   const {
     searchTerm,
@@ -54,18 +57,277 @@ export default function Workers() {
   );
 
   // Hook para la vista y acciones
-  const { isAddWorkerOpen, setIsAddWorkerOpen, getCurrentView } =
-    useWorkersView(
-      filteredAllWorkers,
-      filteredAvailableWorkers,
-      filteredAssignedWorkers,
-      filteredDeactivatedWorkers,
-      filteredIncapacitatedWorkers,
-      filteredFaults,
-      activeTab
-    );
+  const {
+    isAddWorkerOpen,
+    setIsAddWorkerOpen,
+    getCurrentView,
+  } = useWorkersView(
+    filteredAllWorkers,
+    filteredAvailableWorkers,
+    filteredAssignedWorkers,
+    filteredDeactivatedWorkers,
+    filteredIncapacitatedWorkers,
+    filteredFaults,
+    activeTab
+  );
 
   const currentView = getCurrentView();
+
+  // Manejadores de acciones para los trabajadores
+  const handleEditWorker = (worker: Worker) => {
+    // Implementación para editar un trabajador
+    console.log("Editar trabajador:", worker);
+  };
+
+  const handleDeleteWorker = (workerId: number) => {
+    // Implementación para eliminar un trabajador
+    if (window.confirm("¿Estás seguro de que quieres dar de baja a este trabajador?")) {
+      console.log("Dar de baja al trabajador:", workerId);
+    }
+  };
+
+  // Manejador para detalles de faltas
+  const handleViewFault = (fault: Fault) => {
+    // Implementación para ver detalles de una falta
+    console.log("Ver detalles de falta:", fault);
+  };
+
+  // Definir columnas para la tabla de trabajadores
+  const workerColumns: TableColumn<Worker>[] = useMemo(() => [
+    { 
+      header: "Código", 
+      accessor: "code", 
+      className: "font-medium" 
+    },
+    { 
+      header: "Nombre", 
+      accessor: "name" 
+    },
+    { 
+      header: "Teléfono", 
+      accessor: "phone" 
+    },
+    { 
+      header: "DNI", 
+      accessor: "dni" 
+    },
+    { 
+      header: "Fecha Inicio", 
+      accessor: "createAt",
+      cell: (worker) => worker.createAt 
+        ? format(new Date(worker.createAt), "dd/MM/yyyy", { locale: es }) 
+        : 'N/A'
+    },
+    { 
+      header: "Área", 
+      accessor: "jobArea.name",
+      cell: (worker) => (
+        <div className="flex items-center">
+          <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
+          {worker.jobArea?.name || "Sin área"}
+        </div>
+      )
+    },
+    { 
+      header: "Estado", 
+      accessor: "status",
+      cell: (worker) => {
+        let statusText = "";
+        let bgColor = "";
+        let textColor = "";
+        
+        switch(worker.status) {
+          case WorkerStatus.AVAILABLE:
+            statusText = "Disponible";
+            bgColor = "bg-green-100";
+            textColor = "text-green-800";
+            break;
+          case WorkerStatus.ASSIGNED:
+            statusText = "Asignado";
+            bgColor = "bg-blue-100";
+            textColor = "text-blue-800";
+            break;
+          case WorkerStatus.DEACTIVATED:
+            statusText = "Retirado";
+            bgColor = "bg-gray-100";
+            textColor = "text-gray-800";
+            break;
+          case WorkerStatus.UNAVAILABLE:
+            statusText = "Deshabilitado";
+            bgColor = "bg-red-100";
+            textColor = "text-red-800";
+            break;
+          case WorkerStatus.INCAPACITATED:
+            statusText = "Incapacitado";
+            bgColor = "bg-yellow-100";
+            textColor = "text-yellow-800";
+            break;
+          default:
+            statusText = "Desconocido";
+            bgColor = "bg-gray-100";
+            textColor = "text-gray-800";
+        }
+        
+        return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${bgColor} ${textColor}`}>
+            {statusText}
+          </span>
+        );
+      }
+    },
+  ], []);
+
+  // Acciones para la tabla de trabajadores
+  const workerActions: TableAction<Worker>[] = useMemo(() => [
+    {
+      label: "Editar",
+      icon: <BsPencil className="h-4 w-4" />,
+      onClick: handleEditWorker,
+      className: "text-gray-700"
+    },
+    {
+      label: "Dar de baja",
+      icon: <BsTrash className="h-4 w-4" />,
+      onClick: (worker) => handleDeleteWorker(worker.id),
+      className: "text-red-600"
+    }
+  ], []);
+
+  // Definir columnas para la tabla de faltas
+  const faultColumns: TableColumn<Fault>[] = useMemo(() => [
+    { 
+      header: "Documento", 
+      accessor: "worker.dni",
+      className: "font-medium"
+    },
+    { 
+      header: "Trabajador", 
+      accessor: "worker.name" 
+    },
+    { 
+      header: "Tipo", 
+      accessor: "type",
+      cell: (fault) => {
+        let typeText = "";
+        let bgColor = "";
+        let textColor = "";
+        
+        switch(fault.type) {
+          case FaultType.INASSISTANCE:
+            typeText = "Ausencia";
+            bgColor = "bg-red-100";
+            textColor = "text-red-800";
+            break;
+          case FaultType.IRRESPECTFUL:
+            typeText = "Irrespetuoso";
+            bgColor = "bg-orange-100";
+            textColor = "text-orange-800";
+            break;
+          case FaultType.ABANDONMENT:
+            typeText = "Abandono";
+            bgColor = "bg-gray-100";
+            textColor = "text-gray-800";
+            break;
+          default:
+            typeText = fault.type;
+            bgColor = "bg-blue-100";
+            textColor = "text-blue-800";
+        }
+        
+        return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${bgColor} ${textColor}`}>
+            {typeText}
+          </span>
+        );
+      }
+    },
+    { 
+      header: "Descripción", 
+      accessor: "description",
+      cell: (fault) => (
+        <div className="max-w-xs truncate" title={fault.description}>
+          {fault.description}
+        </div>
+      )
+    },
+    { 
+      header: "Fecha", 
+      accessor: "createdAt",
+      cell: (fault) => format(new Date(fault.createAt), "dd/MM/yyyy", { locale: es })
+    }
+  ], []);
+
+  // Acciones para la tabla de faltas
+  const faultActions: TableAction<Fault>[] = useMemo(() => [
+    {
+      label: "Ver detalles",
+      icon: <BsEye className="h-4 w-4" />,
+      onClick: handleViewFault,
+      className: "text-blue-600"
+    }
+  ], []);
+  
+  // Definir columnas para exportar trabajadores
+  const workerExportColumns: ExcelColumn[] = useMemo(() => [
+    { header: 'Código', field: 'code' },
+    { header: 'Nombre', field: 'name' },
+    { header: 'Teléfono', field: 'phone' },
+    { header: 'DNI', field: 'dni' },
+    { 
+      header: 'Fecha Inicio', 
+      field: 'createAt',
+      value: (worker) => worker.createAt 
+        ? format(new Date(worker.createAt), "dd/MM/yyyy", { locale: es }) 
+        : 'N/A'
+    },
+    { 
+      header: 'Área', 
+      field: 'jobArea.name'
+    },
+    { 
+      header: 'Estado', 
+      field: 'status',
+      value: (worker) => {
+        switch(worker.status) {
+          case 'AVALIABLE': return 'Disponible';
+          case 'ASSIGNED': return 'Asignado';
+          case 'DEACTIVATED': return 'Retirado';
+          case 'DISABLE': return 'Deshabilitado';
+          case 'INCAPACITATED': return 'Incapacitado';
+          default: return 'Desconocido';
+        }
+      }
+    }
+  ], []);
+
+  // Definir columnas para exportar faltas
+  const faultExportColumns: ExcelColumn[] = useMemo(() => [
+    { header: 'Documento', field: 'worker.dni' },
+    { header: 'Trabajador', field: 'worker.name' },
+    { 
+      header: 'Tipo', 
+      field: 'type',
+      value: (fault) => {
+        switch(fault.type) {
+          case 'INNASSISTENCE': return 'Ausencia';
+          case 'IRRESPECTFUL': return 'Irrespetuoso';
+          case 'OTHER': return 'Otro';
+          default: return fault.type;
+        }
+      }
+    },
+    { header: 'Descripción', field: 'description' },
+    { 
+      header: 'Fecha', 
+      field: 'createdAt',
+      value: (fault) => format(new Date(fault.createdAt), "dd/MM/yyyy", { locale: es })
+    }
+  ], []);
+
+  // Obtener las columnas correspondientes según la vista actual
+  const currentExportColumns = useMemo(() => {
+    return currentView.type === 'workers' ? workerExportColumns : faultExportColumns;
+  }, [currentView.type, workerExportColumns, faultExportColumns]);
 
   // Controlador para el cambio de pestaña
   const handleTabChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -75,39 +337,20 @@ export default function Workers() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="rounded-xl shadow-md">
-        {/* Header mejorado y moderno */}
-        <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md">
-          <div>
-            <h1 className="text-3xl font-bold">Trabajadores</h1>
-            <p className="text-blue-100 mt-1 font-light">
-              Gestión de personal y registro de faltas
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              title="Exportar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-            >
-              <AiOutlineDownload className="h-5 w-5" />
-            </button>
-
-            <button
-              title="Actualizar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-            >
-              <AiOutlineReload className="h-5 w-5" />
-            </button>
-
-            <button
-              className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
-              onClick={() => setIsAddWorkerOpen(true)}
-            >
-              <AiOutlineUserAdd className="mr-2" /> Agregar Trabajador
-            </button>
-          </div>
-        </header>
-
+        {/* Header mejorado con exportación personalizada */}
+        <SectionHeader 
+          title="Trabajadores"
+          subtitle="Gestión de trabajadores y registro de faltas"
+          btnAddText="Agregar Trabajador"
+          handleAddArea={() => setIsAddWorkerOpen(true)}
+          refreshData={() => Promise.resolve(refreshWorkers())}
+          loading={false}
+          exportData={currentView.items}
+          exportFileName={`${currentView.type === 'workers' ? 'trabajadores' : 'faltas'}_${activeTab}`}
+          exportColumns={currentExportColumns}
+          currentView={currentView.type}
+        />
+        
         <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
           <div className="flex gap-4 items-center p-2">
             <div>
@@ -133,9 +376,9 @@ export default function Workers() {
                   value={activeTab}
                   onChange={handleTabChange}
                   style={{
-                    backgroundImage: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
+                    backgroundImage: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none'
                   }}
                 >
                   <option value="all">Todos</option>
@@ -146,19 +389,8 @@ export default function Workers() {
                   <option value="faults">Faltas</option>
                 </select>
                 <div className="absolute right-3 top-3 pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
+                  <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </div>
@@ -166,27 +398,44 @@ export default function Workers() {
           </div>
         </div>
       </div>
-      {/* Vista principal */}
+
+      {/* Vista principal usando DataTable */}
       {activeTab && (
         <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-          <div className="bg-white">
-            {currentView.type === "workers" ? (
-              <WorkersList workers={currentView.items as Worker[]} />
+          <div className="bg-white p-4">
+            {currentView.type === 'workers' ? (
+              <DataTable
+                data={currentView.items as Worker[]}
+                columns={workerColumns}
+                actions={workerActions}
+                initialSort={{ key: 'code', direction: 'asc' }}
+                itemsPerPage={10}
+                itemName="trabajadores"
+                emptyMessage="No se encontraron trabajadores"
+              />
             ) : (
-              <FaultsList />
+              <DataTable
+                data={currentView.items as Fault[]}
+                columns={faultColumns}
+                actions={faultActions}
+                initialSort={{ key: 'createdAt', direction: 'desc' }}
+                itemsPerPage={5}
+                itemName="faltas"
+                emptyMessage="No se encontraron registros de faltas"
+              />
+
             )}
           </div>
         </div>
       )}
 
-      <AddWorkerDialog
-        open={isAddWorkerOpen}
+      {/* Diálogos */}
+      <AddWorkerDialog 
+        open={isAddWorkerOpen} 
         onOpenChange={setIsAddWorkerOpen}
-        areas={[
-          { id: 1, name: "Area 1" },
-          { id: 2, name: "Area 2" },
-        ]}
+        areas={[{ id: 1, name: "Area 1" }, { id: 2, name: "Area 2" }]}
       />
     </div>
   );
 }
+
