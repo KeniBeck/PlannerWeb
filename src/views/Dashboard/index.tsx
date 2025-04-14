@@ -15,7 +15,7 @@ import { MdAssignment, MdHomeRepairService } from "react-icons/md";
 import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { FaPersonMilitaryPointing } from "react-icons/fa6";
 import { BsBuildingsFill } from "react-icons/bs";
-import { LayeredProviders } from "@/contexts/LayeredProviders";
+import { Feature, LayeredProviders } from "@/contexts/LayeredProviders";
 import Areas from "./areas/Areas";
 import Supervisors from "./supervisors/Supervisors";
 import Services from "./services/Services";
@@ -184,7 +184,7 @@ export default function Dashboard() {
             <Route
               path="/"
               element={
-                <LayeredProviders features={["workers"]}>
+                <LayeredProviders features={[Feature.WORKERS]}>
                   <Workers />
                 </LayeredProviders>
               }
@@ -192,7 +192,7 @@ export default function Dashboard() {
             <Route
               path="/workers"
               element={
-                <LayeredProviders features={["workers"]}>
+                <LayeredProviders features={[Feature.WORKERS]}>
                   <Workers />
                 </LayeredProviders>
               }
@@ -204,7 +204,13 @@ export default function Dashboard() {
                         <Route path="/reports" element={<div className="text-center p-10 text-gray-600">Reportes en desarrollo</div>} />
                         <Route path="/clients" element={<Clients />} />
                         <Route path="/users" element={<div className="text-center p-10 text-gray-600">Usuarios en desarrollo</div>} />
-                        <Route path="/areas" element={<Areas />} />
+              <Route 
+                path="/areas" element={
+                  <LayeredProviders features={[Feature.AREAS]}>
+                          <Areas />
+                  </LayeredProviders>
+                }
+              />
                         <Route path="/settings" element={<div className="text-center p-10 text-gray-600">Configuración en desarrollo</div>} />
                         <Route path="/profile" element={<div className="text-center p-10 text-gray-600">Perfil en desarrollo</div>} />
           </Routes>

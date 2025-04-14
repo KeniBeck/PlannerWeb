@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useClients } from "@/lib/hooks/useClients";
 import { Client } from "@/core/model/client";
-import { ClientsList } from "@/components/ui/ClientsList";
-import { AiOutlineSearch, AiOutlinePlusCircle, AiOutlineDownload, AiOutlineReload } from "react-icons/ai";
+import { AiOutlineSearch } from "react-icons/ai";
+import { BsPencil, BsTrash } from "react-icons/bs";
+import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { AddClientDialog } from "@/components/ui/AddClientDialog";
+import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 
 export default function Clients() {
   const { clients, loading, addClient, updateClient, deleteClient, refreshData } = useClients();
@@ -15,8 +17,10 @@ export default function Clients() {
   const [clientToEdit, setClientToEdit] = useState<Client | undefined>(undefined);
 
   // Filtrar clientes según el término de búsqueda
-  const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = useMemo(() => 
+    clients.filter(client => 
+      client.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ), [clients, searchTerm]
   );
 
   // Manejar la edición de un cliente
@@ -40,7 +44,6 @@ export default function Clients() {
 
   // Manejar la eliminación de un cliente
   const handleDeleteClient = (clientId: number) => {
-    // Aquí podrías mostrar una confirmación antes de eliminar
     if (window.confirm("¿Estás seguro de que quieres eliminar este cliente?")) {
       deleteClient(clientId);
       StatusSuccessAlert("Éxito", "Cliente eliminado correctamente");
@@ -58,44 +61,58 @@ export default function Clients() {
     setIsAddClientOpen(true);
   };
 
+  // Definir las columnas para la tabla
+  const columns: TableColumn<Client>[] = useMemo(() => [
+    { 
+      header: "ID", 
+      accessor: "id", 
+      className: "font-medium"
+    },
+    { 
+      header: "Nombre", 
+      accessor: "name" 
+    }
+  ], []);
+
+  // Definir acciones de la tabla
+  const actions: TableAction<Client>[] = useMemo(() => [
+    {
+      label: "Editar",
+      icon: <BsPencil className="h-4 w-4" />,
+      onClick: handleEditClient,
+      className: "text-gray-700"
+    },
+    {
+      label: "Eliminar",
+      icon: <BsTrash className="h-4 w-4" />,
+      onClick: (client) => handleDeleteClient(client.id),
+      className: "text-red-600"
+    }
+  ], []);
+
+  // Definir las columnas para exportar clientes a Excel
+  const clientExportColumns: ExcelColumn[] = useMemo(() => [
+    { header: 'ID', field: 'id' },
+    { header: 'Nombre', field: 'name' }
+  ], []);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="rounded-xl shadow-md">
-        {/* Header */}
-        <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md">
-          <div>
-            <h1 className="text-3xl font-bold">Clientes</h1>
-            <p className="text-blue-100 mt-1 font-light">
-              Administración de clientes de la empresa
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              title="Exportar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-            >
-              <AiOutlineDownload className="h-5 w-5" />
-            </button>
-
-            <button
-              title="Actualizar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-              onClick={() => refreshData()}
-              disabled={loading}
-            >
-              <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-            </button>
-
-            <button
-              className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
-              onClick={handleAddClient}
-            >
-              <AiOutlinePlusCircle className="mr-2" /> Agregar Cliente
-            </button>
-          </div>
-        </header>
-
+        {/* Header con exportación */}
+        <SectionHeader
+          title="Clientes"
+          subtitle="Agrega, edita o elimina clientes"
+          btnAddText="Agregar cliente"
+          handleAddArea={handleAddClient}
+          refreshData={() => Promise.resolve(refreshData())}
+          loading={loading}
+          exportData={filteredClients}
+          exportFileName="clientes"
+          exportColumns={clientExportColumns}
+          currentView="clients"
+        />
+        
         {/* Búsqueda */}
         <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
           <div className="flex gap-4 items-center p-2">
@@ -115,23 +132,19 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* Vista principal */}
+      {/* Vista principal con DataTable */}
       <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div className="bg-white">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando clientes...</p>
-              </div>
-            </div>
-          ) : (
-            <ClientsList 
-              clients={filteredClients} 
-              onEdit={handleEditClient} 
-              onDelete={handleDeleteClient} 
-            />
-          )}
+        <div className="bg-white p-4">
+          <DataTable
+            data={filteredClients}
+            columns={columns}
+            actions={actions}
+            isLoading={loading}
+            itemsPerPage={10}
+            itemName="clientes"
+            initialSort={{ key: 'id', direction: 'asc' }}
+            emptyMessage="No se encontraron clientes"
+          />
         </div>
       </div>
 
