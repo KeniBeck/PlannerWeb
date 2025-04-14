@@ -22,7 +22,7 @@ class AreaService {
         try {
             const response = await api.post(`${this.baseUrl}/area`, area);
 
-            if (response.status !== 200) {
+            if (response.status < 200 || response.status >= 300) {
                 throw new Error("Error adding area");
             }
             return response.data;

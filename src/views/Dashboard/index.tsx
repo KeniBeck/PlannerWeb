@@ -207,7 +207,7 @@ export default function Dashboard() {
                         <Route path="/users" element={<div className="text-center p-10 text-gray-600">Usuarios en desarrollo</div>} />
               <Route 
                 path="/areas" element={
-                  <LayeredProviders features={[Feature.AREAS]}>
+                  <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
                           <Areas />
                   </LayeredProviders>
                 }
