@@ -171,7 +171,9 @@ export default function  Workers() {
                 </div>
             )}
 
-            <AddWorkerDialog open={isAddWorkerOpen} onOpenChange={setIsAddWorkerOpen} />
+            <AddWorkerDialog open={isAddWorkerOpen} onOpenChange={setIsAddWorkerOpen}
+                areas={[{ id: 1, name: "Area 1" }, { id: 2, name: "Area 2" }]}
+            />
         </div>
     );
 }

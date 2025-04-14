@@ -9,6 +9,18 @@ export interface WorkerFilters {
     activeTab: WorkerViewTab;
 }
 
+/**
+ * Normaliza un string eliminando acentos/tildes y convirtiéndolo a minúsculas
+ */
+const normalizeString = (text?: string): string => {
+    if (!text) return '';
+
+    return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, ''); // Elimina diacríticos (acentos, tildes, etc.)
+};
+
 export function useWorkersFilter<W extends Worker, F extends Fault>(
     allWorkers: W[],
     availableWorkers: W[],
@@ -26,24 +38,42 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
     const filterWorkersBySearchTerm = (workers: W[]): W[] => {
         if (!filters.searchTerm) return workers;
 
-        const searchTermLower = filters.searchTerm.toLowerCase();
+        // Normalizar el término de búsqueda (sin acentos y en minúsculas)
+        const normalizedSearchTerm = normalizeString(filters.searchTerm);
 
-        return workers.filter(worker =>
-            worker.name.toLowerCase().includes(searchTermLower) ||
-            (worker.dni && worker.dni.toLowerCase().includes(searchTermLower))
-        );
+        return workers.filter(worker => {
+            // Normalizar los campos del trabajador para la búsqueda
+            const normalizedName = normalizeString(worker.name);
+            const normalizedDni = normalizeString(worker.dni);
+            const normalizedCode = normalizeString(worker.code);
+
+            // Buscar en nombre, DNI y código
+            return normalizedName.includes(normalizedSearchTerm) ||
+                normalizedDni.includes(normalizedSearchTerm) ||
+                normalizedCode.includes(normalizedSearchTerm);
+        });
     };
 
     // Filtrar faltas por término de búsqueda
     const filterFaultsBySearchTerm = (faults: F[]): F[] => {
         if (!filters.searchTerm) return faults;
 
-        const searchTermLower = filters.searchTerm.toLowerCase();
+        // Normalizar el término de búsqueda (sin acentos y en minúsculas)
+        const normalizedSearchTerm = normalizeString(filters.searchTerm);
 
-        return faults.filter(fault =>
-            fault.worker.name.toLowerCase().includes(searchTermLower) ||
-            (fault.worker.dni && fault.worker.dni.toLowerCase().includes(searchTermLower))
-        );
+        return faults.filter(fault => {
+            // Normalizar los campos del trabajador para la búsqueda
+            const normalizedWorkerName = normalizeString(fault.worker.name);
+            const normalizedWorkerDni = normalizeString(fault.worker.dni);
+            const normalizedWorkerCode = normalizeString(fault.worker.code);
+            const normalizedDescription = normalizeString(fault.description);
+
+            // Buscar en nombre del trabajador, DNI, código y descripción de la falta
+            return normalizedWorkerName.includes(normalizedSearchTerm) ||
+                normalizedWorkerDni.includes(normalizedSearchTerm) ||
+                normalizedWorkerCode.includes(normalizedSearchTerm) ||
+                normalizedDescription.includes(normalizedSearchTerm);
+        });
     };
 
     const filteredAllWorkers = filterWorkersBySearchTerm(allWorkers);
@@ -81,6 +111,25 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
         }
     };
 
+    // Obtener el número total de elementos según la pestaña activa
+    const getTotalCount = (): number => {
+        switch (filters.activeTab) {
+            case 'all': return filteredAllWorkers.length;
+            case 'available': return filteredAvailableWorkers.length;
+            case 'assigned': return filteredAssignedWorkers.length;
+            case 'deactivated': return filteredDeactivatedWorkers.length;
+            case 'incapacitated': return filteredIncapacitatedWorkers.length;
+            case 'faults': return filteredFaults.length;
+            default: return filteredAllWorkers.length;
+        }
+    };
+
+    // Determinar si la vista actual es de trabajadores o faltas
+    const isWorkersView = filters.activeTab !== 'faults';
+
+    // Obtener el nombre del tipo de elemento actual (trabajadores o faltas)
+    const itemTypeName = isWorkersView ? 'trabajadores' : 'faltas';
+
     return {
         searchTerm: filters.searchTerm,
         activeTab: filters.activeTab,
@@ -93,5 +142,8 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
         setSearchTerm,
         setActiveTab,
         getActiveTabLabel,
+        getTotalCount,
+        isWorkersView,
+        itemTypeName,
     };
 }
