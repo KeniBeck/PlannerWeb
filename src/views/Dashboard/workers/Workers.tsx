@@ -2,11 +2,16 @@ import { useMemo, useState } from "react";
 import { Worker, WorkerStatus } from "@/core/model/worker";
 import { Fault, FaultType } from "@/core/model/fault";
 import { useWorkers } from "@/contexts/WorkerContext";
+import {
+  AiOutlineSearch,
+  AiOutlineUserAdd,
+  AiOutlineDownload,
+  AiOutlineReload,
+} from "react-icons/ai";
+import { FiFilter } from "react-icons/fi";
 import { useWorkersFilter, WorkerViewTab } from "@/lib/hooks/useWorkersFilter";
 import { useWorkersView } from "@/lib/hooks/useWorkersView";
 import { AddWorkerDialog } from "@/components/ui/AddWorkerDialog";
-import { AiOutlineSearch } from "react-icons/ai";
-import { FiFilter } from "react-icons/fi";
 import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
 import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
@@ -248,7 +253,7 @@ export default function Workers() {
     { 
       header: "Fecha", 
       accessor: "createdAt",
-      cell: (fault) => format(new Date(fault.createdAt), "dd/MM/yyyy", { locale: es })
+      cell: (fault) => format(new Date(fault.createAt), "dd/MM/yyyy", { locale: es })
     }
   ], []);
 
@@ -418,6 +423,7 @@ export default function Workers() {
                 itemName="faltas"
                 emptyMessage="No se encontraron registros de faltas"
               />
+
             )}
           </div>
         </div>
@@ -432,3 +438,4 @@ export default function Workers() {
     </div>
   );
 }
+

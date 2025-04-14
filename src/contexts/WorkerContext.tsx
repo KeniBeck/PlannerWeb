@@ -5,22 +5,6 @@ import { isLoadingAlert } from '@/components/dialog/AlertsLogin';
 import { workersState } from './WorkerState';
 import { WorkerStatus,Worker } from '@/core/model/worker';
 
-
-// Define la interfaz para un trabajador
-interface WorkerContextType {
-    workers: Worker[];
-    availableWorkers: Worker[];
-    assignedWorkers: Worker[];
-    deactivatedWorkers: Worker[];
-    incapacitatedWorkers: Worker[];
-    isLoading: boolean;
-    error: string | null;
-    lastUpdated: Date | null;
-    refreshWorkers: () => Promise<void>;
-  }
-
-// status: 'AVAILABLE' | 'ASSIGNED' | 'DEACTIVATED' | 'INCAPACITATED';
-// Define la interfaz para el contexto
 interface WorkerContextType {
   workers: Worker[];
   availableWorkers: Worker[];

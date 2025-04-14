@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { WorkerProvider } from './WorkerContext';
 import { AreasProvider } from './AreasContext';
 // import { FaultProvider } from './FaultContext';
+import { FaultProvider } from './FaultContext';
+
 // Importar otros providers según necesites
 
 // Usar enum para las features disponibles

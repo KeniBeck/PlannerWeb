@@ -184,7 +184,7 @@ export default function Dashboard() {
             <Route
               path="/"
               element={
-                <LayeredProviders features={[Feature.WORKERS]}>
+                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS]}>
                   <Workers />
                 </LayeredProviders>
               }
@@ -192,7 +192,8 @@ export default function Dashboard() {
             <Route
               path="/workers"
               element={
-                <LayeredProviders features={[Feature.WORKERS]}>
+
+                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS]}>
                   <Workers />
                 </LayeredProviders>
               }
@@ -213,6 +214,7 @@ export default function Dashboard() {
               />
                         <Route path="/settings" element={<div className="text-center p-10 text-gray-600">Configuración en desarrollo</div>} />
                         <Route path="/profile" element={<div className="text-center p-10 text-gray-600">Perfil en desarrollo</div>} />
+
           </Routes>
         </main>
       </div>
