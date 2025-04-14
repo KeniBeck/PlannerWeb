@@ -184,7 +184,7 @@ export default function Dashboard() {
             <Route
               path="/"
               element={
-                <LayeredProviders features={["workers"]}>
+                <LayeredProviders features={["workers", "faults"]}>
                   <Workers />
                 </LayeredProviders>
               }
@@ -192,21 +192,56 @@ export default function Dashboard() {
             <Route
               path="/workers"
               element={
-                <LayeredProviders features={["workers"]}>
+                <LayeredProviders features={["workers", "faults"]}>
                   <Workers />
                 </LayeredProviders>
               }
             />
             {/* Aquí puedes agregar más rutas según necesites */}
-            <Route path="/operations" element={<div className="text-center p-10 text-gray-600">Operaciones en desarrollo</div>} />
-                        <Route path="/services" element={<Services />} />
-                        <Route path="/supersvisors" element={<Supervisors />} />
-                        <Route path="/reports" element={<div className="text-center p-10 text-gray-600">Reportes en desarrollo</div>} />
-                        <Route path="/clients" element={<Clients />} />
-                        <Route path="/users" element={<div className="text-center p-10 text-gray-600">Usuarios en desarrollo</div>} />
-                        <Route path="/areas" element={<Areas />} />
-                        <Route path="/settings" element={<div className="text-center p-10 text-gray-600">Configuración en desarrollo</div>} />
-                        <Route path="/profile" element={<div className="text-center p-10 text-gray-600">Perfil en desarrollo</div>} />
+            <Route
+              path="/operations"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Operaciones en desarrollo
+                </div>
+              }
+            />
+            <Route path="/services" element={<Services />} />
+            <Route path="/supersvisors" element={<Supervisors />} />
+            <Route
+              path="/reports"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Reportes en desarrollo
+                </div>
+              }
+            />
+            <Route path="/clients" element={<Clients />} />
+            <Route
+              path="/users"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Usuarios en desarrollo
+                </div>
+              }
+            />
+            <Route path="/areas" element={<Areas />} />
+            <Route
+              path="/settings"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Configuración en desarrollo
+                </div>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Perfil en desarrollo
+                </div>
+              }
+            />
           </Routes>
         </main>
       </div>
