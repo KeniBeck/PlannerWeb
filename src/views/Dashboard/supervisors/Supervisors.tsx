@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useSupervisors } from "@/lib/hooks/useSupervisors";
-import { Supervisor } from "@/core/model/supervisor";
+import { User } from "@/core/model/user";
 import { SupervisorsList } from "@/components/ui/SupervisorsList";
-import { AddSupervisorDialog } from "@/components/ui/AddSupervisorDialog";
 import { AiOutlineSearch, AiOutlineUserAdd, AiOutlineDownload, AiOutlineReload } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
+import { AddSupervisorDialog } from "@/components/ui/AddSupervisorDialog";
 
 export default function Supervisors() {
   const { supervisors, loading, addSupervisor, updateSupervisor, deleteSupervisor, refreshData } = useSupervisors();
@@ -14,27 +14,26 @@ export default function Supervisors() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeStatus, setActiveStatus] = useState<string>("all");
   const [isAddSupervisorOpen, setIsAddSupervisorOpen] = useState(false);
-  const [supervisorToEdit, setSupervisorToEdit] = useState<Supervisor | undefined>(undefined);
+  const [supervisorToEdit, setSupervisorToEdit] = useState<User | undefined>(undefined);
 
   // Filtrar supervisores según el término de búsqueda
   const filteredSupervisors = supervisors.filter(supervisor => 
     (supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
      supervisor.dni.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     supervisor.phone.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (activeStatus === "all" || supervisor.status === activeStatus)
+     supervisor.phone.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Manejar la edición de un supervisor
-  const handleEditSupervisor = (supervisor: Supervisor) => {
+  const handleEditSupervisor = (supervisor: User) => {
     setSupervisorToEdit(supervisor);
     setIsAddSupervisorOpen(true);
   };
 
   // Manejar guardar un supervisor (nuevo o editado)
-  const handleSaveSupervisor = (supervisor: Omit<Supervisor, "id"> & { id?: number }) => {
+  const handleSaveSupervisor = (supervisor: Omit<User, "id"> & { id?: number }) => {
     if (supervisor.id) {
       // Actualizar supervisor existente
-      updateSupervisor(supervisor as Supervisor);
+      updateSupervisor(supervisor as User);
       StatusSuccessAlert("Éxito", "Supervisor actualizado correctamente");
     } else {
       // Agregar nuevo supervisor

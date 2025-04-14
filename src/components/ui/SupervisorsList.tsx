@@ -1,12 +1,12 @@
-import { Supervisor } from "@/core/model/supervisor";
+import { User } from "@/core/model/user";
 import { useState, useMemo } from "react";
-import { BsChevronUp, BsChevronDown, BsThreeDotsVertical, BsPencil, BsTrash } from "react-icons/bs";
+import { BsChevronUp, BsChevronDown } from "react-icons/bs";
 import Pagination from "./Pagination";
 import { compareValues } from "@/lib/utils/sortUtils";
 
 interface SupervisorsListProps {
-  supervisors: Supervisor[];
-  onEdit?: (supervisor: Supervisor) => void;
+  supervisors: User[];
+  onEdit?: (supervisor: User) => void;
   onDelete?: (supervisorId: number) => void;
 }
 
@@ -15,7 +15,7 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 }
 
-export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsListProps) {
+export function SupervisorsList({ supervisors }: SupervisorsListProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -51,11 +51,11 @@ export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsLi
     setCurrentPage(pageNumber);
   };
 
-  // Manejo del menú desplegable
-  const toggleDropdown = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
+  // // Manejo del menú desplegable
+  // const toggleDropdown = (id: number, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   setActiveDropdown(activeDropdown === id ? null : id);
+  // };
 
   const handleClickOutside = () => {
     setActiveDropdown(null);
@@ -87,35 +87,6 @@ export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsLi
     );
   };
 
-  // Renderizar el estado del supervisor con color apropiado
-  const renderStatus = (status: string) => {
-    switch (status) {
-      case 'active':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-            Activo
-          </span>
-        );
-      case 'inactive':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-            Inactivo
-          </span>
-        );
-      case 'on_leave':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-            De Permiso
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-            {status}
-          </span>
-        );
-    }
-  };
 
   return (
     <div className="overflow-x-auto w-full" onClick={handleClickOutside}>
@@ -134,8 +105,6 @@ export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsLi
             <SortableHeader label="DNI" sortKey="dni" />
             <SortableHeader label="Teléfono" sortKey="phone" />
             <SortableHeader label="Especialidad" sortKey="specialty" />
-            <SortableHeader label="Estado" sortKey="status" />
-            <th className="py-3 px-4 text-right text-sm font-medium text-blue-700">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -149,49 +118,7 @@ export function SupervisorsList({ supervisors, onEdit, onDelete }: SupervisorsLi
                 <td className="py-3 px-4 text-sm text-gray-800">{supervisor.name}</td>
                 <td className="py-3 px-4 text-sm text-gray-800">{supervisor.dni}</td>
                 <td className="py-3 px-4 text-sm text-gray-800">{supervisor.phone}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">{supervisor.specialty}</td>
-                <td className="py-3 px-4 text-sm text-gray-800">
-                  {renderStatus(supervisor.status)}
-                </td>
-                <td className="py-3 px-4 text-sm text-right">
-                  <div className="relative inline-block text-left">
-                    <button
-                      onClick={(e) => toggleDropdown(supervisor.id, e)}
-                      className="p-1 rounded-full hover:bg-blue-100 text-blue-600"
-                    >
-                      <BsThreeDotsVertical className="h-5 w-5" />
-                    </button>
-
-                    {activeDropdown === supervisor.id && (
-                      <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                        <div className="py-1" role="menu" aria-orientation="vertical">
-                          <button
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"
-                            role="menuitem"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit?.(supervisor);
-                            }}
-                          >
-                            <BsPencil className="mr-2 h-4 w-4" />
-                            Editar
-                          </button>
-                          <button
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                            role="menuitem"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete?.(supervisor.id);
-                            }}
-                          >
-                            <BsTrash className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </td>
+                <td className="py-3 px-4 text-sm text-gray-800">{supervisor.cargo}</td>
               </tr>
             ))
           ) : (
