@@ -1,18 +1,23 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { BsChevronUp, BsChevronDown } from "react-icons/bs";
 import { useFaults } from "@/contexts/FaultContext";
 import { compareValues } from "@/lib/utils/sortUtils";
-import { Fault } from "@/core/model/fault";
 import Pagination from "./Pagination";
+import { Fault } from "@/core/model/fault";
 
 type SortConfig = {
   key: string;
   direction: "asc" | "desc";
 };
 
-export function FaultsList() {
+interface FaultsListProps {
+  filteredFaults?: Fault[];
+  searchTerm?: string;
+}
+
+export function FaultsList({ filteredFaults, searchTerm }: FaultsListProps) {
   const {
     faults,
     isLoading,
@@ -25,7 +30,7 @@ export function FaultsList() {
     setPage,
     lastUpdated,
   } = useFaults();
-
+  const faultsToUse = filteredFaults || faults;
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "",
     direction: "asc",
@@ -44,7 +49,7 @@ export function FaultsList() {
 
   // Lista ordenada
   const sortedFaults = useMemo(() => {
-    const sortableFaults = [...faults];
+    const sortableFaults = [...faultsToUse];
     if (sortConfig.key) {
       sortableFaults.sort((a, b) => {
         const comparison = compareValues(a, b, sortConfig.key);
@@ -52,7 +57,7 @@ export function FaultsList() {
       });
     }
     return sortableFaults;
-  }, [faults, sortConfig]);
+  }, [faultsToUse, sortConfig]);
 
   // Función para cambiar de página
   const paginate = (pageNumber: number) => {
@@ -193,6 +198,7 @@ export function FaultsList() {
           <tr className="bg-blue-50 border-b border-blue-100">
             <SortableHeader label="ID" sortKey="id" />
             <SortableHeader label="Trabajador" sortKey="worker.name" />
+            <SortableHeader label="DNI" sortKey="worker.code" />
             <SortableHeader label="Fecha" sortKey="createAt" />
             <SortableHeader label="Descripción" sortKey="description" />
             <SortableHeader label="Tipo" sortKey="type" />
@@ -214,6 +220,9 @@ export function FaultsList() {
                   <td className="py-3 px-4 text-sm font-medium">{fault.id}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">
                     {fault.worker?.name || "N/A"}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-800">
+                    {fault.worker.dni}
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-800">
                     {formattedDate}
@@ -259,7 +268,6 @@ export function FaultsList() {
           )}
         </tbody>
       </table>
-
       <div className="text-xs text-gray-500 m-2">
         {lastUpdated && (
           <span>

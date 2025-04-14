@@ -2,13 +2,7 @@ import { isLoadingAlert } from "@/components/dialog/AlertsLogin";
 import { Fault, FaultContextType, PaginatedResponse } from "@/core/model/fault";
 import { authService } from "@/services/authService";
 import { faultService } from "@/services/faultService";
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 // Crear el contexto
 const FaultContext = createContext<FaultContextType | undefined>(undefined);
@@ -24,18 +18,12 @@ export function FaultProvider({ children }: { children: ReactNode }) {
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
+  
   // Almacén de páginas en caché
-  const [cachedPages, setCachedPages] = useState<Map<number, Fault[]>>(
-    new Map()
-  );
+  const [cachedPages, setCachedPages] = useState<Map<number, Fault[]>>(new Map());
 
   // Función para cargar las faltas paginadas
-  const fetchFaults = async (
-    page = currentPage,
-    limit = itemsPerPage,
-    force = false
-  ) => {
+  const fetchFaults = async (page = currentPage, limit = itemsPerPage, force = false) => {
     // No intentar cargar si no hay autenticación
     if (!authService.isLocallyAuthenticated()) {
       return;
@@ -54,7 +42,7 @@ export function FaultProvider({ children }: { children: ReactNode }) {
 
     try {
       const data = await faultService.getPaginatedFaults(page, limit);
-
+      
       // Actualizamos los datos actuales
       setFaults(data.items);
       setTotalItems(data.pagination.totalItems);
@@ -62,32 +50,25 @@ export function FaultProvider({ children }: { children: ReactNode }) {
       setItemsPerPage(data.pagination.itemsPerPage);
       setTotalPages(data.pagination.totalPages);
       setLastUpdated(new Date());
-
+      
       // Guardamos en caché la página actual
       const newCachedPages = new Map(cachedPages);
       newCachedPages.set(page, data.items);
-
+      
       // Guardamos también las páginas siguientes que vinieron en la respuesta
-      const dataWithNextPages = data as PaginatedResponse & {
-        nextPages?: Array<{ pageNumber: number; items: Fault[] }>;
-      };
-      if (
-        dataWithNextPages.nextPages &&
-        Array.isArray(dataWithNextPages.nextPages)
-      ) {
-        dataWithNextPages.nextPages.forEach((nextPage) => {
+      const dataWithNextPages = data as PaginatedResponse & { nextPages?: Array<{pageNumber: number, items: Fault[]}> };
+      if (dataWithNextPages.nextPages && Array.isArray(dataWithNextPages.nextPages)) {
+        dataWithNextPages.nextPages.forEach(nextPage => {
           if (nextPage.pageNumber && nextPage.items) {
             newCachedPages.set(nextPage.pageNumber, nextPage.items);
           }
         });
       }
-
+      
       setCachedPages(newCachedPages);
     } catch (err) {
-      console.error("Error fetching faults:", err);
-      setError(
-        "No se pudieron cargar los datos de las faltas. Intente nuevamente."
-      );
+      console.error('Error fetching faults:', err);
+      setError('No se pudieron cargar los datos de las faltas. Intente nuevamente.');
     } finally {
       setIsLoading(false);
       isLoadingAlert(false);
@@ -142,20 +123,20 @@ export function FaultProvider({ children }: { children: ReactNode }) {
       setLastUpdated(null);
       setCachedPages(new Map());
     };
-
+    
     // Función para manejar login
     const handleLogin = () => {
       fetchFaults(1, itemsPerPage, true);
     };
-
+    
     // Registrar eventos globales
-    window.addEventListener("auth:logout", handleLogout);
-    window.addEventListener("auth:login_success", handleLogin);
-
+    window.addEventListener('auth:logout', handleLogout);
+    window.addEventListener('auth:login_success', handleLogin);
+    
     // Limpiar evento al desmontar
     return () => {
-      window.removeEventListener("auth:logout", handleLogout);
-      window.removeEventListener("auth:login_success", handleLogin);
+      window.removeEventListener('auth:logout', handleLogout);
+      window.removeEventListener('auth:login_success', handleLogin);
     };
   }, [itemsPerPage]);
 
@@ -171,11 +152,13 @@ export function FaultProvider({ children }: { children: ReactNode }) {
     setPage,
     setItemsPerPage: changeItemsPerPage,
     refreshFaults,
-    lastUpdated,
+    lastUpdated
   };
 
   return (
-    <FaultContext.Provider value={value}>{children}</FaultContext.Provider>
+    <FaultContext.Provider value={value}>
+      {children}
+    </FaultContext.Provider>
   );
 }
 
@@ -183,7 +166,7 @@ export function FaultProvider({ children }: { children: ReactNode }) {
 export function useFaults() {
   const context = useContext(FaultContext);
   if (context === undefined) {
-    throw new Error("useFaults must be used within a FaultProvider");
+    throw new Error('useFaults must be used within a FaultProvider');
   }
   return context;
 }
