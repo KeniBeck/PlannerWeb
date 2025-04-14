@@ -38,8 +38,7 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         content = <WorkerProvider>{content}</WorkerProvider>;
         break;
       case Feature.FAULTS:
-        console.warn(`Provider para ${feature} no está implementado`);
-        // content = <FaultProvider>{content}</FaultProvider>;
+        content = <FaultProvider>{content}</FaultProvider>;
         break;
       case Feature.PROJECTS:
         console.warn(`Provider para ${feature} no está implementado`);
