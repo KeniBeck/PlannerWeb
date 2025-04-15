@@ -63,7 +63,8 @@ export function OperationProvider({ children }: OperationProviderProps) {
   
   // Estado para caché y actualización
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [cachedPages, setCachedPages] = useState<Map<number, Operation[]>>(new Map());
+  // Cambiar la estructura de la caché para incluir filtros
+  const [cachedPages, setCachedPages] = useState<Map<string, Operation[]>>(new Map());
   
   // Referencia para controlar solicitudes iniciales y repetidas
   const initialLoadRef = useRef(false);
@@ -72,6 +73,12 @@ export function OperationProvider({ children }: OperationProviderProps) {
   // Generar una clave única para el request basada en parámetros
   const getRequestKey = (page: number, limit: number, filterStr: string) => {
     return `${page}-${limit}-${filterStr}`;
+  };
+
+  // Nueva función para generar clave de caché que incluye filtros
+  const getCacheKey = (page: number, currentFilters: OperationFilterDto = {}) => {
+    const filterStr = JSON.stringify(currentFilters);
+    return `${page}-${filterStr}`;
   };
   
   // Función para cargar operaciones
@@ -90,20 +97,14 @@ export function OperationProvider({ children }: OperationProviderProps) {
     // Convertir filtros a string para caché y comparación
     const filterStr = JSON.stringify(currentFilters);
     
-    // Determinar si podemos usar la caché
-    const filterKeys = Object.keys(currentFilters);
-    const hasActiveFilters = filterKeys.length > 0 && 
-      filterKeys.some(key => {
-        const value = currentFilters[key as keyof OperationFilterDto];
-        return value !== undefined && value !== null && value !== '';
-      });
+    // Determinar la clave de caché que ahora incluye los filtros
+    const cacheKey = getCacheKey(page, currentFilters);
     
-    // Si la página está en caché, no hay filtros activos y no es forzado, usar la caché
-    const cacheKey = page;
-    const isCacheUsable = !force && cachedPages.has(cacheKey) && !hasActiveFilters;
+    // Si la página está en caché y no es forzado, usar la caché
+    const isCacheUsable = !force && cachedPages.has(cacheKey);
     
     if (isCacheUsable) {
-      console.log(`[OperationContext] Usando caché para página ${page}`);
+      console.log(`[OperationContext] Usando caché para página ${page} con filtros: ${filterStr}`);
       if (page === currentPage) {
         setOperations(cachedPages.get(cacheKey) || []);
       }
@@ -123,7 +124,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       setError(null);
       isLoadingAlert(true);
     } else {
-      console.log(`[OperationContext] Precargando silenciosamente página ${page}`);
+      console.log(`[OperationContext] Precargando silenciosamente página ${page} con filtros: ${filterStr}`);
     }
     
     // Crear una nueva solicitud y guardarla en el registro de solicitudes activas
@@ -137,7 +138,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
         ) as PaginatedResponse;
 
         console.log(`[OperationContext] Datos obtenidos para página ${page}:`, 
-          { totalItems: data.pagination.totalItems, itemCount: data.items.length }
+          { totalItems: data.pagination.totalItems, itemCount: data.items.length, filters: filterStr }
         );
         
         // Actualizar los estados solo si no es una carga silenciosa o es la página actual
@@ -150,24 +151,24 @@ export function OperationProvider({ children }: OperationProviderProps) {
           setLastUpdated(new Date());
         }
         
-        // Siempre guardar en caché si no hay filtros activos
-        if (!hasActiveFilters) {
-          const newCachedPages = new Map(cachedPages);
-          newCachedPages.set(page, data.items);
-          
-          // Guardar también las nextPages si existen en la respuesta
-          if (data.nextPages && Array.isArray(data.nextPages)) {
-            data.nextPages.forEach(nextPage => {
-              if (nextPage.pageNumber && nextPage.items) {
-                console.log(`[OperationContext] Guardando nextPage ${nextPage.pageNumber} en caché`);
-                newCachedPages.set(nextPage.pageNumber, nextPage.items);
-              }
-            });
-          }
-          
-          setCachedPages(newCachedPages);
+        // Siempre guardar en caché, incluso con filtros
+        const newCachedPages = new Map(cachedPages);
+        // Usar la clave que incluye los filtros
+        newCachedPages.set(cacheKey, data.items);
+        
+        // Guardar también las nextPages si existen en la respuesta
+        if (data.nextPages && Array.isArray(data.nextPages)) {
+          data.nextPages.forEach(nextPage => {
+            if (nextPage.pageNumber && nextPage.items) {
+              // La clave de caché para nextPages también incluye los filtros actuales
+              const nextPageCacheKey = getCacheKey(nextPage.pageNumber, currentFilters);
+              console.log(`[OperationContext] Guardando nextPage ${nextPage.pageNumber} en caché con filtros: ${filterStr}`);
+              newCachedPages.set(nextPageCacheKey, nextPage.items);
+            }
+          });
         }
         
+        setCachedPages(newCachedPages);
         return data;
       } catch (err) {
         console.error("[OperationContext] Error fetching operations:", err);
@@ -195,12 +196,15 @@ export function OperationProvider({ children }: OperationProviderProps) {
     if (currentPage < totalPages) {
       const nextPage = currentPage + 1;
       
+      // Clave de caché que incluye filtros actuales
+      const nextPageCacheKey = getCacheKey(nextPage, filters);
+      
       // Solo precargar si la página no está ya en caché
-      if (!cachedPages.has(nextPage)) {
-        console.log(`[OperationContext] Precargando página ${nextPage}`);
+      if (!cachedPages.has(nextPageCacheKey)) {
+        console.log(`[OperationContext] Precargando página ${nextPage} con filtros actuales`);
         fetchOperations(nextPage, itemsPerPage, false, filters, true);
       } else {
-        console.log(`[OperationContext] La página ${nextPage} ya está en caché`);
+        console.log(`[OperationContext] La página ${nextPage} con filtros actuales ya está en caché`);
       }
     }
   }, [currentPage, totalPages, cachedPages, itemsPerPage, filters]);
@@ -218,7 +222,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
   useEffect(() => {
     if (initialLoadRef.current && authService.isLocallyAuthenticated()) {
       console.log("[OperationContext] Recargando debido a cambios en filtros");
-      setCachedPages(new Map()); // Limpiar caché al cambiar filtros
+      // No limpiamos toda la caché, solo cargamos con nuevos filtros
       fetchOperations(1, itemsPerPage, true, filters);
     }
   }, [filters, itemsPerPage]);
@@ -226,17 +230,14 @@ export function OperationProvider({ children }: OperationProviderProps) {
   // Método para cambiar la página
   const setPage = (page: number) => {
     if (page !== currentPage && page > 0 && page <= totalPages) {
-      // Verificar si hay filtros activos
-      const hasActiveFilters = Object.values(filters).some(
-        value => value !== undefined && value !== null && value !== ''
-      );
+      // Clave de caché que incluye filtros actuales
+      const cacheKey = getCacheKey(page, filters);
       
-      // Verificar si la página está en caché y podemos usarla
-      const cacheKey = page;
-      const isCacheUsable = cachedPages.has(cacheKey) && !hasActiveFilters;
+      // Verificar si la página está en caché
+      const isCacheUsable = cachedPages.has(cacheKey);
       
       if (isCacheUsable) {
-        console.log(`[OperationContext] Usando caché para página ${page}`);
+        console.log(`[OperationContext] Usando caché para página ${page} con filtros actuales`);
         setOperations(cachedPages.get(cacheKey) || []);
         setCurrentPage(page);
         
@@ -245,7 +246,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
           preloadNextPages();
         }, 100);
       } else {
-        // Si no está en caché o hay filtros, cargar del servidor
+        // Si no está en caché, cargar del servidor
         console.log(`[OperationContext] Cambiando a página ${page} (carga desde servidor)`);
         fetchOperations(page, itemsPerPage, false, filters);
       }
@@ -257,7 +258,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
     if (items !== itemsPerPage) {
       console.log(`[OperationContext] Cambiando a ${items} elementos por página`);
       setItemsPerPage(items);
-      // Resetear caché y volver a primera página
+      // Resetear caché al cambiar la cantidad de elementos por página
       setCachedPages(new Map());
       setCurrentPage(1);
       fetchOperations(1, items, true, filters);
@@ -266,7 +267,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
   
   // Método para actualizar filtros
   const updateFilters = (newFilters: OperationFilterDto) => {
-    console.log("[OperationContext] Actualizando filtros");
+    console.log("[OperationContext] Actualizando filtros:", newFilters);
     setFilters(newFilters);
     // Al cambiar filtros, volvemos a la primera página
     setCurrentPage(1);

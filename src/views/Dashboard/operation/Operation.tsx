@@ -1,42 +1,157 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
-import { AiOutlineSearch } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
 import { OperationList } from "@/components/ui/OperationList";
 import { useOperations } from "@/contexts/OperationContext";
 import { Operation as OperationModel } from "@/core/model/operation";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { FilterTag } from "@/components/custom/filter/FilterTagProps";
+import { FilterBar } from "@/components/custom/filter/FilterBarProps";
+// Definir el enum para que coincida con el modelo de Operation
+enum OperationStatus {
+  PENDING = "PENDING",
+  INPROGRESS = "INPROGRESS",
+  COMPLETED = "COMPLETED",
+  CANCELED = "CANCELED",
+}
 
 export default function Operation() {
-  // Estado para búsqueda y filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
+
+  // Referencia para almacenar el valor anterior del filtro
+  const prevStatusFilterRef = useRef<string>("all");
+  const prevStartDateRef = useRef<string>("");
+  const prevEndDateRef = useRef<string>("");
+
   // Obtener datos de operaciones del contexto
   const {
     operations,
     isLoading,
-    error, 
+    error,
     refreshOperations,
     totalItems,
+    filters,
+    setFilters,
+    setPage,
   } = useOperations();
 
-  // Filtrar operaciones según término de búsqueda y filtro de estado
-  const filteredOperations = operations.filter(operation => {
-    // Filtrar por término de búsqueda (nombre, área, cliente, embarcación...)
-    const searchMatch = !searchTerm || 
+  // Opciones para el filtro de estado
+  const statusOptions = [
+    { value: "all", label: "Todos los estados" },
+    { value: OperationStatus.PENDING, label: "Pendientes" },
+    { value: OperationStatus.INPROGRESS, label: "En curso" },
+    { value: OperationStatus.COMPLETED, label: "Finalizadas" },
+    { value: OperationStatus.CANCELED, label: "Canceladas" },
+  ];
+
+  // Efecto para aplicar filtros cuando cambian
+  useEffect(() => {
+    // Verificar si algún filtro cambió realmente para evitar bucles
+    const statusChanged = statusFilter !== prevStatusFilterRef.current;
+    const startDateChanged = startDateFilter !== prevStartDateRef.current;
+    const endDateChanged = endDateFilter !== prevEndDateRef.current;
+
+    if (statusChanged || startDateChanged || endDateChanged) {
+      console.log("[Operation] Cambios en filtros detectados");
+
+      // Actualizar referencias a valores anteriores
+      prevStatusFilterRef.current = statusFilter;
+      prevStartDateRef.current = startDateFilter;
+      prevEndDateRef.current = endDateFilter;
+
+      // Crear una copia del objeto de filtros actual
+      const newFilters = { ...filters };
+
+      // Aplicar filtro de estado solo si no es "all"
+      if (statusFilter && statusFilter !== "all") {
+        console.log(`[Operation] Aplicando filtro de estado: ${statusFilter}`);
+        newFilters.status = [statusFilter as any];
+      } else {
+        // Si es "all", quitar el filtro de estado
+        if ("status" in newFilters) {
+          delete newFilters.status;
+          console.log("[Operation] Quitando filtro de estado");
+        }
+      }
+
+      // Aplicar filtro de fecha de inicio
+      if (startDateFilter) {
+        console.log(
+          `[Operation] Aplicando filtro de fecha inicio: ${startDateFilter}`
+        );
+        // Convertir el string de fecha a Date (el input date devuelve YYYY-MM-DD)
+        newFilters.dateStart = parseISO(startDateFilter); // Convertir string a objeto Date
+      } else {
+        // Si está vacío, quitar el filtro
+        if ("dateStart" in newFilters) {
+          delete newFilters.dateStart;
+          console.log("[Operation] Quitando filtro de fecha inicio");
+        }
+      }
+
+      // Aplicar filtro de fecha de fin
+      if (endDateFilter) {
+        console.log(
+          `[Operation] Aplicando filtro de fecha fin: ${endDateFilter}`
+        );
+        // Convertir el string de fecha a Date (el input date devuelve YYYY-MM-DD)
+        newFilters.dateEnd = parseISO(endDateFilter); // Convertir string a objeto Date
+      } else {
+        // Si está vacío, quitar el filtro
+        if ("dateEnd" in newFilters) {
+          delete newFilters.dateEnd;
+          console.log("[Operation] Quitando filtro de fecha fin");
+        }
+      }
+
+      // Aplicar los filtros y volver a página 1
+      setFilters(newFilters);
+      setPage(1);
+    }
+  }, [statusFilter, startDateFilter, endDateFilter, setFilters, setPage]);
+
+  // Función para limpiar todos los filtros
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setStartDateFilter("");
+    setEndDateFilter("");
+  };
+
+  // Filtrado adicional solo para búsqueda por término (los filtros de estado ya se aplican en el backend)
+  const filteredOperations = operations.filter((operation) => {
+    return (
+      !searchTerm ||
       operation.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      operation.jobArea?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      operation.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      operation.jobArea?.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      operation.client?.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       operation.motorship?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      operation.id?.toString().includes(searchTerm);
-    
-    // Filtrar por estado
-    const statusMatch = statusFilter === "all" || operation.status === statusFilter;
-    
-    return searchMatch && statusMatch;
+      operation.id?.toString().includes(searchTerm)
+    );
   });
+
+  // Obtener etiqueta amigable para el estado
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case OperationStatus.PENDING:
+        return "Pendiente";
+      case OperationStatus.INPROGRESS:
+        return "En Curso";
+      case OperationStatus.COMPLETED:
+        return "Finalizado";
+      case OperationStatus.CANCELED:
+        return "Cancelado";
+      default:
+        return status || "Desconocido";
+    }
+  };
 
   // Manejadores para ver, editar y eliminar operaciones
   const handleViewOperation = (operation: OperationModel) => {
@@ -50,7 +165,11 @@ export default function Operation() {
   };
 
   const handleDeleteOperation = (operation: OperationModel) => {
-    if (window.confirm(`¿Estás seguro de eliminar la operación "${operation.name}"?`)) {
+    if (
+      window.confirm(
+        `¿Estás seguro de eliminar la operación "${operation.name}"?`
+      )
+    ) {
       console.log("Eliminar operación:", operation.id);
       // Implementar eliminación
     }
@@ -60,24 +179,60 @@ export default function Operation() {
   const exportColumns: ExcelColumn[] = [
     { header: "ID", field: "id" },
     { header: "Nombre", field: "name" },
-    { header: "Área", field: "area.name", value: (op) => op.area?.name || "Sin área" },
-    { header: "Cliente", field: "client.name", value: (op) => op.client?.name || "Sin cliente" },
-    { header: "Fecha Inicio", field: "startDate", value: (op) => 
-      op.startDate ? format(new Date(op.startDate), "dd/MM/yyyy", { locale: es }) : "N/A" },
+    {
+      header: "Área",
+      field: "area.name",
+      value: (op) => op.area?.name || "Sin área",
+    },
+    {
+      header: "Cliente",
+      field: "client.name",
+      value: (op) => op.client?.name || "Sin cliente",
+    },
+    {
+      header: "Fecha Inicio",
+      field: "startDate",
+      value: (op) =>
+        op.startDate
+          ? format(new Date(op.startDate), "dd/MM/yyyy", { locale: es })
+          : "N/A",
+    },
     { header: "Hora Inicio", field: "startTime" },
-    { header: "Fecha Fin", field: "endDate", value: (op) => 
-      op.endDate ? format(new Date(op.endDate), "dd/MM/yyyy", { locale: es }) : "N/A" },
-    { header: "Embarcación", field: "motorship", value: (op) => op.motorship || "N/A" },
-    { header: "Estado", field: "status", value: (op) => {
-      switch (op.status) {
-        case "PENDING": return "Pendiente";
-        case "INPROGRESS": return "En Curso";
-        case "COMPLETED": return "Finalizado";
-        case "CANCELED": return "Cancelado";
-        default: return op.status || "Desconocido";
-      }
-    }}
+    {
+      header: "Fecha Fin",
+      field: "endDate",
+      value: (op) =>
+        op.endDate
+          ? format(new Date(op.endDate), "dd/MM/yyyy", { locale: es })
+          : "N/A",
+    },
+    {
+      header: "Embarcación",
+      field: "motorship",
+      value: (op) => op.motorship || "N/A",
+    },
+    {
+      header: "Estado",
+      field: "status",
+      value: (op) => getStatusLabel(op.status),
+    },
   ];
+
+  // Verificar si hay filtros activos
+  const hasActiveFilters =
+    statusFilter !== "all" || startDateFilter !== "" || endDateFilter !== "";
+
+  // Formatear fechas para mostrar
+  const formatDisplayDate = (dateString: string) => {
+    if (!dateString) return "";
+    try {
+      // El formato del input date es YYYY-MM-DD, lo convertimos a formato legible
+      const [year, month, day] = dateString.split("-");
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -97,49 +252,22 @@ export default function Operation() {
           exportColumns={exportColumns}
           currentView="operations"
         />
-        <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
-          <div className="flex gap-4 items-center p-2">
-            <div>
-              <div className="relative">
-                <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, área, cliente o embarcación"
-                  className="p-2 pl-10 w-80 border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            {/* Filtro por estado */}
-            <div className="flex gap-3">
-              <div className="relative w-full">
-                <div className="absolute left-3 top-3">
-                  <FiFilter className="h-5 w-5 text-blue-500" />
-                </div>
-                <select
-                  className="pl-10 pr-10 py-2.5 w-60 appearance-none border border-blue-200 rounded-lg bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm text-gray-700 font-medium"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  style={{
-                    backgroundImage: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
-                  }}
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value="PENDING">Pendientes</option>
-                  <option value="INPROGRESS">En curso</option>
-                  <option value="COMPLETED">Finalizadas</option>
-                  <option value="CANCELED">Canceladas</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
+        
+        <FilterBar 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          startDateFilter={startDateFilter}
+          setStartDateFilter={setStartDateFilter}
+          endDateFilter={endDateFilter}
+          setEndDateFilter={setEndDateFilter}
+          statusOptions={statusOptions}
+          clearAllFilters={clearAllFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
       </div>
-      
+
       {/* Tabla de operaciones */}
       <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
         <div className="bg-white">
@@ -152,6 +280,44 @@ export default function Operation() {
           />
         </div>
       </div>
+
+      {/* Indicador de filtros activos */}
+      {hasActiveFilters && (
+        <div className="text-sm text-blue-600 flex items-center flex-wrap gap-2">
+          <div className="font-semibold">Filtros activos:</div>
+
+          {statusFilter !== "all" && (
+            <FilterTag 
+              label="Estado"
+              value={getStatusLabel(statusFilter)}
+              onRemove={() => setStatusFilter("all")}
+            />
+          )}
+
+          {startDateFilter && (
+            <FilterTag 
+              label="Desde"
+              value={formatDisplayDate(startDateFilter)}
+              onRemove={() => setStartDateFilter("")}
+            />
+          )}
+
+          {endDateFilter && (
+            <FilterTag 
+              label="Hasta"
+              value={formatDisplayDate(endDateFilter)}
+              onRemove={() => setEndDateFilter("")}
+            />
+          )}
+
+          <button
+            className="ml-2 text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded"
+            onClick={clearAllFilters}
+          >
+            Limpiar todos
+          </button>
+        </div>
+      )}
     </div>
   );
 }

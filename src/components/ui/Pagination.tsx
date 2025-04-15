@@ -40,7 +40,7 @@ const Pagination = ({
     return (
         <div className="flex justify-between items-center py-4 px-4 bg-white border-t border-blue-100">
             <div className="text-sm text-gray-600 mr-1">
-                Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, totalItems)} de {totalItems} {itemName}
+                Mostrando {indexOfFirstItem}-{Math.min(indexOfLastItem, totalItems)} de {totalItems} {itemName}
             </div>
             <div className="flex items-center gap-1">
                 <button

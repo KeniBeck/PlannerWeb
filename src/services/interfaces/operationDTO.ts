@@ -9,9 +9,9 @@ export interface OperationFilterDto {
 
 enum StatusOperation {
   PENDING = "PENDING",
-  IN_PROGRESS = "IN_PROGRESS",
+  IN_PROGRESS = "INPROGRESS",
   COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
+  CANCELLED = "CANCELED",
 }
 
 export interface WorkerConnection {
