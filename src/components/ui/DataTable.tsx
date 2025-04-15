@@ -1,4 +1,4 @@
-import { useState, useMemo, ReactNode } from "react";
+import { useState, useMemo, ReactNode, useEffect } from "react";
 import { BsChevronUp, BsChevronDown, BsThreeDotsVertical } from "react-icons/bs";
 import Pagination from "./Pagination";
 
@@ -38,6 +38,14 @@ export interface DataTableProps<T> {
   emptyIcon?: ReactNode;           // Icono cuando no hay datos
   initialSort?: SortConfig;        // Configuración inicial de ordenamiento
   className?: string;              // Clases CSS adicionales para la tabla
+  
+  // Props para paginación externa
+  externalPagination?: boolean;    // Indica si la paginación es manejada externamente
+  currentPage?: number;            // Página actual (para paginación externa)
+  totalItems?: number;             // Total de elementos (para paginación externa)
+  totalPages?: number;             // Total de páginas (para paginación externa)
+  onPageChange?: (page: number) => void;           // Función para cambiar de página
+  onItemsPerPageChange?: (itemsPerPage: number) => void; // Función para cambiar items por página
 }
 
 // Función para acceder a propiedades anidadas usando notación de punto
@@ -83,21 +91,42 @@ export function DataTable<T extends { id: number | string }>({
   columns,
   actions,
   itemsPerPage = 10,
-  itemsPerPageOptions = [5, 10, 20, 50],
+  itemsPerPageOptions = [10, 20, 30, 50],
   itemName = "elementos",
   isLoading = false,
   emptyMessage = "No se encontraron elementos",
   emptyIcon,
   initialSort,
-  className = ""
+  className = "",
+  // Props para paginación externa
+  externalPagination = false,
+  currentPage: externalCurrentPage,
+  totalItems: externalTotalItems,
+  totalPages: externalTotalPages,
+  onPageChange,
+  onItemsPerPageChange
 }: DataTableProps<T>) {
   // Estados
   const [sortConfig, setSortConfig] = useState<SortConfig>(
     initialSort || { key: '', direction: 'asc' }
   );
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState<number | string | null>(null);
   const [itemsPerPageState, setItemsPerPageState] = useState(itemsPerPage);
+
+  // Valores finales para la interfaz
+  const currentPage = externalPagination ? (externalCurrentPage || 1) : internalCurrentPage;
+  const effectiveTotalItems = externalPagination ? (externalTotalItems || data.length) : data.length;
+  
+  // Calcular total de páginas si no se proporciona externamente
+  const totalPages = externalPagination 
+    ? (externalTotalPages || Math.ceil(effectiveTotalItems / itemsPerPageState))
+    : Math.ceil(data.length / itemsPerPageState);
+
+  // Sincronizar itemsPerPage interno con el prop
+  useEffect(() => {
+    setItemsPerPageState(itemsPerPage);
+  }, [itemsPerPage]);
 
   // Ordenamiento
   const requestSort = (key: string) => {
@@ -121,19 +150,36 @@ export function DataTable<T extends { id: number | string }>({
     return sortableData;
   }, [data, sortConfig]);
 
-  // Paginación
-  const indexOfLastItem = currentPage * itemsPerPageState;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPageState;
-  const currentItems = sortedData.slice(indexOfFirstItem, indexOfLastItem);
+  // Determinar qué elementos mostrar (paginación interna o externa)
+  const currentItems = useMemo(() => {
+    if (externalPagination) {
+      return sortedData; // En paginación externa, mostramos todos los datos recibidos
+    } else {
+      // En paginación interna, calculamos el slice
+      const indexOfLastItem = internalCurrentPage * itemsPerPageState;
+      const indexOfFirstItem = indexOfLastItem - itemsPerPageState;
+      return sortedData.slice(indexOfFirstItem, indexOfLastItem);
+    }
+  }, [sortedData, externalPagination, internalCurrentPage, itemsPerPageState]);
 
-  const paginate = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
+  // Manejadores de paginación
+  const handlePageChange = (page: number) => {
+    if (externalPagination && onPageChange) {
+      onPageChange(page);
+    } else {
+      setInternalCurrentPage(page);
+    }
   };
 
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = Number(e.target.value);
-    setItemsPerPageState(newValue);
-    setCurrentPage(1); // Volver a la primera página
+    
+    if (externalPagination && onItemsPerPageChange) {
+      onItemsPerPageChange(newValue);
+    } else {
+      setItemsPerPageState(newValue);
+      setInternalCurrentPage(1); // Volver a la primera página
+    }
   };
 
   // Manejo del menú desplegable
@@ -204,10 +250,9 @@ export function DataTable<T extends { id: number | string }>({
 
   return (
     <div className="overflow-x-auto w-full" onClick={handleClickOutside}>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center">
         {/* Selector de elementos por página */}
         <div className="flex items-center space-x-2 ml-2">
-          <span className="text-sm text-gray-600">Mostrar</span>
           <select
             value={itemsPerPageState}
             onChange={handleItemsPerPageChange}
@@ -219,15 +264,14 @@ export function DataTable<T extends { id: number | string }>({
               </option>
             ))}
           </select>
-          <span className="text-sm text-gray-600">por página</span>
         </div>
         
         {/* Componente de paginación */}
         <Pagination
           currentPage={currentPage}
-          totalItems={sortedData.length}
+          totalItems={effectiveTotalItems}
           itemsPerPage={itemsPerPageState}
-          paginate={paginate}
+          paginate={handlePageChange}
           itemName={itemName}
         />
       </div>

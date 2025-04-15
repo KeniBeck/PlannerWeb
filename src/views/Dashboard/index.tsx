@@ -199,7 +199,14 @@ export default function Dashboard() {
               }
             />
             {/* Aquí puedes agregar más rutas según necesites */}
-            <Route path="/operations" element={<Operation />} />
+            <Route
+              path="/operations"
+              element={
+                <LayeredProviders features={[Feature.OPERATION]}>
+                  <Operation />
+                </LayeredProviders>
+              }
+            />
             <Route path="/services" element={<Services />} />
             <Route path="/supersvisors" element={<Supervisors />} />
             <Route
