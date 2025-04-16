@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { OperationList } from "@/components/ui/operations/OperationList";
 import { useOperations } from "@/contexts/OperationContext";
@@ -8,6 +8,7 @@ import { es } from "date-fns/locale";
 import { FilterTag } from "@/components/custom/filter/FilterTagProps";
 import { FilterBar } from "@/components/custom/filter/FilterBarProps";
 import { useAreas } from "@/contexts/AreasContext";
+import { useUsers } from "@/contexts/UsersContext";
 // Definir el enum para que coincida con el modelo de Operation
 
 
@@ -18,7 +19,21 @@ export default function Operation() {
   const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [areaFilter, setAreaFilter] = useState<string>("all"); // Nuevo estado para filtro de área
 
-  const { areas } = useAreas();
+  const { areas, refreshData } = useAreas();
+  const {users} = useUsers();
+  
+  const supervisorsAndCoordinators = useMemo(() => {
+    if (!users) return [];
+    
+    return users
+      .filter(user => {
+        return user.occupation === 'SUPERVISOR' || user.occupation === 'COORDINADOR';
+      })
+      .map(user => ({
+        id: user.id,
+        name: user.name
+      }));
+  }, [users]);
 
   // Referencia para almacenar el valor anterior del filtro
   const prevStatusFilterRef = useRef<string>("all");
@@ -274,6 +289,12 @@ export default function Operation() {
     }
   };
 
+  const refreshDataLocal = () => {
+    console.log("Refrescar datos de operaciones");
+    refreshOperations();
+    refreshData();
+  }
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="rounded-xl shadow-md">
@@ -285,7 +306,7 @@ export default function Operation() {
             console.log("Abrir modal para agregar operación");
             // Implementar apertura de modal o navegación
           }}
-          refreshData={() => Promise.resolve(refreshOperations())}
+          refreshData={() => Promise.resolve(refreshDataLocal())}
           loading={isLoading}
           exportData={filteredOperations}
           exportFileName="operaciones"
@@ -308,6 +329,7 @@ export default function Operation() {
           statusOptions={statusOptions}
           clearAllFilters={clearAllFilters}
           hasActiveFilters={hasActiveFilters}
+          useDateRangeFilter={true}
         />
       </div>
 

@@ -1,8 +1,10 @@
 import { FiFilter } from "react-icons/fi";
-import { SearchFilter } from "./SearchFilterProps"; 
-import { StatusFilter } from "./StatusFilterProps"; 
-import { DateFilter } from "./DateFilterProps"; 
+import { SearchFilter } from "./SearchFilterProps";
+import { StatusFilter } from "./StatusFilterProps";
+import { DateFilter } from "./DateFilterProps";
 import { AreaFilter } from "./AreaFilter";
+import { use } from "react";
+import { DateRangeFilter } from "./DateFilterRanger";
 
 interface FilterBarProps {
   searchTerm: string;
@@ -19,6 +21,7 @@ interface FilterBarProps {
   areaOptions: Array<{ value: string; label: string }>;
   clearAllFilters: () => void;
   hasActiveFilters: boolean;
+  useDateRangeFilter?: boolean; // Prop opcional para usar el filtro de rango de fechas
 }
 
 export const FilterBar = ({
@@ -35,12 +38,13 @@ export const FilterBar = ({
   statusOptions,
   areaOptions,
   clearAllFilters,
-  hasActiveFilters
+  hasActiveFilters,
+  useDateRangeFilter = false,
 }: FilterBarProps) => {
   return (
     <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
       <div className="flex gap-4 items-center p-2 flex-wrap w-full">
-        <SearchFilter 
+        <SearchFilter
           value={searchTerm}
           onChange={setSearchTerm}
           placeholder="Buscar por area o cliente"
@@ -54,26 +58,19 @@ export const FilterBar = ({
           className="w-60"
         />
 
-        <StatusFilter 
+        <StatusFilter
           value={statusFilter}
           onChange={setStatusFilter}
           options={statusOptions}
           className="w-60"
         />
 
-        <DateFilter 
-          label="Fecha de inicio"
-          value={startDateFilter}
-          onChange={setStartDateFilter}
-          className="w-48"
-        />
-
-        <DateFilter 
-          label="Fecha de fin"
-          value={endDateFilter}
-          onChange={setEndDateFilter}
-          minDate={startDateFilter}
-          className="w-48"
+        <DateRangeFilter
+          startDate={startDateFilter}
+          endDate={endDateFilter}
+          onStartDateChange={setStartDateFilter}
+          onEndDateChange={setEndDateFilter}
+          className="w-64"
         />
 
         {/* Botón para limpiar todos los filtros */}
