@@ -1,7 +1,5 @@
 import { FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useState, useRef, useEffect } from "react";
-import { format, parse, addMonths, subMonths, getDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, parseISO, isAfter } from "date-fns";
-import { es } from "date-fns/locale";
 
 interface DateFilterProps {
   label: string;
@@ -24,14 +22,24 @@ export const DateFilter = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Convertir las fechas string a objetos Date
-  const selectedDate = value ? parse(value, 'yyyy-MM-dd', new Date()) : null;
-  const minDateTime = minDate ? parse(minDate, 'yyyy-MM-dd', new Date()) : null;
+  const selectedDate = value ? new Date(value + "T00:00:00") : null;
+  const minDateTime = minDate ? new Date(minDate + "T00:00:00") : null;
+
+  // Nombres de meses en español
+  const monthNames = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
 
   // Función para formatear la fecha para mostrar al usuario
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return "";
     try {
-      return format(parse(dateString, 'yyyy-MM-dd', new Date()), 'dd MMMM yyyy', { locale: es });
+      const date = new Date(dateString + "T00:00:00");
+      const day = date.getDate();
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
     } catch (e) {
       return dateString;
     }
@@ -39,35 +47,80 @@ export const DateFilter = ({
 
   // Obtener días del mes actual
   const getDaysInMonth = () => {
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    return eachDayOfInterval({ start, end });
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const days: Date[] = [];
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      days.push(new Date(year, month, day));
+    }
+    
+    return days;
   };
 
   // Obtener día de la semana (0-6) del primer día del mes
   const getFirstDayOfMonth = () => {
-    return getDay(startOfMonth(currentMonth));
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    return new Date(year, month, 1).getDay();
+  };
+
+  // Verificar si dos fechas son el mismo día
+  const isSameDay = (date1: Date, date2: Date) => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  };
+
+  // Verificar si una fecha es hoy
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return isSameDay(date, today);
+  };
+
+  // Verificar si una fecha es posterior a otra
+  const isDateAfter = (date1: Date, date2: Date) => {
+    // Ignorar horas, minutos, segundos
+    const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+    const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+    return d1 > d2;
+  };
+
+  // Formatear fecha a YYYY-MM-DD
+  const formatISODate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Manejar selección de fecha
   const handleDateClick = (day: Date) => {
     // Verificar si es después de la fecha mínima
-    if (minDateTime && isAfter(minDateTime, day)) {
+    if (minDateTime && isDateAfter(minDateTime, day)) {
       return;
     }
     
-    onChange(format(day, 'yyyy-MM-dd'));
+    onChange(formatISODate(day));
     setIsCalendarOpen(false);
   };
 
   // Ir al mes anterior
   const prevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(currentMonth.getMonth() - 1);
+    setCurrentMonth(newMonth);
   };
 
   // Ir al mes siguiente
   const nextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(currentMonth.getMonth() + 1);
+    setCurrentMonth(newMonth);
   };
 
   // Cerrar el calendario al hacer clic fuera
@@ -127,12 +180,13 @@ export const DateFilter = ({
                 prevMonth();
               }}
               className="p-1 rounded-full hover:bg-blue-600 transition-colors"
+              type="button"
             >
               <FiChevronLeft size={20} />
             </button>
             
             <h3 className="font-medium">
-              {format(currentMonth, 'MMMM yyyy', { locale: es })}
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </h3>
             
             <button 
@@ -141,6 +195,7 @@ export const DateFilter = ({
                 nextMonth();
               }}
               className="p-1 rounded-full hover:bg-blue-600 transition-colors"
+              type="button"
             >
               <FiChevronRight size={20} />
             </button>
@@ -169,8 +224,8 @@ export const DateFilter = ({
             {getDaysInMonth().map((day) => {
               const isSelected = selectedDate && isSameDay(day, selectedDate);
               const isDayToday = isToday(day);
-              const isDisabled = minDateTime && isAfter(minDateTime, day);
-              const dayFormatted = format(day, 'd');
+              const isDisabled = minDateTime && isDateAfter(minDateTime, day);
+              const dayFormatted = day.getDate();
               
               return (
                 <div 
@@ -204,6 +259,7 @@ export const DateFilter = ({
                 setIsCalendarOpen(false);
               }}
               className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+              type="button"
             >
               Borrar
             </button>
@@ -213,6 +269,7 @@ export const DateFilter = ({
                 handleDateClick(new Date());
               }}
               className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+              type="button"
             >
               Hoy
             </button>
