@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Worker } from "@/core/model/worker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { DataTable, TableColumn } from "./DataTable";
+import { DataTable, TableColumn } from "../DataTable";
 
 interface WorkersListProps {
   workers: Worker[];

@@ -3,7 +3,7 @@ import { Area } from "@/core/model/area";
 import { AiOutlineSearch } from "react-icons/ai";
 import { BsPencil, BsTrash } from "react-icons/bs";
 import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
-import { AddAreaDialog } from "@/components/ui/AddAreaDialog";
+import { AddAreaDialog } from "@/components/ui/areas/AddAreaDialog";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { useAreas } from "@/contexts/AreasContext";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";

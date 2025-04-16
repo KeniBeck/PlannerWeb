@@ -6,16 +6,16 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
 import { useWorkersFilter, WorkerViewTab } from "@/lib/hooks/useWorkersFilter";
 import { useWorkersView } from "@/lib/hooks/useWorkersView";
-import { AddWorkerDialog } from "@/components/ui/AddWorkerDialog";
+import { AddWorkerDialog } from "@/components/ui/workers/AddWorkerDialog";
 import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
 import { TableColumn, TableAction } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { WorkersList } from "@/components/ui/WorkerList";
-import { FaultsList } from "@/components/ui/FaultList";
+import { WorkersList } from "@/components/ui/workers/WorkerList";
+import { FaultsList } from "@/components/ui/faults/FaultList";
 import { useFaults } from "@/contexts/FaultContext";
-import { FaultTypeBadge } from "@/components/ui/FaultTypeBadge";
+import { FaultTypeBadge } from "@/components/ui/faults/FaultTypeBadge";
 
 export default function Workers() {
   const {

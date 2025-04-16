@@ -8,7 +8,7 @@ import {
 } from "react-icons/bs";
 import { useOperations } from "@/contexts/OperationContext";
 import { Operation } from "@/core/model/operation";
-import { DataTable, TableColumn, TableAction } from "./DataTable";
+import { DataTable, TableColumn, TableAction } from "../DataTable";
 
 type SortConfig = {
   key: string;
