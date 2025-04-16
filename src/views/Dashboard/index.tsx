@@ -202,7 +202,7 @@ export default function Dashboard() {
             <Route
               path="/operations"
               element={
-                <LayeredProviders features={[Feature.OPERATION]}>
+                <LayeredProviders features={[Feature.OPERATION, Feature.AREAS, Feature.USERS]}>
                   <Operation />
                 </LayeredProviders>
               }

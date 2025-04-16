@@ -7,6 +7,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { FilterTag } from "@/components/custom/filter/FilterTagProps";
 import { FilterBar } from "@/components/custom/filter/FilterBarProps";
+import { useAreas } from "@/contexts/AreasContext";
 // Definir el enum para que coincida con el modelo de Operation
 enum OperationStatus {
   PENDING = "PENDING",
@@ -20,11 +21,15 @@ export default function Operation() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
+  const [areaFilter, setAreaFilter] = useState<string>("all"); // Nuevo estado para filtro de área
+
+  const { areas } = useAreas();
 
   // Referencia para almacenar el valor anterior del filtro
   const prevStatusFilterRef = useRef<string>("all");
   const prevStartDateRef = useRef<string>("");
   const prevEndDateRef = useRef<string>("");
+  const prevAreaFilterRef = useRef<string>("all"); // Nueva referencia para área
 
   // Obtener datos de operaciones del contexto
   const {
@@ -47,20 +52,31 @@ export default function Operation() {
     { value: OperationStatus.CANCELED, label: "Canceladas" },
   ];
 
+  // Opciones para el filtro de áreas
+  const areaOptions = [
+    { value: "all", label: "Todas las áreas" },
+    ...(areas?.map((area) => ({
+      value: area.id.toString(),
+      label: area.name,
+    })) || []),
+  ];
+
   // Efecto para aplicar filtros cuando cambian
   useEffect(() => {
     // Verificar si algún filtro cambió realmente para evitar bucles
     const statusChanged = statusFilter !== prevStatusFilterRef.current;
     const startDateChanged = startDateFilter !== prevStartDateRef.current;
     const endDateChanged = endDateFilter !== prevEndDateRef.current;
+    const areaChanged = areaFilter !== prevAreaFilterRef.current;
 
-    if (statusChanged || startDateChanged || endDateChanged) {
+    if (statusChanged || startDateChanged || endDateChanged || areaChanged) {
       console.log("[Operation] Cambios en filtros detectados");
 
       // Actualizar referencias a valores anteriores
       prevStatusFilterRef.current = statusFilter;
       prevStartDateRef.current = startDateFilter;
       prevEndDateRef.current = endDateFilter;
+      prevAreaFilterRef.current = areaFilter;
 
       // Crear una copia del objeto de filtros actual
       const newFilters = { ...filters };
@@ -74,6 +90,18 @@ export default function Operation() {
         if ("status" in newFilters) {
           delete newFilters.status;
           console.log("[Operation] Quitando filtro de estado");
+        }
+      }
+
+      // Aplicar filtro de área solo si no es "all"
+      if (areaFilter && areaFilter !== "all") {
+        console.log(`[Operation] Aplicando filtro de área: ${areaFilter}`);
+        newFilters.jobAreaId = parseInt(areaFilter);
+      } else {
+        // Si es "all", quitar el filtro de área
+        if ("areaId" in newFilters) {
+          delete newFilters.jobAreaId;
+          console.log("[Operation] Quitando filtro de área");
         }
       }
 
@@ -111,13 +139,22 @@ export default function Operation() {
       setFilters(newFilters);
       setPage(1);
     }
-  }, [statusFilter, startDateFilter, endDateFilter, setFilters, setPage]);
+  }, [
+    statusFilter,
+    startDateFilter,
+    endDateFilter,
+    areaFilter,
+    setFilters,
+    setPage,
+    areas,
+  ]);
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
     setStatusFilter("all");
     setStartDateFilter("");
     setEndDateFilter("");
+    setAreaFilter("all");
   };
 
   // Filtrado adicional solo para búsqueda por término (los filtros de estado ya se aplican en el backend)
@@ -150,6 +187,12 @@ export default function Operation() {
       default:
         return status || "Desconocido";
     }
+  };
+
+  // Obtener nombre del área por ID
+  const getAreaName = (areaId: string): string => {
+    const area = areas?.find((a) => a.id.toString() === areaId);
+    return area?.name || "Área desconocida";
   };
 
   // Manejadores para ver, editar y eliminar operaciones
@@ -219,7 +262,10 @@ export default function Operation() {
 
   // Verificar si hay filtros activos
   const hasActiveFilters =
-    statusFilter !== "all" || startDateFilter !== "" || endDateFilter !== "";
+    statusFilter !== "all" ||
+    startDateFilter !== "" ||
+    endDateFilter !== "" ||
+    areaFilter !== "all";
 
   // Formatear fechas para mostrar
   const formatDisplayDate = (dateString: string) => {
@@ -251,8 +297,8 @@ export default function Operation() {
           exportColumns={exportColumns}
           currentView="operations"
         />
-        
-        <FilterBar 
+
+        <FilterBar
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           statusFilter={statusFilter}
@@ -261,6 +307,9 @@ export default function Operation() {
           setStartDateFilter={setStartDateFilter}
           endDateFilter={endDateFilter}
           setEndDateFilter={setEndDateFilter}
+          areaFilter={areaFilter}
+          setAreaFilter={setAreaFilter}
+          areaOptions={areaOptions}
           statusOptions={statusOptions}
           clearAllFilters={clearAllFilters}
           hasActiveFilters={hasActiveFilters}
@@ -286,15 +335,23 @@ export default function Operation() {
           <div className="font-semibold">Filtros activos:</div>
 
           {statusFilter !== "all" && (
-            <FilterTag 
+            <FilterTag
               label="Estado"
               value={getStatusLabel(statusFilter)}
               onRemove={() => setStatusFilter("all")}
             />
           )}
 
+          {areaFilter !== "all" && (
+            <FilterTag
+              label="Área"
+              value={getAreaName(areaFilter)}
+              onRemove={() => setAreaFilter("all")}
+            />
+          )}
+
           {startDateFilter && (
-            <FilterTag 
+            <FilterTag
               label="Desde"
               value={formatDisplayDate(startDateFilter)}
               onRemove={() => setStartDateFilter("")}
@@ -302,7 +359,7 @@ export default function Operation() {
           )}
 
           {endDateFilter && (
-            <FilterTag 
+            <FilterTag
               label="Hasta"
               value={formatDisplayDate(endDateFilter)}
               onRemove={() => setEndDateFilter("")}
