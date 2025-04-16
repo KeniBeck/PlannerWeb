@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
-import { FiFilter } from "react-icons/fi";
 import { OperationList } from "@/components/ui/OperationList";
 import { useOperations } from "@/contexts/OperationContext";
 import { Operation as OperationModel } from "@/core/model/operation";
