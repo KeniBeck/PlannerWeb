@@ -24,6 +24,7 @@ import Operation from "./operation/Operation";
 import Users from "./users/Users";
 import { GiExitDoor } from "react-icons/gi";
 import Profile from "./profile/Profile";
+import Reports from "./reports/reports";
 
 
 export default function Dashboard() {
@@ -224,9 +225,11 @@ export default function Dashboard() {
             <Route
               path="/reports"
               element={
-                <div className="text-center p-10 text-gray-600">
-                  Reportes en desarrollo
-                </div>
+                <LayeredProviders features={[Feature.OPERATION, Feature.AREAS, Feature.WORKERS]}>
+
+                <Reports />
+                </LayeredProviders>
+
               }
             />
         

@@ -137,6 +137,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
           currentFilters
         ) as PaginatedResponse;
 
+
         console.log(`[OperationContext] Datos obtenidos para página ${page}:`, 
           { totalItems: data.pagination.totalItems, itemCount: data.items.length, filters: filterStr }
         );

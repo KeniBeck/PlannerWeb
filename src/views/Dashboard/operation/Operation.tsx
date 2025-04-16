@@ -1,20 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
-import { OperationList } from "@/components/ui/OperationList";
+import { OperationList } from "@/components/ui/operations/OperationList";
 import { useOperations } from "@/contexts/OperationContext";
-import { Operation as OperationModel } from "@/core/model/operation";
+import { Operation as OperationModel, OperationStatus } from "@/core/model/operation";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { FilterTag } from "@/components/custom/filter/FilterTagProps";
 import { FilterBar } from "@/components/custom/filter/FilterBarProps";
 import { useAreas } from "@/contexts/AreasContext";
 // Definir el enum para que coincida con el modelo de Operation
-enum OperationStatus {
-  PENDING = "PENDING",
-  INPROGRESS = "INPROGRESS",
-  COMPLETED = "COMPLETED",
-  CANCELED = "CANCELED",
-}
+
 
 export default function Operation() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -168,7 +163,7 @@ export default function Operation() {
       operation.client?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      operation.motorship?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      operation.motorShip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       operation.id?.toString().includes(searchTerm)
     );
   });

@@ -4,7 +4,7 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { BsPencil, BsTrash } from "react-icons/bs";
 import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
-import { AddServiceDialog } from "@/components/ui/AddServiceDialog";
+import { AddServiceDialog } from "@/components/ui/services/AddServiceDialog";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { useServices } from "@/contexts/ServicesContext";
 
