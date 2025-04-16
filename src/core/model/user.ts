@@ -4,4 +4,6 @@ export interface User {
     phone: string;
     dni: string;
     cargo: string;
+    username: string;
+    password?: string;
 }

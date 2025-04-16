@@ -276,7 +276,14 @@ export function DataTable<T extends { id: number | string }>({
                       </button>
                       
                       {activeDropdown === item.id && (
-                        <div className="absolute right-0 mt-1 py-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-100">
+                        <div 
+                          className="fixed mt-1 py-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-100"
+                          style={{
+                            position: 'absolute',
+                            right: '0',
+                            top: '100%',
+                          }}
+                        >
                           <div className="px-2">
                             {actions.map((action, index) => (
                               <button

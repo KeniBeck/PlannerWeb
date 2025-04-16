@@ -3,6 +3,9 @@ import { WorkerProvider } from './WorkerContext';
 import { AreasProvider } from './AreasContext';
 // import { FaultProvider } from './FaultContext';
 import { FaultProvider } from './FaultContext';
+import { ClientsProvider } from './ClientsContext';
+import { ServicesProvider } from './ServicesContext';
+import { UsersProvider } from './UsersContext';
 
 // Importar otros providers según necesites
 
@@ -48,12 +51,14 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         content = <AreasProvider>{content}</AreasProvider>;
         break;
       case Feature.CLIENTS:
-        console.warn(`Provider para ${feature} no está implementado`);
-        // Cuando implementes ClientsProvider, descomenta esta línea:
-        // content = <ClientsProvider>{content}</ClientsProvider>;
+        content = <ClientsProvider>{content}</ClientsProvider>;
         break;
       case Feature.SERVICES:
+        content = <ServicesProvider>{content}</ServicesProvider>;
+        break;
       case Feature.USERS:
+        content = <UsersProvider>{content}</UsersProvider>;
+        break;
       case Feature.SUPERVISORS:
         console.warn(`Provider para ${feature} no está implementado`);
         break;

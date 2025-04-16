@@ -24,6 +24,7 @@ interface SectionHeaderProps {
   exportColumns?: ExcelColumn[];
   // Para saber qué tipo de datos se está exportando (en caso de vistas alternantes)
   currentView?: string;
+  showAddButton?: boolean;
 }
 
 export default function SectionHeader({
@@ -36,7 +37,8 @@ export default function SectionHeader({
   exportData = [],
   exportFileName = 'datos_exportados',
   exportColumns,
-  currentView
+  currentView,
+  showAddButton = true,
 }: SectionHeaderProps) {
   
   // Función para exportar a Excel
@@ -158,12 +160,14 @@ export default function SectionHeader({
           <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
         </button>
 
-        <button
-          className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
-          onClick={handleAddArea}
-        >
-          <AiOutlinePlusCircle className="mr-2" /> {btnAddText}
-        </button>
+        {showAddButton && (
+          <button
+            className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
+            onClick={handleAddArea}
+          >
+            <AiOutlinePlusCircle className="mr-2" /> {btnAddText}
+          </button>
+        )}
       </div>
     </header>
   )
