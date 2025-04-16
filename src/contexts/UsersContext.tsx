@@ -10,7 +10,7 @@ interface UsersContextType {
   addUser: (user: Omit<User, "id">) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
   deleteUser: (userId: number) => Promise<void>;
-  changePassword: (userId: number, newPassword: string) => Promise<void>;
+  changePassword: (dni: string, newPassword: string) => Promise<void>;
 }
 
 // Crear el contexto
@@ -88,7 +88,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Cambiar contraseña
-  const changePassword = async (userId: number, newPassword: string) => {
+  const changePassword = async (userId: string, newPassword: string) => {
     setLoading(true);
     try {
       await userService.changePassword(userId, newPassword);
