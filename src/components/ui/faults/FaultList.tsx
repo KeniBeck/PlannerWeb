@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useFaults } from "@/contexts/FaultContext";
 import { Fault } from "@/core/model/fault";
-import { DataTable, TableColumn } from "./DataTable";
+import { DataTable, TableColumn } from "../DataTable";
 
 interface FaultsListProps {
   filteredFaults?: Fault[];

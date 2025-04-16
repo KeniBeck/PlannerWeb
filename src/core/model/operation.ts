@@ -8,8 +8,8 @@ import { User } from "./user";
 export interface Operation {
   id: number;
   name: string;
-  dateStart: Date;
-  endDate?: Date;
+  dateStart: string;
+  endDate?: string;
   startTime: string;
   endTime?: string;
   status: OperationStatus;
@@ -19,16 +19,17 @@ export interface Operation {
   jobArea: Area;
   task: Service;
   client: Client;
-  motorship?: string;
+  zone: string;
+  motorShip?: string;
   createdAt: Date;
   updatedAt: Date;
-  groups: WorkersGroup[];
+  workerGroups: WorkersGroup[];
   inCharge: Pick<User, "id" | "name">[];
 }
 
-enum OperationStatus {
-  PENDING = "PENDIENTE",
-  IN_PROGRESS = "EN CURSO",
-  FINISHED = "FINALIZADO",
-  CANCELLED = "CANCELADO",
+export enum OperationStatus {
+  PENDING = "PENDING",
+  INPROGRESS = "INPROGRESS",
+  COMPLETED = "COMPLETED",
+  CANCELED = "CANCELED",
 }

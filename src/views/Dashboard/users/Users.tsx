@@ -6,8 +6,8 @@ import { BsPencil, BsTrash, BsKey } from "react-icons/bs";
 import { FiFilter } from "react-icons/fi";
 import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
-import { AddUserDialog } from "@/components/ui/AddUserDialog";
-import { ChangePasswordDialog } from "@/components/ui/ChangePasswordDialog";
+import { AddUserDialog } from "@/components/ui/users/AddUserDialog";
+import { ChangePasswordDialog } from "@/components/ui/users/ChangePasswordDialog";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { userService } from "@/services/userService";
 
