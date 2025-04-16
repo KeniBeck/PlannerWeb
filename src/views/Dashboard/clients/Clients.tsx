@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useClients } from "@/lib/hooks/useClients";
 import { Client } from "@/core/model/client";
 import { AiOutlineSearch } from "react-icons/ai";
 import { BsPencil, BsTrash } from "react-icons/bs";
@@ -7,6 +6,7 @@ import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { AddClientDialog } from "@/components/ui/AddClientDialog";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { useClients } from "@/contexts/ClientsContext";
 
 export default function Clients() {
   const { clients, loading, addClient, updateClient, deleteClient, refreshData } = useClients();

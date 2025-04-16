@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useServices } from "@/lib/hooks/useServices";
 import { Service } from "@/core/model/service";
 import { AiOutlineSearch } from "react-icons/ai";
 import { BsPencil, BsTrash } from "react-icons/bs";
@@ -7,6 +6,7 @@ import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { AddServiceDialog } from "@/components/ui/AddServiceDialog";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { useServices } from "@/contexts/ServicesContext";
 
 export default function Services() {
   const { services, loading, addService, updateService, deleteService, refreshData } = useServices();

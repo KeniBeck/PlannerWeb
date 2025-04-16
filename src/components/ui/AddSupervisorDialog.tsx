@@ -5,7 +5,7 @@ interface AddSupervisorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   supervisor?: User; // Si se proporciona, es para editar
-  onSave?: (supervisor: Omit<User, "id"> & { id?: number }) => void;
+  onSave?: (supervisor: Omit<User, "id" | "username"> & { id?: number }) => void;
 }
 
 export function AddSupervisorDialog({ open, onOpenChange, supervisor, onSave }: AddSupervisorDialogProps) {
@@ -175,7 +175,7 @@ export function AddSupervisorDialog({ open, onOpenChange, supervisor, onSave }: 
       name: formData.name,
       dni: formData.dni,
       phone: formData.phone,
-      cargo: formData.cargo
+      cargo: formData.cargo,
     });
     
     onOpenChange(false);

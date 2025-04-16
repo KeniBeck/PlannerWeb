@@ -1,22 +1,23 @@
 import { useState, useMemo } from "react";
-import { useSupervisors } from "@/lib/hooks/useSupervisors";
+import { useUsers } from "@/contexts/UsersContext"; // Cambiamos a useUsers en lugar de useSupervisors
 import { User } from "@/core/model/user";
 import { AiOutlineSearch } from "react-icons/ai";
-import { BsPencil, BsTrash } from "react-icons/bs";
 import { FiFilter } from "react-icons/fi";
-import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
-import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
-import { AddSupervisorDialog } from "@/components/ui/AddSupervisorDialog";
+import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 
 export default function Supervisors() {
-  const { supervisors, loading, addSupervisor, updateSupervisor, deleteSupervisor, refreshData } = useSupervisors();
+  const { users, loading, refreshData } = useUsers();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
   const [activeStatus, setActiveStatus] = useState<string>("all");
-  const [isAddSupervisorOpen, setIsAddSupervisorOpen] = useState(false);
-  const [supervisorToEdit, setSupervisorToEdit] = useState<User | undefined>(undefined);
+
+  // Filtrar solo supervisores y coordinadores
+  const supervisors = useMemo(() => 
+    users.filter(user => user.cargo === "SUPERVISOR" || user.cargo === "COORDINADOR"), 
+    [users]
+  );
 
   // Filtrar supervisores según el término de búsqueda y estado
   const filteredSupervisors = useMemo(() => 
@@ -24,40 +25,13 @@ export default function Supervisors() {
       // Filtro por búsqueda
       const matchesSearch = 
         supervisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supervisor.dni.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supervisor.phone.toLowerCase().includes(searchTerm.toLowerCase());
+        supervisor.dni?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        supervisor.phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      
+
       return matchesSearch;
     }), [supervisors, searchTerm, activeStatus]
   );
-
-  // Manejar la edición de un supervisor
-  const handleEditSupervisor = (supervisor: User) => {
-    setSupervisorToEdit(supervisor);
-    setIsAddSupervisorOpen(true);
-  };
-
-  // Manejar guardar un supervisor (nuevo o editado)
-  const handleSaveSupervisor = (supervisor: Omit<User, "id"> & { id?: number }) => {
-    if (supervisor.id) {
-      // Actualizar supervisor existente
-      updateSupervisor(supervisor as User);
-      StatusSuccessAlert("Éxito", "Supervisor actualizado correctamente");
-    } else {
-      // Agregar nuevo supervisor
-      addSupervisor(supervisor);
-      StatusSuccessAlert("Éxito", "Supervisor agregado correctamente");
-    }
-  };
-
-  // Manejar la eliminación de un supervisor
-  const handleDeleteSupervisor = (supervisorId: number) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este supervisor?")) {
-      deleteSupervisor(supervisorId);
-      StatusSuccessAlert("Éxito", "Supervisor eliminado correctamente");
-    }
-  };
 
   // Manejador de búsqueda
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,12 +41,6 @@ export default function Supervisors() {
   // Manejador para filtrar por estado
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setActiveStatus(e.target.value);
-  };
-
-  // Manejador para abrir diálogo de nuevo supervisor
-  const handleAddSupervisor = () => {
-    setSupervisorToEdit(undefined); // Resetear el supervisor a editar
-    setIsAddSupervisorOpen(true);
   };
 
   // Definir las columnas para la tabla
@@ -95,34 +63,26 @@ export default function Supervisors() {
       accessor: "phone" 
     },
     { 
-      header: "Especialidad", 
-      accessor: "cargo" 
+      header: "Cargo", 
+      accessor: "cargo",
+      cell: (user) => {
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium 
+            ${user.cargo === "SUPERVISOR" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}>
+            {user.cargo}
+          </span>
+        );
+      }
     },
-  ], []);
-
-  // Definir acciones de la tabla
-  const actions: TableAction<User>[] = useMemo(() => [
-    {
-      label: "Editar",
-      icon: <BsPencil className="h-4 w-4" />,
-      onClick: handleEditSupervisor,
-      className: "text-gray-700"
-    },
-    {
-      label: "Eliminar",
-      icon: <BsTrash className="h-4 w-4" />,
-      onClick: (supervisor) => handleDeleteSupervisor(supervisor.id),
-      className: "text-red-600"
-    }
   ], []);
 
   // Definir las columnas para exportar supervisores a Excel
   const supervisorExportColumns: ExcelColumn[] = useMemo(() => [
-    { header: 'Código', field: 'id' },
+    { header: 'ID', field: 'id' },
     { header: 'Nombre', field: 'name' },
     { header: 'DNI', field: 'dni' },
     { header: 'Teléfono', field: 'phone' },
-    { header: 'Especialidad', field: 'cargo' },
+    { header: 'Cargo', field: 'cargo' },
   ], []);
 
   return (
@@ -131,15 +91,16 @@ export default function Supervisors() {
         {/* Header con exportación */}
         <SectionHeader
           title="Supervisores"
-          subtitle="Gestión de supervisores"
-          btnAddText="Agregar Supervisor"
-          handleAddArea={handleAddSupervisor}
+          subtitle="Visualización de supervisores y coordinadores"
+          btnAddText=""
+          handleAddArea={() => {}}
           refreshData={() => Promise.resolve(refreshData())}
           loading={loading}
           exportData={filteredSupervisors}
-          exportFileName="supervisores"
+          exportFileName="supervisores_coordinadores"
           exportColumns={supervisorExportColumns}
           currentView="supervisors"
+          showAddButton={false}
         />
         
         {/* Filtros */}
@@ -150,7 +111,7 @@ export default function Supervisors() {
                 <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar por nombre, DNI o teléfono"
+                  placeholder="Buscar por nombre, email, DNI o teléfono"
                   className="p-2 pl-10 w-80 border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                   value={searchTerm}
                   onChange={handleSearchChange}
@@ -176,7 +137,6 @@ export default function Supervisors() {
                   <option value="all">Todos los estados</option>
                   <option value="active">Activos</option>
                   <option value="inactive">Inactivos</option>
-                  <option value="on_leave">De permiso</option>
                 </select>
                 <div className="absolute right-3 top-3 pointer-events-none">
                   <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -195,7 +155,6 @@ export default function Supervisors() {
           <DataTable
             data={filteredSupervisors}
             columns={columns}
-            actions={actions}
             isLoading={loading}
             itemsPerPage={10}
             itemName="supervisores"
@@ -204,14 +163,6 @@ export default function Supervisors() {
           />
         </div>
       </div>
-
-      {/* Diálogo para agregar/editar supervisor */}
-      <AddSupervisorDialog
-        open={isAddSupervisorOpen}
-        onOpenChange={setIsAddSupervisorOpen}
-        supervisor={supervisorToEdit}
-        onSave={handleSaveSupervisor}
-      />
     </div>
   );
 }
