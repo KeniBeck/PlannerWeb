@@ -7,9 +7,12 @@ import { AddAreaDialog } from "@/components/ui/AddAreaDialog";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { useAreas } from "@/contexts/AreasContext";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { useWorkers } from "@/contexts/WorkerContext";
 
 export default function Areas() {
   const { areas, loading, addArea, updateArea, deleteArea, refreshData } = useAreas();
+  const { workers, isLoading: workersLoading } = useWorkers();
+  
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +26,25 @@ export default function Areas() {
     ), [areas, searchTerm]
   );
 
+    // Calcular el conteo de trabajadores por área
+    const workerCountByArea = useMemo(() => {
+      const counts: Record<number, number> = {};
+      
+      // Inicializar contadores en 0 para todas las áreas
+      areas.forEach(area => {
+        counts[area.id] = 0;
+      });
+      
+      // Contar trabajadores por área
+      workers.forEach(worker => {
+        if (worker.jobArea && worker.jobArea.id) {
+          counts[worker.jobArea.id] = (counts[worker.jobArea.id] || 0) + 1;
+        }
+      });
+      
+      return counts;
+    }, [areas, workers]);
+
   // Manejar la edición de un área
   const handleEditArea = (area: Area) => {
     setAreaToEdit(area);
@@ -31,15 +53,9 @@ export default function Areas() {
 
   // Manejar guardar un área (nueva o editada)
   const handleSaveArea = (area: Omit<Area, "id"> & { id?: number }) => {
-    if (area.id) {
-      // Actualizar área existente
-      updateArea(area as Area);
-      StatusSuccessAlert("Éxito", "Área actualizada correctamente");
-    } else {
       // Agregar nueva área
       addArea(area);
       StatusSuccessAlert("Éxito", "Área agregada correctamente");
-    }
   };
 
   // Manejar la eliminación de un área
@@ -71,12 +87,19 @@ export default function Areas() {
       header: "Total Trabajadores",
       accessor: "id",
       sortable: false,
-      cell: (area) => (
-        <div className="flex items-center">
-          <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
-          {Math.floor(Math.random() * 20)} trabajadores {/* Ejemplo - reemplazar con datos reales */}
-        </div>
-      )
+      cell: (area) => {
+        const count = workerCountByArea[area.id] || 0;
+        const badgeColor = count > 0 ? "bg-blue-500" : "bg-gray-300";
+        
+        return (
+          <div className="flex items-center">
+            <div className={`h-2 w-2 rounded-full ${badgeColor} mr-2`}></div>
+            <span className="text-gray-600">
+              {count} {count === 1 ? "trabajador" : "trabajadores"}
+            </span>
+          </div>
+        );
+      }
     }
   ], []);
 
