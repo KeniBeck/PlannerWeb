@@ -273,6 +273,7 @@ export default function Reports() {
                     exportColumns={[]}
                     currentView="reports"
                     showAddButton={false}
+                    showDownloadButton={false}
                 />
 
 

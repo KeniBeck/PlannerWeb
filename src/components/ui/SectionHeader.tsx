@@ -25,6 +25,7 @@ interface SectionHeaderProps {
   // Para saber qué tipo de datos se está exportando (en caso de vistas alternantes)
   currentView?: string;
   showAddButton?: boolean;
+  showDownloadButton?: boolean;
 }
 
 export default function SectionHeader({
@@ -39,6 +40,7 @@ export default function SectionHeader({
   exportColumns,
   currentView,
   showAddButton = true,
+  showDownloadButton = true,
 }: SectionHeaderProps) {
   
   // Función para exportar a Excel
@@ -142,15 +144,17 @@ export default function SectionHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          title="Exportar datos"
-          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-          onClick={handleExportToExcel}
-          disabled={!exportData || exportData.length === 0}
-        >
-          <AiOutlineDownload className="h-5 w-5" />
-        </button>
-
+        {
+          showDownloadButton && (
+            <button
+              title="Exportar a Excel"
+              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
+              onClick={handleExportToExcel}
+            >
+              <AiOutlineDownload className="h-5 w-5" />
+            </button>
+          )
+        }
         <button
           title="Actualizar datos"
           className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"

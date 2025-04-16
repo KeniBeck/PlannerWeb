@@ -25,6 +25,7 @@ import Users from "./users/Users";
 import { GiExitDoor } from "react-icons/gi";
 import Profile from "./profile/Profile";
 import Reports from "./reports/reports";
+import DashboardHome from "./DashboardHome";
 
 
 export default function Dashboard() {
@@ -80,7 +81,7 @@ export default function Dashboard() {
               P
             </div>
             {isMenuOpen && (
-              <h2 className="text-xl font-bold text-gray-800 mt-2">Planner</h2>
+              <h2 className="text-xl font-bold text-gray-800 mt-2">CargoPlanner</h2>
             )}
           </div>
 
@@ -155,7 +156,6 @@ export default function Dashboard() {
                 isActive={isActive("/dashboard/clients")}
               />
 
-              {/* Separador */}
               <li className="my-3">
                 {isMenuOpen ? (
                   <hr className="border-gray-200" />
@@ -199,8 +199,8 @@ export default function Dashboard() {
             <Route
               path="/"
               element={
-                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS]}>
-                  <Workers />
+                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS, Feature.OPERATION, Feature.AREAS, Feature.USERS, Feature.SERVICES, Feature.CLIENTS]}>
+                  <DashboardHome />
                 </LayeredProviders>
               }
             />
@@ -217,7 +217,7 @@ export default function Dashboard() {
             <Route
               path="/operations"
               element={
-                <LayeredProviders features={[Feature.OPERATION]}>
+                <LayeredProviders features={[Feature.OPERATION, Feature.AREAS, Feature.WORKERS, Feature.USERS, Feature.SERVICES, Feature.CLIENTS]}>
                   <Operation />
                 </LayeredProviders>
               }

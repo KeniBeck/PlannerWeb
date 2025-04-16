@@ -219,7 +219,7 @@ export default function Profile() {
             <div className="md:col-span-2">
               <div className="mb-4">
                 <label htmlFor="cargo" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cargo / Posición <span className="text-red-500">*</span>
+                  Cargo <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="cargo"

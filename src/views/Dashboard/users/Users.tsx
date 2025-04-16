@@ -64,7 +64,7 @@ export default function Users() {
       throw error;
     }
   };
-  // ...existing code...
+ 
   // Manejar la eliminación de un usuario
   const handleDeleteUser = (userId: number) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este usuario?")) {

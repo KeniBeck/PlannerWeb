@@ -7,6 +7,12 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { FilterTag } from "@/components/custom/filter/FilterTagProps";
 import { FilterBar } from "@/components/custom/filter/FilterBarProps";
+import { AddOperationDialog } from "@/components/ui/operations/AddOperationDialog";
+import { useAreas } from "@/contexts/AreasContext";
+import { useServices } from "@/contexts/ServicesContext";
+import { useClients } from "@/contexts/ClientsContext";
+import { useWorkers } from "@/contexts/WorkerContext";
+import { useUsers } from "@/contexts/UsersContext";
 
 
 export default function Operation() {
@@ -14,6 +20,7 @@ export default function Operation() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   // Referencia para almacenar el valor anterior del filtro
   const prevStatusFilterRef = useRef<string>("all");
@@ -31,6 +38,14 @@ export default function Operation() {
     setFilters,
     setPage,
   } = useOperations();
+
+  // Obtener datos de áreas, servicios, clientes y trabajadores
+  const { areas } = useAreas();
+  const { services } = useServices();
+  const { clients } = useClients();
+  const { workers } = useWorkers();
+  const { users } = useUsers();
+
 
   // Opciones para el filtro de estado
   const statusOptions = [
@@ -106,6 +121,17 @@ export default function Operation() {
       setPage(1);
     }
   }, [statusFilter, startDateFilter, endDateFilter, setFilters, setPage]);
+
+  const handleSave = async (data: any) => {
+    try {
+      console.log("Guardar operación:", data);
+      // await createOperation(data); // Asumiendo que tienes una función createOperation en tu contexto
+      await refreshOperations();
+      setIsAddOpen(false);
+    } catch (error) {
+      console.error("Error al guardar la operación:", error);
+    }
+  };
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
@@ -235,8 +261,8 @@ export default function Operation() {
           subtitle="Gestión de operaciones, agrega, edita o elimina operaciones"
           btnAddText="Agregar Operación"
           handleAddArea={() => {
-            console.log("Abrir modal para agregar operación");
-            // Implementar apertura de modal o navegación
+            console.log("Agregar operación****");
+            setIsAddOpen(true);
           }}
           refreshData={() => Promise.resolve(refreshOperations())}
           loading={isLoading}
@@ -311,6 +337,24 @@ export default function Operation() {
           </button>
         </div>
       )}
+
+{isAddOpen && (
+  <AddOperationDialog
+    open={isAddOpen}
+    onOpenChange={(open) => {
+      console.log("onOpenChange called with:", open);
+      setIsAddOpen(open);
+    }}
+    areas={areas || []}
+    services={services || []}
+    clients={clients || []}
+    availableWorkers={workers || []}
+    supervisors={users?.filter((user) => 
+      user.cargo === "SUPERVISOR" || user.cargo === "COORDINADOR"
+    ) || []}
+    onSave={handleSave}
+  />
+)}
     </div>
   );
 }
