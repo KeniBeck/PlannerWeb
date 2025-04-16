@@ -20,9 +20,11 @@ import Areas from "./areas/Areas";
 import Supervisors from "./supervisors/Supervisors";
 import Services from "./services/Services";
 import Clients from "./clients/Clients";
+import Operation from "./operation/Operation";
 import Users from "./users/Users";
 import { GiExitDoor } from "react-icons/gi";
 import Profile from "./profile/Profile";
+
 
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -204,14 +206,32 @@ export default function Dashboard() {
             <Route
               path="/workers"
               element={
-
                 <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS]}>
                   <Workers />
                 </LayeredProviders>
               }
             />
             {/* Aquí puedes agregar más rutas según necesites */}
-            <Route path="/operations" element={<div className="text-center p-10 text-gray-600">Operaciones en desarrollo</div>} />
+
+            <Route
+              path="/operations"
+              element={
+                <LayeredProviders features={[Feature.OPERATION]}>
+                  <Operation />
+                </LayeredProviders>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Reportes en desarrollo
+                </div>
+              }
+            />
+        
+         
+
             <Route path="/services" element={<LayeredProviders features={[Feature.SERVICES]}>
               <Services />
             </LayeredProviders>} />
@@ -232,6 +252,8 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
+
+
             <Route path="/profile" element={<Profile />} />
 
           </Routes>

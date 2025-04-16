@@ -1,24 +1,21 @@
 import { ReactNode } from 'react';
 import { WorkerProvider } from './WorkerContext';
 import { AreasProvider } from './AreasContext';
-// import { FaultProvider } from './FaultContext';
 import { FaultProvider } from './FaultContext';
+import { OperationProvider } from './OperationContext';
 import { ClientsProvider } from './ClientsContext';
 import { ServicesProvider } from './ServicesContext';
 import { UsersProvider } from './UsersContext';
 
-// Importar otros providers según necesites
-
-// Usar enum para las features disponibles
 export enum Feature {
   WORKERS = 'workers',
   FAULTS = 'faults',
-  PROJECTS = 'projects',
   AREAS = 'areas',
   SERVICES = 'services',
   USERS = 'users',
   SUPERVISORS = 'supervisors',
-  CLIENTS = 'clients'
+  CLIENTS = 'clients',
+  OPERATION = 'operation',
 }
 
 type FeatureType = Feature;
@@ -43,9 +40,8 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
       case Feature.FAULTS:
         content = <FaultProvider>{content}</FaultProvider>;
         break;
-      case Feature.PROJECTS:
-        console.warn(`Provider para ${feature} no está implementado`);
-        // content = <ProjectProvider>{content}</ProjectProvider>;
+      case Feature.OPERATION:
+       content = <OperationProvider>{content}</OperationProvider>
         break;
       case Feature.AREAS:
         content = <AreasProvider>{content}</AreasProvider>;
