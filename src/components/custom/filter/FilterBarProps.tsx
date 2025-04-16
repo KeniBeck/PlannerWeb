@@ -2,6 +2,7 @@ import { FiFilter } from "react-icons/fi";
 import { SearchFilter } from "./SearchFilterProps"; 
 import { StatusFilter } from "./StatusFilterProps"; 
 import { DateFilter } from "./DateFilterProps"; 
+import { AreaFilter } from "./AreaFilter";
 
 interface FilterBarProps {
   searchTerm: string;
@@ -11,8 +12,11 @@ interface FilterBarProps {
   startDateFilter: string;
   setStartDateFilter: (value: string) => void;
   endDateFilter: string;
+  areaFilter: string;
+  setAreaFilter: (value: string) => void;
   setEndDateFilter: (value: string) => void;
   statusOptions: Array<{ value: string; label: string }>;
+  areaOptions: Array<{ value: string; label: string }>;
   clearAllFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -26,7 +30,10 @@ export const FilterBar = ({
   setStartDateFilter,
   endDateFilter,
   setEndDateFilter,
+  areaFilter,
+  setAreaFilter,
   statusOptions,
+  areaOptions,
   clearAllFilters,
   hasActiveFilters
 }: FilterBarProps) => {
@@ -36,8 +43,15 @@ export const FilterBar = ({
         <SearchFilter 
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Buscar por nombre, área, cliente o embarcación"
+          placeholder="Buscar por area o cliente"
           className="w-80"
+        />
+
+        <AreaFilter
+          value={areaFilter}
+          onChange={setAreaFilter}
+          options={areaOptions}
+          className="w-60"
         />
 
         <StatusFilter 
