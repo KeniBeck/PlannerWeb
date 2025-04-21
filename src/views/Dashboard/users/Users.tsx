@@ -32,7 +32,7 @@ export default function Users() {
         user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Filtro por rol
-      const matchesRole = roleFilter === "all" || user.cargo === roleFilter;
+      const matchesRole = roleFilter === "all" || user.occupation === roleFilter;
       
       return matchesSearch && matchesRole;
     }), [users, searchTerm, roleFilter]
@@ -126,7 +126,7 @@ export default function Users() {
         let bgColor = "bg-gray-100";
         let textColor = "text-gray-800";
         
-        switch(user.cargo) {
+        switch(user.occupation) {
           case "ADMIN":
             bgColor = "bg-purple-100";
             textColor = "text-purple-800";
@@ -147,7 +147,7 @@ export default function Users() {
         
         return (
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
-            {user.cargo}
+            {user.occupation}
           </span>
         );
       }
