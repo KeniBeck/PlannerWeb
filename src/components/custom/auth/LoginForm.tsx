@@ -32,7 +32,6 @@ export function LoginForm() {
     try {
       isLoadingAlert(true);
       const response = await authService.login(values);
-      console.log("Login successful:", response);
       isLoadingAlert(false);
       StatusSuccessAlert("Login successful", "Welcome to CargoPlanner!");
       setTimeout(() => {

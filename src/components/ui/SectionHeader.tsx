@@ -1,5 +1,5 @@
 import { AiOutlineDownload, AiOutlinePlusCircle, AiOutlineReload } from "react-icons/ai";
-import * as XLSX from 'xlsx';
+import { Workbook } from 'exceljs';
 import { saveAs } from 'file-saver';
 
 // Tipo para la configuración de columnas
@@ -41,25 +41,82 @@ export default function SectionHeader({
   showAddButton = true,
 }: SectionHeaderProps) {
   
-  // Función para exportar a Excel
-  const handleExportToExcel = () => {
+  // Función para exportar a Excel usando ExcelJS
+  const handleExportToExcel = async () => {
     if (!exportData || exportData.length === 0) {
       alert('No hay datos para exportar.');
       return;
     }
 
     try {
-      let dataToExport = exportData;
+      // Crear un nuevo libro de trabajo
+      const workbook = new Workbook();
+      workbook.creator = 'PlannerWeb';
+      workbook.created = new Date();
       
-      // Si hay configuración de columnas, formateamos los datos
+      // Nombre de la hoja según el tipo de datos
+      const sheetName = currentView ? currentView.charAt(0).toUpperCase() + currentView.slice(1) : 'Datos';
+      const worksheet = workbook.addWorksheet(sheetName, {
+        pageSetup: {
+          fitToPage: true,
+          fitToHeight: 5,
+          fitToWidth: 7
+        }
+      });
+
+      // Preparar encabezados desde la configuración de columnas
+      const headers = exportColumns?.map(col => col.header) || 
+        (exportData.length > 0 ? Object.keys(exportData[0]) : []);
+      
+      // Añadir fila de encabezados
+      worksheet.addRow(headers);
+      
+      // Aplicar estilo a los encabezados (primera fila)
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 28; // Altura de la fila de encabezados
+      
+      // Aplicar estilo a cada celda de encabezado
+      headerRow.eachCell((cell, colNumber) => {
+        // Estilo de fondo para encabezados
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: '4472C4' } // Azul corporativo
+        };
+        
+        // Estilo de fuente para encabezados
+        cell.font = {
+          bold: true,
+          color: { argb: 'FFFFFF' }, // Texto blanco
+          size: 12
+        };
+        
+        // Alineación
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: 'center',
+          wrapText: true
+        };
+        
+        // Bordes
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+      
+      // Transformar datos según la configuración de columnas
+      let rowsToAdd: any[] = [];
+      
       if (exportColumns && exportColumns.length > 0) {
-        dataToExport = exportData.map(item => {
-          const formattedItem: Record<string, any> = {};
-          
-          exportColumns.forEach(column => {
+        // Si tenemos configuración específica de columnas
+        rowsToAdd = exportData.map(item => {
+          return exportColumns.map(column => {
             // Si hay una función personalizada para obtener el valor
             if (column.value) {
-              formattedItem[column.header] = column.value(item);
+              return column.value(item);
             } 
             // Para campos anidados (usando notación de punto)
             else if (column.field.includes('.')) {
@@ -76,48 +133,71 @@ export default function SectionHeader({
                 }
               }
               
-              formattedItem[column.header] = value;
+              return value;
             } 
             // Para campos simples
             else {
-              formattedItem[column.header] = item[column.field] || '';
+              return item[column.field] !== undefined ? item[column.field] : '';
             }
           });
-          
-          return formattedItem;
         });
+      } else {
+        // Sin configuración específica, usar los datos tal cual
+        rowsToAdd = exportData.map(item => Object.values(item));
       }
       
-      // Preparamos la hoja de Excel
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      
-      // Si hay encabezados personalizados y no tenemos datos, aseguramos que aparezcan las cabeceras
-      if (exportColumns && exportColumns.length > 0 && dataToExport.length === 0) {
-        const headers: Record<string, string> = {};
-        exportColumns.forEach((col, index) => {
-          // Convertimos el índice de columna a letra de Excel (A, B, C...)
-          const cellRef = XLSX.utils.encode_cell({ r: 0, c: index });
-          headers[cellRef] = col.header;
-        });
+      // Añadir filas de datos
+      rowsToAdd.forEach((rowData, index) => {
+        const row = worksheet.addRow(rowData);
         
-        worksheet['!ref'] = 'A1:' + XLSX.utils.encode_cell({ r: 0, c: exportColumns.length - 1 });
-        worksheet['!data'] = [exportColumns.map(col => col.header)];
-      }
+        // Aplicar estilo a filas alternas para mejor legibilidad
+        if (index % 2 === 1) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'F2F7FF' } // Fondo azul muy claro para filas alternas
+            };
+          });
+        }
+        
+        // Aplicar bordes a todas las celdas
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'E0E0E0' } },
+            left: { style: 'thin', color: { argb: 'E0E0E0' } },
+            bottom: { style: 'thin', color: { argb: 'E0E0E0' } },
+            right: { style: 'thin', color: { argb: 'E0E0E0' } }
+          };
+          
+          // Alineación vertical centrada
+          cell.alignment = {
+            vertical: 'middle'
+          };
+        });
+      });
       
-      // Crear un libro
-      const workbook = XLSX.utils.book_new();
+      // Ajustar ancho de columnas automáticamente
+      worksheet.columns.forEach(column => {
+        if (!column || typeof column.eachCell !== 'function') return;
+        if (column.width) return;
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? String(cell.value).length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = Math.min(maxLength + 4, 30); // Máximo 30 de ancho
+      });
       
-      // Nombre de la hoja según el tipo de datos o vista actual
-      const sheetName = currentView ? currentView.charAt(0).toUpperCase() + currentView.slice(1) : 'Datos';
+      // Generar el archivo Excel
+      const buffer = await workbook.xlsx.writeBuffer();
       
-      // Añadir la hoja al libro
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-      
-      // Generar el archivo
-      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      
-      // Convertir a Blob
-      const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+      // Convertir a Blob y descargar
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
       
       // Nombre del archivo con la fecha actual
       const fileName = `${exportFileName || currentView || 'datos'}_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -144,7 +224,7 @@ export default function SectionHeader({
       <div className="flex items-center gap-2">
         <button
           title="Exportar datos"
-          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
+          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
           onClick={handleExportToExcel}
           disabled={!exportData || exportData.length === 0}
         >
@@ -153,7 +233,7 @@ export default function SectionHeader({
 
         <button
           title="Actualizar datos"
-          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
+          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
           onClick={() => refreshData()}
           disabled={loading}
         >
@@ -162,7 +242,7 @@ export default function SectionHeader({
 
         {showAddButton && (
           <button
-            className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
+            className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all cursor-pointer"
             onClick={handleAddArea}
           >
             <AiOutlinePlusCircle className="mr-2" /> {btnAddText}
@@ -170,5 +250,5 @@ export default function SectionHeader({
         )}
       </div>
     </header>
-  )
+  );
 }

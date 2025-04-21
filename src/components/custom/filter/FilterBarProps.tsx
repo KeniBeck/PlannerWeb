@@ -1,10 +1,9 @@
 import { FiFilter } from "react-icons/fi";
 import { SearchFilter } from "./SearchFilterProps";
 import { StatusFilter } from "./StatusFilterProps";
-import { DateFilter } from "./DateFilterProps";
 import { AreaFilter } from "./AreaFilter";
-import { use } from "react";
 import { DateRangeFilter } from "./DateFilterRanger";
+import { SupervisorFilter } from "./SupervisorFilter";
 
 interface FilterBarProps {
   searchTerm: string;
@@ -15,6 +14,9 @@ interface FilterBarProps {
   setStartDateFilter: (value: string) => void;
   endDateFilter: string;
   areaFilter: string;
+  supervisorFilter?: string;
+  setSupervisorFilter?: (value: string) => void;
+  supervisorOptions?: Array<{ value: string; label: string }>;
   setAreaFilter: (value: string) => void;
   setEndDateFilter: (value: string) => void;
   statusOptions: Array<{ value: string; label: string }>;
@@ -37,6 +39,9 @@ export const FilterBar = ({
   setAreaFilter,
   statusOptions,
   areaOptions,
+  supervisorFilter = "all",
+  setSupervisorFilter,
+  supervisorOptions = [],
   clearAllFilters,
   hasActiveFilters,
   useDateRangeFilter = false,
@@ -65,12 +70,24 @@ export const FilterBar = ({
           className="w-60"
         />
 
+        {/* Filtro de Supervisor - Solo se muestra si se proporcionan las opciones */}
+        {setSupervisorFilter &&
+          supervisorOptions &&
+          supervisorOptions.length > 0 && (
+            <SupervisorFilter
+              value={supervisorFilter}
+              onChange={setSupervisorFilter}
+              options={supervisorOptions}
+              className="w-60"
+            />
+          )}
+
         <DateRangeFilter
           startDate={startDateFilter}
           endDate={endDateFilter}
           onStartDateChange={setStartDateFilter}
           onEndDateChange={setEndDateFilter}
-          className="w-64"
+          className="w-60"
         />
 
         {/* Botón para limpiar todos los filtros */}
