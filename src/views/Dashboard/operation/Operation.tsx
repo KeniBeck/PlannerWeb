@@ -13,6 +13,8 @@ import { useServices } from "@/contexts/ServicesContext";
 import { useClients } from "@/contexts/ClientsContext";
 import { useWorkers } from "@/contexts/WorkerContext";
 import { useUsers } from "@/contexts/UsersContext";
+import { operationService } from "@/services/operationService";
+import Swal from "sweetalert2";
 
 
 export default function Operation() {
@@ -21,6 +23,7 @@ export default function Operation() {
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedOperation, setSelectedOperation] = useState<OperationModel | undefined>(undefined);
 
   // Referencia para almacenar el valor anterior del filtro
   const prevStatusFilterRef = useRef<string>("all");
@@ -37,6 +40,7 @@ export default function Operation() {
     filters,
     setFilters,
     setPage,
+    createOperation
   } = useOperations();
 
   // Obtener datos de áreas, servicios, clientes y trabajadores
@@ -122,16 +126,92 @@ export default function Operation() {
     }
   }, [statusFilter, startDateFilter, endDateFilter, setFilters, setPage]);
 
-  const handleSave = async (data: any) => {
+  const handleEditOperation = (operation: any) => {
+    console.log("Editar operación:", operation);
+
+    // Crear un objeto formateado con los campos correctos
+    const formattedOperation = {
+      ...operation,
+      // Corregir campos de tiempo
+      timeStart: operation.timeStrat || operation.timeStart || "",
+      // Asegurarse de que los IDs estén correctamente mapeados
+      id_client: operation.id_client || operation.client?.id,
+      id_area: operation.jobArea?.id,
+      id_task: operation.task?.id,
+      // Formatear la fecha para que sea compatible con el input date
+      dateStart: operation.dateStart ? new Date(operation.dateStart).toISOString().split('T')[0] : "",
+      dateEnd: operation.dateEnd ? new Date(operation.dateEnd).toISOString().split('T')[0] : "",
+      // Asegurarse de que zone sea string para los inputs
+      zone: operation.zone?.toString(),
+      // Mantener los grupos y trabajadores
+      workerGroups: operation.workerGroups || [],
+      inChargedIds: operation.inCharge?.map((s: any) => s.id) || []
+    };
+
+    setSelectedOperation(formattedOperation);
+    setIsAddOpen(true);
+  };
+
+  // Actualizar la función handleSave para asegurar el formato correcto al enviar
+  const handleSave = async (data: any, isEdit: boolean) => {
     try {
-      console.log("Guardar operación:", data);
-      // await createOperation(data); // Asumiendo que tienes una función createOperation en tu contexto
+      // Formatear los datos antes de enviar
+      const formattedData = {
+        ...data,
+        id: isEdit ? data.id : undefined,
+        zone: parseInt(data.zone),
+        id_client: parseInt(data.id_client),
+        id_area: parseInt(data.id_area),
+        id_task: parseInt(data.id_task),
+        dateStart: data.dateStart,
+        timeStart: data.timeStart || data.timeStrat, // Manejar ambos campos
+        dateEnd: data.dateEnd || null,
+        timeEnd: data.timeEnd || null,
+        status: data.status || "PENDING",
+        workerGroups: data.workerGroups || [],
+        inChargedIds: data.inChargedIds || []
+      };
+
+      if (isEdit) {
+        await operationService.updateOperation(data.id, formattedData);
+
+        Swal.fire({
+          title: 'Operación actualizada',
+          text: 'La operación ha sido actualizada correctamente.',
+          icon: 'success',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#3085d6'
+        });
+      } else {
+        await operationService.createOperation(formattedData);
+
+        Swal.fire({
+          title: 'Operación creada',
+          text: 'La operación ha sido creada correctamente.',
+          icon: 'success',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#3085d6'
+        });
+      }
+
       await refreshOperations();
       setIsAddOpen(false);
+      setSelectedOperation(undefined);
     } catch (error) {
       console.error("Error al guardar la operación:", error);
+
+      Swal.fire({
+        title: 'Error',
+        text: isEdit
+          ? 'Error al actualizar la operación. Inténtelo de nuevo.'
+          : 'Error al crear la operación. Inténtelo de nuevo.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#3085d6'
+      });
     }
   };
+
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
@@ -178,10 +258,6 @@ export default function Operation() {
     // Implementar navegación a detalles o abrir modal
   };
 
-  const handleEditOperation = (operation: OperationModel) => {
-    console.log("Editar operación:", operation);
-    // Implementar navegación o abrir modal de edición
-  };
 
   const handleDeleteOperation = (operation: OperationModel) => {
     if (
@@ -271,8 +347,8 @@ export default function Operation() {
           exportColumns={exportColumns}
           currentView="operations"
         />
-        
-        <FilterBar 
+
+        <FilterBar
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           statusFilter={statusFilter}
@@ -306,7 +382,7 @@ export default function Operation() {
           <div className="font-semibold">Filtros activos:</div>
 
           {statusFilter !== "all" && (
-            <FilterTag 
+            <FilterTag
               label="Estado"
               value={getStatusLabel(statusFilter)}
               onRemove={() => setStatusFilter("all")}
@@ -314,7 +390,7 @@ export default function Operation() {
           )}
 
           {startDateFilter && (
-            <FilterTag 
+            <FilterTag
               label="Desde"
               value={formatDisplayDate(startDateFilter)}
               onRemove={() => setStartDateFilter("")}
@@ -322,7 +398,7 @@ export default function Operation() {
           )}
 
           {endDateFilter && (
-            <FilterTag 
+            <FilterTag
               label="Hasta"
               value={formatDisplayDate(endDateFilter)}
               onRemove={() => setEndDateFilter("")}
@@ -338,23 +414,25 @@ export default function Operation() {
         </div>
       )}
 
-{isAddOpen && (
-  <AddOperationDialog
-    open={isAddOpen}
-    onOpenChange={(open) => {
-      console.log("onOpenChange called with:", open);
-      setIsAddOpen(open);
-    }}
-    areas={areas || []}
-    services={services || []}
-    clients={clients || []}
-    availableWorkers={workers || []}
-    supervisors={users?.filter((user) => 
-      user.cargo === "SUPERVISOR" || user.cargo === "COORDINADOR"
-    ) || []}
-    onSave={handleSave}
-  />
-)}
+      {isAddOpen && (
+        <AddOperationDialog
+          open={isAddOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedOperation(undefined);
+            }
+            setIsAddOpen(open);
+          }}
+          operation={selectedOperation}
+          areas={areas || []}
+          services={services || []}
+          clients={clients || []}
+          availableWorkers={workers || []}
+          supervisors={users?.filter(u => u.cargo === 'SUPERVISOR' || u.cargo === "COORDINADOR") || []}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 }
+

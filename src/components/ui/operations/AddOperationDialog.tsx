@@ -11,6 +11,8 @@ import SupervisorsForm from "./SupervisorsForm";
 import { HiOutlineClipboardList, HiOutlineUserGroup, HiOutlineUsers } from "react-icons/hi";
 import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 import { AnimatePresence, motion } from "framer-motion";
+import Swal from "sweetalert2";
+
 
 interface AddOperationDialogProps {
   open: boolean;
@@ -21,7 +23,7 @@ interface AddOperationDialogProps {
   clients: Client[];
   availableWorkers: Worker[];
   supervisors: User[];
-  onSave?: (data: any) => Promise<void>;
+  onSave?: (data: any, isEdit: boolean) => Promise<void>;
 }
 
 export function AddOperationDialog({
@@ -35,9 +37,12 @@ export function AddOperationDialog({
   supervisors,
   onSave
 }: AddOperationDialogProps) {
+  
   const isEditMode = !!operation;
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
 
   const [formData, setFormData] = useState({
@@ -47,8 +52,8 @@ export function AddOperationDialog({
     motorShip: operation?.motorShip || "",
     dateStart: operation?.dateStart || "",
     dateEnd: operation?.endDate || "",
-    timeStart: operation?.startTime || "",
-    timeEnd: operation?.endTime || "",
+    timeStart: operation?.timeStart || "",
+    timeEnd: operation?.timeEnd|| "",
     id_area: operation?.jobArea?.id || "",
     id_task: operation?.task?.id || "",
     id_client: operation?.client?.id || "",
@@ -56,6 +61,40 @@ export function AddOperationDialog({
     groups: operation?.workerGroups || [],
     inChargedIds: operation?.inCharge?.map(s => s.id) || []
   });
+
+    // Resetear el formulario cuando cambia el modo (crear/editar) o se abre el modal
+    useEffect(() => {
+      if (open) {
+        setCurrentStep(1);
+        setFormData({
+          id: operation?.id || 0,
+          status: operation?.status || OperationStatus.PENDING,
+          zone: operation?.zone?.toString() || "",
+          motorShip: operation?.motorShip || "",
+          dateStart: operation?.dateStart || "",
+          dateEnd: operation?.endDate || "",
+          timeStart: operation?.timeStart || "",
+          timeEnd: operation?.timeEnd || "",
+          id_area: operation?.jobArea?.id?.toString() || "",
+          id_task: operation?.task?.id?.toString() || "",
+          id_client: operation?.client?.id?.toString() || "",
+          workerIds: operation?.workers?.map(w => w.id) || [],
+          groups: operation?.workerGroups || [],
+          inChargedIds: operation?.inCharge?.map(s => s.id) || []
+        });
+        setErrors({
+          zone: "",
+          motorShip: "",
+          dateStart: "",
+          timeStart: "",
+          id_area: "",
+          id_task: "",
+          id_client: "",
+          workers: "",
+          inCharged: ""
+        });
+      }
+    }, [open, operation]);
 
   const [errors, setErrors] = useState({
     zone: "",
@@ -113,10 +152,31 @@ export function AddOperationDialog({
     }
   ];
 
-  const validateStep = (step: number) => {
+   const validateStep = (step: number) => {
+    // Crear una copia del objeto de errores actual
     const newErrors = { ...errors };
     let isValid = true;
-
+  
+    // Limpiar errores previos para este paso específico
+    switch (step) {
+      case 1:
+        newErrors.workers = "";
+        break;
+      case 2:
+        newErrors.zone = "";
+        newErrors.motorShip = "";
+        newErrors.dateStart = "";
+        newErrors.timeStart = "";
+        newErrors.id_area = "";
+        newErrors.id_task = "";
+        newErrors.id_client = "";
+        break;
+      case 3:
+        newErrors.inCharged = "";
+        break;
+    }
+  
+    // Realizar las validaciones
     switch (step) {
       case 1:
         if (formData.workerIds.length === 0 && formData.groups.length === 0) {
@@ -130,8 +190,33 @@ export function AddOperationDialog({
           newErrors.zone = "La zona es obligatoria";
           isValid = false;
         }
-        // ... resto de validaciones ...
+
+        if (!formData.id_task) {
+          newErrors.id_task = "La tarea es obligatoria";
+          isValid = false;
+        }
+  
+        if(!formData.id_client) {
+          newErrors.id_client = "El cliente es obligatorio";
+          isValid = false;
+        }
+  
+        if(!formData.id_area) {
+          newErrors.id_area = "El área es obligatoria";
+          isValid = false;
+        }
+  
+        if(!formData.dateStart) {
+          newErrors.dateStart = "La fecha de inicio es obligatoria";
+          isValid = false;
+        }
+  
+        if(!formData.timeStart) {
+          newErrors.timeStart = "La hora de inicio es obligatoria";
+          isValid = false;
+        }
         break;
+        
       case 3:
         if (formData.inChargedIds.length === 0) {
           newErrors.inCharged = "Debe seleccionar al menos un supervisor";
@@ -139,14 +224,37 @@ export function AddOperationDialog({
         }
         break;
     }
-
+  
+    // Actualizar el estado de los errores
     setErrors(newErrors);
     return isValid;
   };
 
+    // Función para validar todos los pasos
+    const validateAllSteps = () => {
+      for (let step = 1; step <= totalSteps; step++) {
+        if (!validateStep(step)) {
+          setCurrentStep(step);
+          return false;
+        }
+      }
+      return true;
+    };
+  
+
+
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+    } else {
+      // Mostrar notificación de error con SweetAlert2
+      Swal.fire({
+        title: 'Campos incompletos',
+        text: 'Por favor complete todos los campos requeridos para continuar.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#3085d6'
+      });
     }
   };
 
@@ -156,16 +264,72 @@ export function AddOperationDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateStep(currentStep)) {
-      try {
-        await onSave?.({
-          ...formData,
-          id_group: Math.random().toString(36).substring(7)
-        });
-        onOpenChange(false);
-      } catch (error) {
-        console.error("Error al guardar:", error);
-      }
+    
+    // Validar el paso actual
+    if (!validateStep(currentStep)) {
+      Swal.fire({
+        title: 'Campos incompletos',
+        text: 'Por favor complete todos los campos requeridos.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#3085d6'
+      });
+      return;
+    }
+    
+    // Validar todos los pasos
+    if (!validateAllSteps()) {
+      Swal.fire({
+        title: 'Información incompleta',
+        text: 'Por favor complete todos los campos requeridos en todos los pasos.',
+        icon: 'warning',
+        confirmButtonText: 'Revisar',
+        confirmButtonColor: '#3085d6'
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Preparar los datos para guardar
+      const dataToSave = {
+        ...formData,
+        // Si estamos editando, usar el ID existente, sino generar uno nuevo
+        id_group: isEditMode ? formData.id : Math.random().toString(36).substring(7)
+      };
+      
+      // Llamar a la función onSave con el indicador de modo
+      await onSave?.(dataToSave, isEditMode);
+      
+      // Mostrar notificación de éxito
+      Swal.fire({
+        title: isEditMode ? 'Operación actualizada' : 'Operación creada',
+        text: isEditMode 
+          ? 'La operación ha sido actualizada correctamente.'
+          : 'La operación ha sido creada correctamente.',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#3085d6'
+      });
+      
+      // Cerrar el modal
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      
+      // Mostrar notificación de error
+      Swal.fire({
+        title: 'Error',
+        text: isEditMode 
+          ? 'Error al actualizar la operación. Inténtelo de nuevo.'
+          : 'Error al crear la operación. Inténtelo de nuevo.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#3085d6'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

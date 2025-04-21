@@ -5,6 +5,7 @@ import { FaMapMarkerAlt, FaShip, FaClock } from "react-icons/fa";
 import { BiArea } from "react-icons/bi";
 import { MdHomeRepairService } from "react-icons/md";
 import { BsBuildingsFill } from "react-icons/bs";
+import { DateFilter } from "@/components/custom/filter/DateFilterProps";
 
 interface BasicInfoFormProps {
   formData: any;
@@ -88,7 +89,7 @@ export default function BasicInfoForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Buque <span className="text-red-500">*</span>
+              Buque 
             </label>
             <div className="relative">
               <input
@@ -124,12 +125,11 @@ export default function BasicInfoForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Fecha Inicio <span className="text-red-500">*</span>
             </label>
-            <input
-              type="date"
-              name="dateStart"
-              value={formData.dateStart}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
+            <DateFilter
+              value={formData.dateStart.toString().slice(0, 10)}
+              onChange={(value) => handleChange({ target: { name: 'dateStart', value } } as React.ChangeEvent<HTMLInputElement>)}
+              label="Fecha Inicio"
+              
             />
             {errors.dateStart && (
               <p className="mt-1.5 text-sm text-red-500 flex items-center">
@@ -143,10 +143,13 @@ export default function BasicInfoForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Hora Inicio <span className="text-red-500">*</span>
             </label>
+            {
+              console.log(formData)
+            }
             <input
               type="time"
               name="timeStart"
-              value={formData.timeStart}
+              value={formData.timeStrat}
               onChange={handleChange}
               className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
             />
@@ -162,13 +165,18 @@ export default function BasicInfoForm({
             <label className="block text-sm font-medium text-gray-500 mb-2">
               Fecha Fin <span className="text-xs text-gray-400">(Opcional)</span>
             </label>
-            <input
-              type="date"
-              name="dateEnd"
+            <DateFilter
               value={formData.dateEnd}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
+              onChange={(value) => handleChange({ target: { name: 'dateEnd', value } } as React.ChangeEvent<HTMLInputElement>)}
+              label="Fecha Fin"
+              
             />
+            {errors.dateEnd && (
+              <p className="mt-1.5 text-sm text-red-500 flex items-center">
+                <span className="mr-1.5">•</span>
+                {errors.dateEnd}
+              </p>
+            )}
           </div>
 
           <div>
