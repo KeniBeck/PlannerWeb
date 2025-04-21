@@ -5,6 +5,7 @@ export interface OperationFilterDto {
   jobAreaId?: number;
   userId?: number;
   search?: string;
+  inChargedId?: number;
 }
 
 enum StatusOperation {

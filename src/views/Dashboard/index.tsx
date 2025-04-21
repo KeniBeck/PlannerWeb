@@ -27,7 +27,6 @@ import Profile from "./profile/Profile";
 import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
 
-
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const location = useLocation();
@@ -48,8 +47,9 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-50">
       {/* Menú lateral */}
       <aside
-        className={`bg-white shadow-lg transition-all duration-300 ease-in-out z-10 ${isMenuOpen ? "w-64" : "w-20"
-          } relative overflow-y-auto h-screen`}
+        className={`bg-white shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isMenuOpen ? "w-64" : "w-20"
+        } relative overflow-y-auto h-screen`}
       >
         {/* Botón de hamburguesa */}
         <button
@@ -68,14 +68,12 @@ export default function Dashboard() {
             <AiOutlineMenu size={16} />
           )}
         </button>
-        <div
-          className="overflow-y-auto h-full pt-16"
-        >
-
+        <div className="overflow-y-auto h-full pt-16">
           {/* Logo y encabezado */}
           <div
-            className={`px-0 py-0 ${isMenuOpen ? "text-center" : "flex justify-center"
-              }`}
+            className={`px-0 py-0 ${
+              isMenuOpen ? "text-center" : "flex justify-center"
+            }`}
           >
             <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white font-bold text-xl mx-auto">
               P
@@ -164,7 +162,6 @@ export default function Dashboard() {
                 )}
               </li>
 
-
               <MenuItem
                 to="/dashboard/profile"
                 icon={<AiOutlineUser size={20} />}
@@ -182,13 +179,10 @@ export default function Dashboard() {
                   localStorage.removeItem("token");
                   window.location.href = "/login";
                 }}
-                
               />
             </ul>
           </nav>
         </div>
-
-
       </aside>
 
       {/* Contenido principal */}
@@ -225,40 +219,64 @@ export default function Dashboard() {
             <Route
               path="/reports"
               element={
-                <LayeredProviders features={[Feature.OPERATION, Feature.AREAS, Feature.WORKERS]}>
-
-                <Reports />
+                <LayeredProviders
+                  features={[Feature.OPERATION, Feature.AREAS, Feature.WORKERS]}
+                >
+                  <Reports />
                 </LayeredProviders>
-
               }
             />
-        
-         
 
-            <Route path="/services" element={<LayeredProviders features={[Feature.SERVICES]}>
-              <Services />
-            </LayeredProviders>} />
-            <Route path="/supersvisors" element={<LayeredProviders features={[Feature.USERS]}>
-              <Supervisors />
-            </LayeredProviders>} />
-            <Route path="/reports" element={<div className="text-center p-10 text-gray-600">Reportes en desarrollo</div>} />
-            <Route path="/clients" element={<LayeredProviders features={[Feature.CLIENTS]}>
-              <Clients />
-            </LayeredProviders>} />
-            <Route path="/users" element={<LayeredProviders features={[Feature.USERS]}>
-              <Users />
-            </LayeredProviders>} />
             <Route
-              path="/areas" element={
+              path="/services"
+              element={
+                <LayeredProviders features={[Feature.SERVICES]}>
+                  <Services />
+                </LayeredProviders>
+              }
+            />
+            <Route
+              path="/supersvisors"
+              element={
+                <LayeredProviders features={[Feature.USERS]}>
+                  <Supervisors />
+                </LayeredProviders>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <div className="text-center p-10 text-gray-600">
+                  Reportes en desarrollo
+                </div>
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                <LayeredProviders features={[Feature.CLIENTS]}>
+                  <Clients />
+                </LayeredProviders>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <LayeredProviders features={[Feature.USERS]}>
+                  <Users />
+                </LayeredProviders>
+              }
+            />
+            <Route
+              path="/areas"
+              element={
                 <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
                   <Areas />
                 </LayeredProviders>
               }
             />
 
-
             <Route path="/profile" element={<Profile />} />
-
           </Routes>
         </main>
       </div>
@@ -276,20 +294,28 @@ interface MenuItemProps {
   onClick?: () => void;
 }
 
-function MenuItem({ to, icon, label, isOpen, isActive, onClick }: MenuItemProps) {
+function MenuItem({
+  to,
+  icon,
+  label,
+  isOpen,
+  isActive,
+  onClick,
+}: MenuItemProps) {
   return (
     <li>
       <Link
         to={to}
         className={`
           flex items-center p-3 rounded-lg transition-all
-          ${isActive
-            ? "bg-blue-50 text-blue-700"
-            : "text-gray-600 hover:bg-gray-100"
+          ${
+            isActive
+              ? "bg-blue-50 text-blue-700"
+              : "text-gray-600 hover:bg-gray-100"
           }
           ${isOpen ? "" : "justify-center"}
         `}
-        onClick={onClick}  
+        onClick={onClick}
       >
         <span className={`${isActive ? "text-blue-600" : ""}`}>{icon}</span>
         {isOpen && <span className="ml-3 font-medium">{label}</span>}

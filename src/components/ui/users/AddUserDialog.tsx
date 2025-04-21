@@ -22,7 +22,7 @@ export function AddUserDialog({ open, onOpenChange, user, onSave }: AddUserDialo
     dni: user?.dni || "",
     phone: user?.phone || "",
     password: "",
-    cargo: user?.cargo || "SUPERVISOR",
+    cargo: user?.occupation || "SUPERVISOR",
   });
 
   const [apiError, setApiError] = useState(""); 
@@ -48,7 +48,7 @@ export function AddUserDialog({ open, onOpenChange, user, onSave }: AddUserDialo
         dni: user?.dni || "",
         phone: user?.phone || "",
         password: "",
-        cargo: user?.cargo || "SUPERVISOR",
+        cargo: user?.occupation || "SUPERVISOR",
       });
       setErrors({ name: "", username: "", dni: "", phone: "", password: "", cargo: "" });
     }
@@ -148,7 +148,7 @@ export function AddUserDialog({ open, onOpenChange, user, onSave }: AddUserDialo
           username: formData.username,
           dni: formData.dni,
           phone: formData.phone,
-          cargo: formData.cargo,
+          occupation: formData.cargo,
           role,
         }
       : {
@@ -157,7 +157,7 @@ export function AddUserDialog({ open, onOpenChange, user, onSave }: AddUserDialo
           username: formData.username,
           dni: formData.dni,
           phone: formData.phone,
-          cargo: formData.cargo,
+          occupation: formData.cargo,
           role,
           password: formData.password,
         };

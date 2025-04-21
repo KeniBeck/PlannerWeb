@@ -1,12 +1,18 @@
-import { useState, useEffect, useRef } from "react";
-import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { useState, useEffect, useRef, useMemo } from "react";
+import SectionHeader from "@/components/ui/SectionHeader";
 import { OperationList } from "@/components/ui/operations/OperationList";
 import { useOperations } from "@/contexts/OperationContext";
-import { Operation as OperationModel, OperationStatus } from "@/core/model/operation";
-import { format, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import {
+  Operation as OperationModel,
+  OperationStatus,
+} from "@/core/model/operation";
+import { parseISO } from "date-fns";
 import { FilterTag } from "@/components/custom/filter/FilterTagProps";
 import { FilterBar } from "@/components/custom/filter/FilterBarProps";
+import { useAreas } from "@/contexts/AreasContext";
+import { useUsers } from "@/contexts/UsersContext";
+import { getOperationExportColumns } from "./OperationExportColumns";
+// Definir el enum para que coincida con el modelo de Operation
 import { AddOperationDialog } from "@/components/ui/operations/AddOperationDialog";
 import { useAreas } from "@/contexts/AreasContext";
 import { useServices } from "@/contexts/ServicesContext";
@@ -22,6 +28,36 @@ export default function Operation() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
+  const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [supervisorFilter, setSupervisorFilter] = useState<string>("all");
+  const { areas, refreshData } = useAreas();
+  const { users } = useUsers();
+
+  const supervisorsAndCoordinators = useMemo(() => {
+    if (!users) return [];
+
+    return users
+      .filter((user) => {
+        return (
+          user.occupation === "SUPERVISOR" || user.occupation === "COORDINADOR"
+        );
+      })
+      .map((user) => ({
+        id: user.id,
+        name: user.name,
+      }));
+  }, [users]);
+
+  const supervisorOptions = useMemo(
+    () => [
+      { value: "all", label: "Todos los supervisores" },
+      ...supervisorsAndCoordinators.map((supervisor) => ({
+        value: supervisor.id.toString(),
+        label: supervisor.name,
+      })),
+    ],
+    [supervisorsAndCoordinators]
+  );
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<OperationModel | undefined>(undefined);
 
@@ -29,6 +65,8 @@ export default function Operation() {
   const prevStatusFilterRef = useRef<string>("all");
   const prevStartDateRef = useRef<string>("");
   const prevEndDateRef = useRef<string>("");
+  const prevAreaFilterRef = useRef<string>("all");
+  const prevSupervisorFilterRef = useRef<string>("all");
 
   // Obtener datos de operaciones del contexto
   const {
@@ -60,20 +98,34 @@ export default function Operation() {
     { value: OperationStatus.CANCELED, label: "Canceladas" },
   ];
 
+  // Opciones para el filtro de áreas
+  const areaOptions = [
+    { value: "all", label: "Todas las áreas" },
+    ...(areas?.map((area) => ({
+      value: area.id.toString(),
+      label: area.name,
+    })) || []),
+  ];
+
   // Efecto para aplicar filtros cuando cambian
   useEffect(() => {
     // Verificar si algún filtro cambió realmente para evitar bucles
     const statusChanged = statusFilter !== prevStatusFilterRef.current;
     const startDateChanged = startDateFilter !== prevStartDateRef.current;
     const endDateChanged = endDateFilter !== prevEndDateRef.current;
+    const areaChanged = areaFilter !== prevAreaFilterRef.current;
+    const supervisorChanged =
+      supervisorFilter !== prevSupervisorFilterRef.current;
 
-    if (statusChanged || startDateChanged || endDateChanged) {
+    if (statusChanged || startDateChanged || endDateChanged || areaChanged || supervisorChanged) {
       console.log("[Operation] Cambios en filtros detectados");
 
       // Actualizar referencias a valores anteriores
       prevStatusFilterRef.current = statusFilter;
       prevStartDateRef.current = startDateFilter;
       prevEndDateRef.current = endDateFilter;
+      prevAreaFilterRef.current = areaFilter;
+      prevSupervisorFilterRef.current = supervisorFilter;
 
       // Crear una copia del objeto de filtros actual
       const newFilters = { ...filters };
@@ -87,6 +139,31 @@ export default function Operation() {
         if ("status" in newFilters) {
           delete newFilters.status;
           console.log("[Operation] Quitando filtro de estado");
+        }
+      }
+      // Aplicar filtro de supervisor solo si no es "all"
+      if (supervisorFilter && supervisorFilter !== "all") {
+        console.log(
+          `[Operation] Aplicando filtro de supervisor: ${supervisorFilter}`
+        );
+        newFilters.inChargedId = parseInt(supervisorFilter);
+      } else {
+        // Si es "all", quitar el filtro de supervisor
+        if ("inChargedId" in newFilters) {
+          delete newFilters.inChargedId;
+          console.log("[Operation] Quitando filtro de supervisor");
+        }
+      }
+
+      // Aplicar filtro de área solo si no es "all"
+      if (areaFilter && areaFilter !== "all") {
+        console.log(`[Operation] Aplicando filtro de área: ${areaFilter}`);
+        newFilters.jobAreaId = parseInt(areaFilter);
+      } else {
+        // Si es "all", quitar el filtro de área
+        if ("areaId" in newFilters) {
+          delete newFilters.jobAreaId;
+          console.log("[Operation] Quitando filtro de área");
         }
       }
 
@@ -212,12 +289,24 @@ export default function Operation() {
     }
   };
 
+  }, [
+    statusFilter,
+    startDateFilter,
+    endDateFilter,
+    areaFilter,
+    supervisorFilter,
+    setFilters,
+    setPage,
+    areas,
+  ]);
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
     setStatusFilter("all");
     setStartDateFilter("");
     setEndDateFilter("");
+    setAreaFilter("all");
+    setSupervisorFilter("all");
   };
 
   // Filtrado adicional solo para búsqueda por término (los filtros de estado ya se aplican en el backend)
@@ -252,6 +341,19 @@ export default function Operation() {
     }
   };
 
+  // Obtener nombre del área por ID
+  const getAreaName = (areaId: string): string => {
+    const area = areas?.find((a) => a.id.toString() === areaId);
+    return area?.name || "Área desconocida";
+  };
+
+  const getSupervisorName = (supervisorId: string): string => {
+    const supervisor = supervisorsAndCoordinators.find(
+      (s) => s.id.toString() === supervisorId
+    );
+    return supervisor?.name || "Supervisor desconocido";
+  };
+
   // Manejadores para ver, editar y eliminar operaciones
   const handleViewOperation = (operation: OperationModel) => {
     console.log("Ver detalles:", operation);
@@ -269,53 +371,16 @@ export default function Operation() {
       // Implementar eliminación
     }
   };
-
   // Columnas para exportación a Excel
-  const exportColumns: ExcelColumn[] = [
-    { header: "ID", field: "id" },
-    { header: "Nombre", field: "name" },
-    {
-      header: "Área",
-      field: "area.name",
-      value: (op) => op.area?.name || "Sin área",
-    },
-    {
-      header: "Cliente",
-      field: "client.name",
-      value: (op) => op.client?.name || "Sin cliente",
-    },
-    {
-      header: "Fecha Inicio",
-      field: "startDate",
-      value: (op) =>
-        op.startDate
-          ? format(new Date(op.startDate), "dd/MM/yyyy", { locale: es })
-          : "N/A",
-    },
-    { header: "Hora Inicio", field: "startTime" },
-    {
-      header: "Fecha Fin",
-      field: "endDate",
-      value: (op) =>
-        op.endDate
-          ? format(new Date(op.endDate), "dd/MM/yyyy", { locale: es })
-          : "N/A",
-    },
-    {
-      header: "Embarcación",
-      field: "motorship",
-      value: (op) => op.motorship || "N/A",
-    },
-    {
-      header: "Estado",
-      field: "status",
-      value: (op) => getStatusLabel(op.status),
-    },
-  ];
+  const exportColumns = getOperationExportColumns();
 
   // Verificar si hay filtros activos
   const hasActiveFilters =
-    statusFilter !== "all" || startDateFilter !== "" || endDateFilter !== "";
+    statusFilter !== "all" ||
+    startDateFilter !== "" ||
+    endDateFilter !== "" ||
+    supervisorFilter !== "all" ||
+    areaFilter !== "all";
 
   // Formatear fechas para mostrar
   const formatDisplayDate = (dateString: string) => {
@@ -329,6 +394,12 @@ export default function Operation() {
     }
   };
 
+  const refreshDataLocal = () => {
+    console.log("Refrescar datos de operaciones");
+    refreshOperations();
+    refreshData();
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="rounded-xl shadow-md">
@@ -340,7 +411,7 @@ export default function Operation() {
             console.log("Agregar operación****");
             setIsAddOpen(true);
           }}
-          refreshData={() => Promise.resolve(refreshOperations())}
+          refreshData={() => Promise.resolve(refreshDataLocal())}
           loading={isLoading}
           exportData={filteredOperations}
           exportFileName="operaciones"
@@ -357,9 +428,16 @@ export default function Operation() {
           setStartDateFilter={setStartDateFilter}
           endDateFilter={endDateFilter}
           setEndDateFilter={setEndDateFilter}
+          areaFilter={areaFilter}
+          setAreaFilter={setAreaFilter}
+          areaOptions={areaOptions}
           statusOptions={statusOptions}
+          supervisorFilter={supervisorFilter}
+          setSupervisorFilter={setSupervisorFilter}
+          supervisorOptions={supervisorOptions}
           clearAllFilters={clearAllFilters}
           hasActiveFilters={hasActiveFilters}
+          useDateRangeFilter={true}
         />
       </div>
 
@@ -386,6 +464,22 @@ export default function Operation() {
               label="Estado"
               value={getStatusLabel(statusFilter)}
               onRemove={() => setStatusFilter("all")}
+            />
+          )}
+
+          {areaFilter !== "all" && (
+            <FilterTag
+              label="Área"
+              value={getAreaName(areaFilter)}
+              onRemove={() => setAreaFilter("all")}
+            />
+          )}
+
+          {supervisorFilter !== "all" && (
+            <FilterTag
+              label="Supervisor"
+              value={getSupervisorName(supervisorFilter)}
+              onRemove={() => setSupervisorFilter("all")}
             />
           )}
 
@@ -435,4 +529,3 @@ export default function Operation() {
     </div>
   );
 }
-

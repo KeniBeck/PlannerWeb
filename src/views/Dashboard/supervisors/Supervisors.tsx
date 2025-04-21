@@ -22,7 +22,7 @@ export default function Supervisors() {
 
   // Filtrar solo supervisores y coordinadores
   const supervisors = useMemo(() => 
-    users.filter(user => user.cargo === "SUPERVISOR" || user.cargo === "COORDINADOR"), 
+    users.filter(user => user.occupation === "SUPERVISOR" || user.occupation === "COORDINADOR"), 
     [users]
   );
 
@@ -95,8 +95,8 @@ export default function Supervisors() {
       cell: (user) => {
         return (
           <span className={`px-2 py-1 rounded-full text-xs font-medium 
-            ${user.cargo === "SUPERVISOR" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}>
-            {user.cargo}
+            ${user.occupation === "SUPERVISOR" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}>
+            {user.occupation}
           </span>
         );
       }

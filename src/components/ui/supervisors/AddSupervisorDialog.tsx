@@ -17,7 +17,7 @@ export function AddSupervisorDialog({ open, onOpenChange, supervisor, onSave }: 
     name: supervisor?.name || "",
     dni: supervisor?.dni || "",
     phone: supervisor?.phone || "",
-    cargo: supervisor?.cargo || "",
+    cargo: supervisor?.occupation || "",
   });
 
   // Estado para validación
@@ -36,7 +36,7 @@ export function AddSupervisorDialog({ open, onOpenChange, supervisor, onSave }: 
         name: supervisor?.name || "",
         dni: supervisor?.dni || "",
         phone: supervisor?.phone || "",
-        cargo: supervisor?.cargo || "",
+        cargo: supervisor?.occupation || "",
       });
       setErrors({ name: "", dni: "", phone: "", cargo: "" });
     }
@@ -175,7 +175,7 @@ export function AddSupervisorDialog({ open, onOpenChange, supervisor, onSave }: 
       name: formData.name,
       dni: formData.dni,
       phone: formData.phone,
-      cargo: formData.cargo,
+      occupation: formData.cargo,
     });
     
     onOpenChange(false);
