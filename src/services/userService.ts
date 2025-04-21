@@ -40,8 +40,8 @@ class UserService {
   async addUser(userData: Omit<User, "id">): Promise<User> {
     try {
       const dataToSend = {
-        occupation: userData.cargo,
-        role: this.getRoleFromCargo(userData.cargo),
+        occupation: userData.occupation,
+        role: this.getRoleFromCargo(userData.occupation),
         dni: userData.dni,
         phone: userData.phone,
         username: userData.username,
@@ -62,8 +62,8 @@ class UserService {
   async updateUser(userData: User): Promise<User> {
     try {
       const dataToSend = {
-        occupation: userData.cargo,
-        role: this.getRoleFromCargo(userData.cargo),
+        occupation: userData.occupation,
+        role: this.getRoleFromCargo(userData.occupation),
         dni: userData.dni,
         phone: userData.phone,
         username: userData.username,

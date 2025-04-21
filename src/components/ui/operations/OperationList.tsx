@@ -178,9 +178,7 @@ export function OperationList({
         cell: (operation) => {
           try {
             return operation.dateStart
-              ? format(new Date(operation.dateStart), "dd/MM/yyyy", {
-                  locale: es,
-                })
+              ? operation.dateStart.split("T")[0]
               : "N/A";
           } catch (error) {
             return "Fecha inválida";

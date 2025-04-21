@@ -19,7 +19,7 @@ export const SearchFilter = ({
       <input
         type="text"
         placeholder={placeholder}
-        className="p-2 pl-10 w-full border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        className="p-2.5 pl-10 w-full border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

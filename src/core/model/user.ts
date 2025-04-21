@@ -3,7 +3,7 @@ export interface User {
     name: string;
     phone: string;
     dni: string;
-    cargo: string;
+    occupation: string;
     username: string;
     password?: string;
 }

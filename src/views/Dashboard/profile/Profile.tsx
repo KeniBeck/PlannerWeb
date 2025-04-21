@@ -69,7 +69,7 @@ export default function Profile() {
         dni: user.dni,
         phone: user.phone,
         username: user.username,
-        occupation: user.cargo,
+        occupation: user.occupation,
       };
       
       await api.patch(
@@ -95,7 +95,7 @@ export default function Profile() {
         user.name !== originalData.name ||
         user.dni !== originalData.dni ||
         user.phone !== originalData.phone ||
-        user.cargo !== originalData.cargo;
+        user.occupation !== originalData.occupation;
       
       setHasChanges(changed);
     }
@@ -158,7 +158,7 @@ export default function Profile() {
             <div className="flex items-center text-gray-500 mt-1">
               <span className="text-blue-600 font-medium">{user.username}</span>
               <span className="mx-2">•</span>
-              <span>{AVAILABLE_ROLES.find(role => role.value === user.cargo)?.label || user.cargo}</span>
+              <span>{AVAILABLE_ROLES.find(role => role.value === user.occupation)?.label || user.occupation}</span>
             </div>
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function Profile() {
                 <select
                   id="cargo"
                   name="cargo"
-                  value={user.cargo}
+                  value={user.occupation}
                   onChange={(e) => handleFieldChange('cargo', e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
@@ -235,7 +235,7 @@ export default function Profile() {
                     </option>
                   ))}
                 </select>
-                {!user.cargo && (
+                {!user.occupation && (
                   <p className="mt-1 text-sm text-red-500">El cargo es obligatorio</p>
                 )}
               </div>
