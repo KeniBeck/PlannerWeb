@@ -38,7 +38,7 @@ export interface DataTableProps<T> {
   emptyIcon?: ReactNode;           // Icono cuando no hay datos
   initialSort?: SortConfig;        // Configuración inicial de ordenamiento
   className?: string;              // Clases CSS adicionales para la tabla
-  
+
   // Props para paginación externa
   externalPagination?: boolean;    // Indica si la paginación es manejada externamente
   currentPage?: number;            // Página actual (para paginación externa)
@@ -64,10 +64,10 @@ const getNestedValue = (obj: any, path: string) => {
 // Función para comparar valores y ordenar
 const compareValues = (a: any, b: any, key: string) => {
   // Obtener los valores considerando propiedades anidadas
-  const valueA = typeof key === 'string' && key.includes('.') 
-    ? getNestedValue(a, key) 
+  const valueA = typeof key === 'string' && key.includes('.')
+    ? getNestedValue(a, key)
     : a[key];
-  
+
   const valueB = typeof key === 'string' && key.includes('.')
     ? getNestedValue(b, key)
     : b[key];
@@ -117,9 +117,9 @@ export function DataTable<T extends { id: number | string }>({
   // Valores finales para la interfaz
   const currentPage = externalPagination ? (externalCurrentPage || 1) : internalCurrentPage;
   const effectiveTotalItems = externalPagination ? (externalTotalItems || data.length) : data.length;
-  
+
   // Calcular total de páginas si no se proporciona externamente
-  const totalPages = externalPagination 
+  const totalPages = externalPagination
     ? (externalTotalPages || Math.ceil(effectiveTotalItems / itemsPerPageState))
     : Math.ceil(data.length / itemsPerPageState);
 
@@ -140,13 +140,13 @@ export function DataTable<T extends { id: number | string }>({
   // Aplicar ordenamiento a los datos
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return data;
-    
+
     const sortableData = [...data];
     sortableData.sort((a, b) => {
       const comparison = compareValues(a, b, sortConfig.key);
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
-    
+
     return sortableData;
   }, [data, sortConfig]);
 
@@ -173,7 +173,7 @@ export function DataTable<T extends { id: number | string }>({
 
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = Number(e.target.value);
-    
+
     if (externalPagination && onItemsPerPageChange) {
       onItemsPerPageChange(newValue);
     } else {
@@ -265,7 +265,7 @@ export function DataTable<T extends { id: number | string }>({
             ))}
           </select>
         </div>
-        
+
         {/* Componente de paginación */}
         <Pagination
           currentPage={currentPage}
@@ -275,15 +275,15 @@ export function DataTable<T extends { id: number | string }>({
           itemName={itemName}
         />
       </div>
-      
+
       <table className={`w-full border-collapse ${className}`}>
         <thead>
           <tr className="bg-blue-50 border-b border-blue-100">
             {columns.map((column, index) => (
-              <SortableHeader 
-                key={index} 
-                label={column.header} 
-                accessor={column.accessor as string} 
+              <SortableHeader
+                key={index}
+                label={column.header}
+                accessor={column.accessor as string}
               />
             ))}
             {actions && actions.length > 0 && (
@@ -301,50 +301,27 @@ export function DataTable<T extends { id: number | string }>({
                 className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
               >
                 {columns.map((column, index) => (
-                  <td 
-                    key={index} 
+                  <td
+                    key={index}
                     className={`py-3 px-4 text-sm text-gray-800 ${column.className || ''}`}
                   >
                     {renderCell(item, column)}
                   </td>
                 ))}
-                
+
                 {actions && actions.length > 0 && (
                   <td className="py-3 px-4 text-right">
-                    <div className="relative inline-block">
-                      <button
-                        onClick={(e) => toggleDropdown(item.id, e)}
-                        className="p-1.5 rounded-md hover:bg-gray-100 focus:outline-none"
-                      >
-                        <BsThreeDotsVertical className="h-4 w-4 text-gray-500" />
-                      </button>
-                      
-                      {activeDropdown === item.id && (
-                        <div 
-                          className="fixed mt-1 py-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-100"
-                          style={{
-                            position: 'absolute',
-                            right: '0',
-                            top: '100%',
-                          }}
+                    <div className="flex items-center justify-end space-x-2">
+                      {actions.map((action, index) => (
+                        <button
+                          key={index}
+                          onClick={() => action.onClick(item)}
+                          className={`p-1.5 rounded-md hover:bg-gray-100 focus:outline-none transition-colors ${action.className || ''}`}
+                          title={action.label}
                         >
-                          <div className="px-2">
-                            {actions.map((action, index) => (
-                              <button
-                                key={index}
-                                onClick={() => {
-                                  action.onClick(item);
-                                  setActiveDropdown(null);
-                                }}
-                                className={`w-full flex items-center px-3 py-2 text-sm hover:bg-blue-50 rounded-md transition-colors ${action.className || ''}`}
-                              >
-                                {action.icon && <span className="mr-2">{action.icon}</span>}
-                                {action.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                          {action.icon || action.label.charAt(0)}
+                        </button>
+                      ))}
                     </div>
                   </td>
                 )}

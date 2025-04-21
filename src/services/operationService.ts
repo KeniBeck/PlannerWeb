@@ -5,6 +5,8 @@ import {
   OperationFilterDto,
   OperationUpdateData,
 } from "./interfaces/operationDTO";
+
+
 class OperationService {
   async getPaginatedOperations(
     page = 1,
@@ -29,6 +31,8 @@ class OperationService {
       const url = `/operation/paginated?${queryParams.toString()}`;
 
       const response = await api.get(url);
+
+      console.log("Response data:", response.data);
 
       return response.data;
     } catch (error) {
