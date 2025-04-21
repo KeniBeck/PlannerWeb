@@ -14,11 +14,9 @@ import { useUsers } from "@/contexts/UsersContext";
 import { getOperationExportColumns } from "./OperationExportColumns";
 // Definir el enum para que coincida con el modelo de Operation
 import { AddOperationDialog } from "@/components/ui/operations/AddOperationDialog";
-import { useAreas } from "@/contexts/AreasContext";
 import { useServices } from "@/contexts/ServicesContext";
 import { useClients } from "@/contexts/ClientsContext";
 import { useWorkers } from "@/contexts/WorkerContext";
-import { useUsers } from "@/contexts/UsersContext";
 import { operationService } from "@/services/operationService";
 import Swal from "sweetalert2";
 
@@ -30,8 +28,13 @@ export default function Operation() {
   const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [supervisorFilter, setSupervisorFilter] = useState<string>("all");
-  const { areas, refreshData } = useAreas();
-  const { users } = useUsers();
+   // Obtener datos de áreas, servicios, clientes y trabajadores
+   const { areas, refreshData } = useAreas();
+   const { services } = useServices();
+   const { clients } = useClients();
+   const { workers } = useWorkers();
+   const { users } = useUsers();
+ 
 
   const supervisorsAndCoordinators = useMemo(() => {
     if (!users) return [];
@@ -81,12 +84,6 @@ export default function Operation() {
     createOperation
   } = useOperations();
 
-  // Obtener datos de áreas, servicios, clientes y trabajadores
-  const { areas } = useAreas();
-  const { services } = useServices();
-  const { clients } = useClients();
-  const { workers } = useWorkers();
-  const { users } = useUsers();
 
 
   // Opciones para el filtro de estado
@@ -289,16 +286,7 @@ export default function Operation() {
     }
   };
 
-  }, [
-    statusFilter,
-    startDateFilter,
-    endDateFilter,
-    areaFilter,
-    supervisorFilter,
-    setFilters,
-    setPage,
-    areas,
-  ]);
+  
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
@@ -522,7 +510,7 @@ export default function Operation() {
           services={services || []}
           clients={clients || []}
           availableWorkers={workers || []}
-          supervisors={users?.filter(u => u.cargo === 'SUPERVISOR' || u.cargo === "COORDINADOR") || []}
+          supervisors={users?.filter(u => u.occupation === 'SUPERVISOR' || u.occupation === "COORDINADOR") || []}
           onSave={handleSave}
         />
       )}
