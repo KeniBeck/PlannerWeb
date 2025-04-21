@@ -270,7 +270,7 @@ export function AddSupervisorDialog({ open, onOpenChange, supervisor, onSave }: 
             {/* Campo: Cargo/Especialidad */}
             <div>
               <label htmlFor="cargo" className="block text-sm font-medium text-gray-700 mb-1">
-                Especialidad <span className="text-red-500">*</span>
+                Cargo <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"

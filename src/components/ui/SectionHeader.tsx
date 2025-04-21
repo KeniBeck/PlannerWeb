@@ -25,6 +25,7 @@ interface SectionHeaderProps {
   // Para saber qué tipo de datos se está exportando (en caso de vistas alternantes)
   currentView?: string;
   showAddButton?: boolean;
+  showDownloadButton?: boolean;
 }
 
 export default function SectionHeader({
@@ -39,6 +40,7 @@ export default function SectionHeader({
   exportColumns,
   currentView,
   showAddButton = true,
+  showDownloadButton = true,
 }: SectionHeaderProps) {
   
   // Función para exportar a Excel usando ExcelJS

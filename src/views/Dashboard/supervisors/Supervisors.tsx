@@ -3,15 +3,22 @@ import { useUsers } from "@/contexts/UsersContext"; // Cambiamos a useUsers en l
 import { User } from "@/core/model/user";
 import { AiOutlineSearch } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
-import { DataTable, TableColumn } from "@/components/ui/DataTable";
+import { DataTable, TableAction, TableColumn } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { BsKey, BsPencil, BsTrash } from "react-icons/bs";
 
 export default function Supervisors() {
-  const { users, loading, refreshData } = useUsers();
+  const { users, loading, refreshData, deleteUser } = useUsers();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
   const [activeStatus, setActiveStatus] = useState<string>("all");
+  const [userToEdit, setUserToEdit] = useState<User | undefined>(undefined);
+  const [userToChangePassword, setUserToChangePassword] = useState<User | undefined>(undefined);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+
+
 
   // Filtrar solo supervisores y coordinadores
   const supervisors = useMemo(() => 
@@ -42,6 +49,26 @@ export default function Supervisors() {
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setActiveStatus(e.target.value);
   };
+
+    // Manejar la edición de un usuario
+    const handleEditUser = (user: User) => {
+      setUserToEdit(user);
+      setIsAddUserOpen(true);
+    };
+  
+    // Manejar cambio de contraseña
+    const handleChangePassword = (user: User) => {
+      setUserToChangePassword(user);
+      setIsChangePasswordOpen(true);
+    };
+
+    // Manejar la eliminación de un usuario
+      const handleDeleteUser = (userId: number) => {
+        if (window.confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
+          deleteUser(userId);
+          // StatusSuccessAlert("Éxito", "Usuario eliminado correctamente");
+        }
+      };
 
   // Definir las columnas para la tabla
   const columns: TableColumn<User>[] = useMemo(() => [
@@ -75,6 +102,28 @@ export default function Supervisors() {
       }
     },
   ], []);
+
+    // Definir acciones de la tabla
+    const actions: TableAction<User>[] = useMemo(() => [
+      {
+        label: "Editar",
+        icon: <BsPencil className="h-4 w-4" />,
+        onClick: handleEditUser,
+        className: "text-gray-700"
+      },
+      {
+        label: "Cambiar contraseña",
+        icon: <BsKey className="h-4 w-4" />,
+        onClick: handleChangePassword,
+        className: "text-blue-600"
+      },
+      {
+        label: "Eliminar",
+        icon: <BsTrash className="h-4 w-4" />,
+        onClick: (user) => handleDeleteUser(user.id),
+        className: "text-red-600"
+      }
+    ], []);
 
   // Definir las columnas para exportar supervisores a Excel
   const supervisorExportColumns: ExcelColumn[] = useMemo(() => [
@@ -160,6 +209,7 @@ export default function Supervisors() {
             itemName="supervisores"
             initialSort={{ key: 'id', direction: 'asc' }}
             emptyMessage="No se encontraron supervisores"
+            actions={actions}
           />
         </div>
       </div>

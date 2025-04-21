@@ -10,8 +10,8 @@ export interface Operation {
   name: string;
   dateStart: string;
   endDate?: string;
-  startTime: string;
-  endTime?: string;
+  timeStart?: string;
+  timeEnd?: string;
   status: OperationStatus;
   workers: Worker[];
   workersFinished?: Worker[];

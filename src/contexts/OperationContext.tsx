@@ -2,8 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { operationService } from '@/services/operationService';
 import { isLoadingAlert } from '@/components/dialog/AlertsLogin';
 import { authService } from '@/services/authService';
-import { OperationFilterDto } from '@/services/interfaces/operationDTO';
+import { OperationCreateData, OperationFilterDto } from '@/services/interfaces/operationDTO';
 import { Operation } from '@/core/model/operation';
+import { number } from 'zod';
 
 // Definir la interfaz para respuestas paginadas con nextPages
 interface PaginatedResponse {
@@ -287,7 +288,37 @@ export function OperationProvider({ children }: OperationProviderProps) {
     setIsLoading(true);
     isLoadingAlert(true);
     try {
-      const newOperation = await operationService.createOperation(data);
+      const dataFmt = {
+        status: data.status,
+        zone: parseInt(data.zone),
+        dateStart: data.dateStart,
+        timeStrat: data.timeStart,
+        id_task: data.id_task,
+        id_area: data.id_area,
+        id_client: data.id_client,
+        workerIds: data.workerIds,
+        groups: data.groups,
+        inChargedIds: data.inChargedIds,
+        motorShip: undefined as string | undefined,
+        dateEnd: undefined as string | undefined,
+        timeEnd: undefined as string | undefined
+      }
+
+
+      if (data.motorShip) {
+        dataFmt.motorShip = data.motorShip;
+      }
+
+      if (data.dateEnd) {
+        dataFmt.dateEnd = data.dateEnd;
+      }
+      if (data.timeEnd) {
+        dataFmt.timeEnd = data.timeEnd;
+      }
+
+
+
+      const newOperation = await operationService.createOperation(dataFmt as OperationCreateData);
       // Refrescar la lista después de crear
       await refreshOperations();
       return newOperation;
