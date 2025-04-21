@@ -101,7 +101,7 @@ export default function SupervisorsForm({
                         )}
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        {supervisor.cargo || "Sin cargo especificado"}
+                        {supervisor.occupation || "Sin cargo especificado"}
                       </p>
                       
                     </div>
