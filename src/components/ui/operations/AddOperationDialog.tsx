@@ -43,6 +43,7 @@ export function AddOperationDialog({
   const totalSteps = 3;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selected, setSelected] = useState<any>([]);
+
   const [errors, setErrors] = useState({
     zone: "",
     motorShip: "",

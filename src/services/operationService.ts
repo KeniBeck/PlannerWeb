@@ -32,8 +32,6 @@ class OperationService {
 
       const response = await api.get(url);
 
-      console.log("Response data:", response.data);
-
       return response.data;
     } catch (error) {
       handleApiError(error);
