@@ -19,6 +19,7 @@ import { useClients } from "@/contexts/ClientsContext";
 import { useWorkers } from "@/contexts/WorkerContext";
 import { operationService } from "@/services/operationService";
 import Swal from "sweetalert2";
+import { OperationCreateData } from "@/services/interfaces/operationDTO";
 
 
 export default function Operation() {
@@ -115,8 +116,6 @@ export default function Operation() {
       supervisorFilter !== prevSupervisorFilterRef.current;
 
     if (statusChanged || startDateChanged || endDateChanged || areaChanged || supervisorChanged) {
-      console.log("[Operation] Cambios en filtros detectados");
-
       // Actualizar referencias a valores anteriores
       prevStatusFilterRef.current = statusFilter;
       prevStartDateRef.current = startDateFilter;
@@ -129,45 +128,38 @@ export default function Operation() {
 
       // Aplicar filtro de estado solo si no es "all"
       if (statusFilter && statusFilter !== "all") {
-        console.log(`[Operation] Aplicando filtro de estado: ${statusFilter}`);
         newFilters.status = [statusFilter as any];
       } else {
         // Si es "all", quitar el filtro de estado
         if ("status" in newFilters) {
           delete newFilters.status;
-          console.log("[Operation] Quitando filtro de estado");
         }
       }
       // Aplicar filtro de supervisor solo si no es "all"
       if (supervisorFilter && supervisorFilter !== "all") {
         console.log(
-          `[Operation] Aplicando filtro de supervisor: ${supervisorFilter}`
         );
         newFilters.inChargedId = parseInt(supervisorFilter);
       } else {
         // Si es "all", quitar el filtro de supervisor
         if ("inChargedId" in newFilters) {
           delete newFilters.inChargedId;
-          console.log("[Operation] Quitando filtro de supervisor");
         }
       }
 
       // Aplicar filtro de área solo si no es "all"
       if (areaFilter && areaFilter !== "all") {
-        console.log(`[Operation] Aplicando filtro de área: ${areaFilter}`);
         newFilters.jobAreaId = parseInt(areaFilter);
       } else {
         // Si es "all", quitar el filtro de área
         if ("areaId" in newFilters) {
           delete newFilters.jobAreaId;
-          console.log("[Operation] Quitando filtro de área");
         }
       }
 
       // Aplicar filtro de fecha de inicio
       if (startDateFilter) {
         console.log(
-          `[Operation] Aplicando filtro de fecha inicio: ${startDateFilter}`
         );
         // Convertir el string de fecha a Date (el input date devuelve YYYY-MM-DD)
         newFilters.dateStart = parseISO(startDateFilter); // Convertir string a objeto Date
@@ -175,14 +167,12 @@ export default function Operation() {
         // Si está vacío, quitar el filtro
         if ("dateStart" in newFilters) {
           delete newFilters.dateStart;
-          console.log("[Operation] Quitando filtro de fecha inicio");
         }
       }
 
       // Aplicar filtro de fecha de fin
       if (endDateFilter) {
         console.log(
-          `[Operation] Aplicando filtro de fecha fin: ${endDateFilter}`
         );
         // Convertir el string de fecha a Date (el input date devuelve YYYY-MM-DD)
         newFilters.dateEnd = parseISO(endDateFilter); // Convertir string a objeto Date
@@ -190,7 +180,6 @@ export default function Operation() {
         // Si está vacío, quitar el filtro
         if ("dateEnd" in newFilters) {
           delete newFilters.dateEnd;
-          console.log("[Operation] Quitando filtro de fecha fin");
         }
       }
 
@@ -226,29 +215,58 @@ export default function Operation() {
     setIsAddOpen(true);
   };
 
-  // Actualizar la función handleSave para asegurar el formato correcto al enviar
+  // Reemplazar la función handleSave completa
+  
   const handleSave = async (data: any, isEdit: boolean) => {
     try {
-      // Formatear los datos antes de enviar
+      console.log("Datos recibidos en handleSave:", data);
+      
+      // Verificar que workerGroups exista y tenga la estructura correcta
+      if (!data.workerGroups || !Array.isArray(data.workerGroups)) {
+        console.error("Error: workerGroups no existe o no es un array", data);
+        throw new Error("Estructura de datos incorrecta: workerGroups debe ser un array");
+      }
+      
+      // Formatear los grupos de trabajadores para el formato esperado por la API
+      const formattedGroups = data.workerGroups.map((group: any) => ({
+        dateStart: group.dateStart,
+        timeStart: group.timeStart,
+        dateEnd: group.dateEnd || null,
+        timeEnd: group.timeEnd || null,
+        workerIds: Array.isArray(group.workers) 
+          ? group.workers.map((w: any) => w.id || w) 
+          : (group.workerIds || [])
+      }));
+      
+      console.log("Grupos formateados:", formattedGroups);
+
+      const removedWorkerIds = data.removedWorkerIds || [];
+      
+      // Datos para enviar al backend con el formato correcto
       const formattedData = {
-        ...data,
         id: isEdit ? data.id : undefined,
         zone: parseInt(data.zone),
         id_client: parseInt(data.id_client),
         id_area: parseInt(data.id_area),
         id_task: parseInt(data.id_task),
         dateStart: data.dateStart,
-        timeStart: data.timeStart || data.timeStrat, // Manejar ambos campos
+        timeStrat: data.timeStrat, // Mantener como está
         dateEnd: data.dateEnd || null,
         timeEnd: data.timeEnd || null,
         status: data.status || "PENDING",
-        workerGroups: data.workerGroups || [],
-        inChargedIds: data.inChargedIds || []
+        // Usar los grupos formateados
+        groups: formattedGroups,
+        inChargedIds: data.inChargedIds || [],
+        motorShip: data.motorShip || "",
+        removedWorkerIds: removedWorkerIds,
+      
       };
-
+      
+      console.log("Datos formateados para guardar:", formattedData);
+      
+      // Llamar directamente al operationService en lugar de usar el contexto
       if (isEdit) {
         await operationService.updateOperation(data.id, formattedData);
-
         Swal.fire({
           title: 'Operación actualizada',
           text: 'La operación ha sido actualizada correctamente.',
@@ -258,7 +276,6 @@ export default function Operation() {
         });
       } else {
         await operationService.createOperation(formattedData);
-
         Swal.fire({
           title: 'Operación creada',
           text: 'La operación ha sido creada correctamente.',
@@ -267,13 +284,14 @@ export default function Operation() {
           confirmButtonColor: '#3085d6'
         });
       }
-
+  
+      // Refrescar los datos después de guardar
       await refreshOperations();
       setIsAddOpen(false);
       setSelectedOperation(undefined);
     } catch (error) {
       console.error("Error al guardar la operación:", error);
-
+      
       Swal.fire({
         title: 'Error',
         text: isEdit
@@ -285,7 +303,6 @@ export default function Operation() {
       });
     }
   };
-
   
 
   // Función para limpiar todos los filtros

@@ -143,12 +143,9 @@ export default function BasicInfoForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Hora Inicio <span className="text-red-500">*</span>
             </label>
-            {
-              console.log(formData)
-            }
             <input
               type="time"
-              name="timeStart"
+              name="timeStrat"
               value={formData.timeStrat}
               onChange={handleChange}
               className="w-full px-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
