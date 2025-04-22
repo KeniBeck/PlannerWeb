@@ -34,7 +34,7 @@ class AreaService {
 
     async updateArea(area: Area): Promise<Area> {
         try {
-            const response = await api.put(`${this.baseUrl}/area/${area.id}`, area);
+            const response = await api.patch(`${this.baseUrl}/area/${area.id}`, area);
 
             if (response.status !== 200) {
                 throw new Error("Error updating area");
@@ -48,7 +48,11 @@ class AreaService {
 
     async deleteArea(areaId: number): Promise<void> {
         try {
-            const response = await api.delete(`${this.baseUrl}/area/${areaId}`);
+            const response = await api.patch(`${this.baseUrl}/area/${areaId}`,
+                {
+                    status: "INACTIVE"
+                }
+            );
 
             if (response.status !== 200) {
                 throw new Error("Error deleting area");

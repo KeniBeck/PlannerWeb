@@ -84,7 +84,9 @@ class UserService {
   async deleteUser(userId: number): Promise<void> {
     try {
       // En producción, usar la API
-      await api.delete(`${this.baseUrl}/user/${userId}`);
+      await api.patch(`${this.baseUrl}/user/${userId}`,
+        { status: "INACTIVE" }
+      );
     } catch (error) {
       console.error("Error deleting user:", error);
       throw error;
