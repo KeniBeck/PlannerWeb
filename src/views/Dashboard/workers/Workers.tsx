@@ -6,6 +6,7 @@ import { AiOutlineSearch } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
 import { useWorkersFilter, WorkerViewTab } from "@/lib/hooks/useWorkersFilter";
 import { useWorkersView } from "@/lib/hooks/useWorkersView";
+import { useAreas } from "@/contexts/AreasContext";
 import { AddWorkerDialog } from "@/components/ui/workers/AddWorkerDialog";
 import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
 import { TableColumn, TableAction } from "@/components/ui/DataTable";
@@ -26,8 +27,10 @@ export default function Workers() {
     incapacitatedWorkers,
     refreshWorkers,
   } = useWorkers();
+  const { areas } = useAreas();
 
   const { faults, refreshFaults, isLoading: isLoadingFaults } = useFaults();
+
 
   // Todas las distintas categorías de trabajadores
   const allWorkers = workers;
@@ -434,10 +437,7 @@ export default function Workers() {
       <AddWorkerDialog
         open={isAddWorkerOpen}
         onOpenChange={setIsAddWorkerOpen}
-        areas={[
-          { id: 1, name: "Area 1" },
-          { id: 2, name: "Area 2" },
-        ]}
+        areas={areas}
       />
     </div>
   );
