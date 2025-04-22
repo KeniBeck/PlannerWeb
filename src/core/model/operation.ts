@@ -8,23 +8,50 @@ import { User } from "./user";
 export interface Operation {
   id: number;
   name: string;
+  status: "PENDING" | "INPROGRESS" | "COMPLETED" | "CANCELED";
   dateStart: string;
-  endDate?: string;
-  timeStart?: string;
-  timeEnd?: string;
-  status: OperationStatus;
-  workers: Worker[];
-  workersFinished?: Worker[];
-  workersDeleted?: Worker[];
-  jobArea: Area;
-  task: Service;
-  client: Client;
-  zone: string;
-  motorShip?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  workerGroups: WorkersGroup[];
-  inCharge: Pick<User, "id" | "name">[];
+  dateEnd: string | null;
+  timeStart: string;
+  timeStrat: string;
+  timeEnd: string | null;
+  motorShip: string;
+  zone: number;
+  client: {
+    id: number;
+    name: string;
+  };
+  jobArea: {
+    id: number;
+    name: string;
+  };
+  task: {
+    id: number;
+    name: string;
+  };
+  inCharge: Array<{
+    id: number;
+    name: string;
+    occupation?: string;
+  }>;
+  workers: Array<{
+    id: number;
+    name: string;
+  }>;
+  workerGroups: Array<{
+    groupId: number | null;
+    schedule: {
+      dateStart: string | null;
+      dateEnd: string | null;
+      timeStart: string | null;
+      timeEnd: string | null;
+    };
+    workers: Array<{
+      id: number;
+      name: string;
+    }>;
+  }>;
+  createAt: string;
+  updateAt: string;
 }
 
 export enum OperationStatus {

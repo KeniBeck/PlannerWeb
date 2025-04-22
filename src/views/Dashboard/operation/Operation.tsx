@@ -8,19 +8,25 @@ import { useAreas } from "@/contexts/AreasContext";
 import { useUsers } from "@/contexts/UsersContext";
 import { getOperationExportColumns } from "./OperationExportColumns";
 import { AddOperationDialog } from "@/components/ui/operations/AddOperationDialog";
+import { ViewOperationDialog } from "@/components/ui/operations/ViewOperationDialog";
 import { useServices } from "@/contexts/ServicesContext";
 import { useClients } from "@/contexts/ClientsContext";
 import { useWorkers } from "@/contexts/WorkerContext";
 import { operationService } from "@/services/operationService";
 import Swal from "sweetalert2";
-import { useOperationFilters } from "@/lib/hooks/useOperationFilters"; 
+import { useOperationFilters } from "@/lib/hooks/useOperationFilters";
 import { formatOperationForEdit } from "@/lib/utils/operationHelpers";
 import { ActiveFilters } from "@/components/custom/filter/ActiveFilter";
 
 export default function Operation() {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [selectedOperation, setSelectedOperation] = useState<OperationModel | undefined>(undefined);
-
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedOperation, setSelectedOperation] = useState<
+    OperationModel | undefined
+  >(undefined);
+  const [viewOperation, setViewOperation] = useState<
+    OperationModel | null
+  >(null);
   // Contextos
   const { areas, refreshData } = useAreas();
   const { services } = useServices();
@@ -51,25 +57,31 @@ export default function Operation() {
     supervisorFilter,
     setSupervisorFilter,
     clearAllFilters,
-    hasActiveFilters
+    hasActiveFilters,
   } = useOperationFilters({ setFilters, setPage, filters });
 
   // Filtrar supervisores y coordinadores
   const supervisorsAndCoordinators = useMemo(() => {
     if (!users) return [];
     return users
-      .filter(user => user.occupation === "SUPERVISOR" || user.occupation === "COORDINADOR")
-      .map(user => ({ id: user.id, name: user.name }));
+      .filter(
+        (user) =>
+          user.occupation === "SUPERVISOR" || user.occupation === "COORDINADOR"
+      )
+      .map((user) => ({ id: user.id, name: user.name }));
   }, [users]);
 
   // Opciones para los filtros
-  const supervisorOptions = useMemo(() => [
-    { value: "all", label: "Todos los supervisores" },
-    ...supervisorsAndCoordinators.map(supervisor => ({
-      value: supervisor.id.toString(),
-      label: supervisor.name,
-    })),
-  ], [supervisorsAndCoordinators]);
+  const supervisorOptions = useMemo(
+    () => [
+      { value: "all", label: "Todos los supervisores" },
+      ...supervisorsAndCoordinators.map((supervisor) => ({
+        value: supervisor.id.toString(),
+        label: supervisor.name,
+      })),
+    ],
+    [supervisorsAndCoordinators]
+  );
 
   const statusOptions = [
     { value: "all", label: "Todos los estados" },
@@ -79,22 +91,29 @@ export default function Operation() {
     { value: "CANCELED", label: "Canceladas" },
   ];
 
-  const areaOptions = useMemo(() => [
-    { value: "all", label: "Todas las áreas" },
-    ...(areas?.map(area => ({
-      value: area.id.toString(),
-      label: area.name,
-    })) || []),
-  ], [areas]);
+  const areaOptions = useMemo(
+    () => [
+      { value: "all", label: "Todas las áreas" },
+      ...(areas?.map((area) => ({
+        value: area.id.toString(),
+        label: area.name,
+      })) || []),
+    ],
+    [areas]
+  );
 
   // Filtrado adicional para búsqueda por término
   const filteredOperations = useMemo(() => {
-    return operations.filter(operation => {
+    return operations.filter((operation) => {
       return (
         !searchTerm ||
         operation.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.jobArea?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        operation.jobArea?.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        operation.client?.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         operation.motorShip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         operation.id?.toString().includes(searchTerm)
       );
@@ -103,13 +122,13 @@ export default function Operation() {
 
   // Funciones auxiliares para los filtros
   const getAreaName = (areaId: string): string => {
-    const area = areas?.find(a => a.id.toString() === areaId);
+    const area = areas?.find((a) => a.id.toString() === areaId);
     return area?.name || "Área desconocida";
   };
 
   const getSupervisorName = (supervisorId: string): string => {
     const supervisor = supervisorsAndCoordinators.find(
-      s => s.id.toString() === supervisorId
+      (s) => s.id.toString() === supervisorId
     );
     return supervisor?.name || "Supervisor desconocido";
   };
@@ -123,12 +142,16 @@ export default function Operation() {
   };
 
   const handleViewOperation = (operation: OperationModel) => {
-    console.log("Ver detalles:", operation);
-    // Implementar navegación a detalles o abrir modal
+    setViewOperation(operation);
+    setIsViewOpen(true);
   };
 
   const handleDeleteOperation = (operation: OperationModel) => {
-    if (window.confirm(`¿Estás seguro de eliminar la operación "${operation.name}"?`)) {
+    if (
+      window.confirm(
+        `¿Estás seguro de eliminar la operación "${operation.name}"?`
+      )
+    ) {
       console.log("Eliminar operación:", operation.id);
       // Implementar eliminación
     }
@@ -284,11 +307,20 @@ export default function Operation() {
           clients={clients || []}
           availableWorkers={workers || []}
           supervisors={
-            users?.filter(u => u.occupation === "SUPERVISOR" || u.occupation === "COORDINADOR") || []
+            users?.filter(
+              (u) =>
+                u.occupation === "SUPERVISOR" || u.occupation === "COORDINADOR"
+            ) || []
           }
           onSave={handleSave}
         />
       )}
+
+<ViewOperationDialog
+        open={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        operation={viewOperation}
+      />
     </div>
   );
 }

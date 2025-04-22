@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { parseISO } from 'date-fns';
-
-export function useOperationFilters({ setFilters, setPage, filters }) {
+interface OperationFiltersProps {
+  setFilters: (filters: any) => void;
+  setPage: (page: number) => void;
+  filters: any;
+}
+export function useOperationFilters( OperationFiltersProps: OperationFiltersProps) {
+  const { setFilters, setPage, filters } = OperationFiltersProps;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
@@ -60,7 +65,7 @@ export function useOperationFilters({ setFilters, setPage, filters }) {
       if (areaFilter && areaFilter !== "all") {
         console.log(`[Operation] Aplicando filtro de área: ${areaFilter}`);
         newFilters.jobAreaId = parseInt(areaFilter);
-      } else if ("areaId" in newFilters) {
+      } else if ("jobAreaId" in newFilters) {
         delete newFilters.jobAreaId;
         console.log("[Operation] Quitando filtro de área");
       }
