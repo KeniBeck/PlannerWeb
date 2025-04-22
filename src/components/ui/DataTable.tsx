@@ -17,12 +17,13 @@ export type SortConfig = {
   direction: 'asc' | 'desc';
 };
 
-// Definición de acciones para el menú desplegable
+// Definición de acciones para el menú desplegable con soporte para funciones condicionales
 export interface TableAction<T> {
-  label: string;           // Etiqueta de la acción
-  icon?: ReactNode;        // Icono opcional
-  onClick: (item: T) => void; // Función a ejecutar al hacer clic
-  className?: string;      // Clases CSS adicionales
+  label: string | ((item: T) => string);           // Etiqueta de la acción (puede ser función)
+  icon?: ReactNode | ((item: T) => ReactNode);     // Icono opcional (puede ser función)
+  onClick: (item: T) => void;                       // Función a ejecutar al hacer clic
+  className?: string | ((item: T) => string);      // Clases CSS adicionales (puede ser función)
+  hidden?: boolean | ((item: T) => boolean);       // Ocultar acción (puede ser función)
 }
 
 // Props del componente
@@ -84,6 +85,16 @@ const compareValues = (a: any, b: any, key: string) => {
   if (normalizedA < normalizedB) return -1;
   if (normalizedA > normalizedB) return 1;
   return 0;
+};
+
+// Función para evaluar propiedades condicionales
+const evaluateConditionalProp = <T, R>(
+  prop: R | ((item: T) => R) | undefined,
+  item: T,
+  defaultValue: R
+): R => {
+  if (prop === undefined) return defaultValue;
+  return typeof prop === 'function' ? (prop as ((item: T) => R))(item) : prop;
 };
 
 export function DataTable<T extends { id: number | string }>({
@@ -312,16 +323,27 @@ export function DataTable<T extends { id: number | string }>({
                 {actions && actions.length > 0 && (
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end space-x-2">
-                      {actions.map((action, index) => (
-                        <button
-                          key={index}
-                          onClick={() => action.onClick(item)}
-                          className={`p-1.5 rounded-md hover:bg-gray-100 focus:outline-none transition-colors ${action.className || ''}`}
-                          title={action.label}
-                        >
-                          {action.icon || action.label.charAt(0)}
-                        </button>
-                      ))}
+                      {actions.map((action, index) => {
+                        // Evaluar si la acción debe ocultarse para este item
+                        const isHidden = evaluateConditionalProp(action.hidden, item, false);
+                        if (isHidden) return null;
+
+                        // Evaluar propiedades potencialmente condicionales
+                        const labelValue = evaluateConditionalProp(action.label, item, '');
+                        const iconValue = evaluateConditionalProp(action.icon, item, null);
+                        const classNameValue = evaluateConditionalProp(action.className, item, '');
+
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => action.onClick(item)}
+                            className={`p-1.5 rounded-md hover:bg-gray-100 focus:outline-none transition-colors ${classNameValue}`}
+                            title={labelValue}
+                          >
+                            {iconValue || labelValue.charAt(0)}
+                          </button>
+                        );
+                      })}
                     </div>
                   </td>
                 )}

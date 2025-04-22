@@ -201,7 +201,7 @@ export default function Dashboard() {
             <Route
               path="/workers"
               element={
-                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS]}>
+                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS, Feature.AREAS]}>
                   <Workers />
                 </LayeredProviders>
               }

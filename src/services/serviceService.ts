@@ -48,7 +48,9 @@ class ServiceService {
 
     async deleteService(serviceId: number): Promise<void> {
         try {
-            const response = await api.delete(`${this.baseUrl}/task/${serviceId}`);
+            const response = await api.patch(`${this.baseUrl}/task/${serviceId}`,
+                { status: "INACTIVE" } 
+            );
 
             if (response.status !== 200) {
                 throw new Error("Error deleting service");
