@@ -5,6 +5,7 @@ import { authService } from '@/services/authService';
 import { OperationCreateData, OperationFilterDto } from '@/services/interfaces/operationDTO';
 import { Operation } from '@/core/model/operation';
 import { number } from 'zod';
+import { set } from 'date-fns';
 
 // Definir la interfaz para respuestas paginadas con nextPages
 interface PaginatedResponse {
@@ -14,6 +15,9 @@ interface PaginatedResponse {
     currentPage: number;
     itemsPerPage: number;
     totalPages: number;
+    totalInProgress: number;
+    totalPending: number;
+    totalCompleted: number;
   };
   nextPages?: Array<{pageNumber: number, items: Operation[]}>;
 }
@@ -27,6 +31,9 @@ interface OperationContextType {
   currentPage: number;
   itemsPerPage: number;
   totalPages: number;
+  totalInProgress: number;
+  totalPending: number;
+  totalCompleted: number;
   setPage: (page: number) => void;
   setItemsPerPage: (items: number) => void;
   filters: OperationFilterDto;
@@ -58,6 +65,9 @@ export function OperationProvider({ children }: OperationProviderProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalInProgress, setTotalInProgress] = useState<number>(0);
+  const [totalPending, setTotalPending] = useState<number>(0);
+  const [totalCompleted, setTotalCompleted] = useState<number>(0);
   
   // Estado de filtros
   const [filters, setFilters] = useState<OperationFilterDto>({});
@@ -149,6 +159,9 @@ export function OperationProvider({ children }: OperationProviderProps) {
           setTotalItems(data.pagination.totalItems);
           setCurrentPage(data.pagination.currentPage);
           setItemsPerPage(data.pagination.itemsPerPage);
+          setTotalInProgress(data.pagination.totalInProgress);
+          setTotalPending(data.pagination.totalPending);
+          setTotalCompleted(data.pagination.totalCompleted);
           setTotalPages(data.pagination.totalPages);
           setLastUpdated(new Date());
         }
@@ -357,6 +370,9 @@ export function OperationProvider({ children }: OperationProviderProps) {
       setTotalItems(0);
       setCurrentPage(1);
       setTotalPages(0);
+      setTotalInProgress(0);
+      setTotalPending(0);
+      setTotalCompleted(0);
       setLastUpdated(null);
       setCachedPages(new Map());
       setFilters({});
@@ -388,6 +404,9 @@ export function OperationProvider({ children }: OperationProviderProps) {
     totalItems,
     isLoading,
     error,
+    totalInProgress,
+    totalPending,
+    totalCompleted,
     currentPage,
     itemsPerPage,
     totalPages,
