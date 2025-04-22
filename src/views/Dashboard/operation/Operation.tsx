@@ -17,6 +17,8 @@ import Swal from "sweetalert2";
 import { useOperationFilters } from "@/lib/hooks/useOperationFilters";
 import { formatOperationForEdit } from "@/lib/utils/operationHelpers";
 import { ActiveFilters } from "@/components/custom/filter/ActiveFilter";
+import { OperationCreateData } from "@/services/interfaces/operationDTO";
+
 
 export default function Operation() {
   const [isAddOpen, setIsAddOpen] = useState(false);

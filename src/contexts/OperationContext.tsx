@@ -4,7 +4,7 @@ import { isLoadingAlert } from '@/components/dialog/AlertsLogin';
 import { authService } from '@/services/authService';
 import { OperationCreateData, OperationFilterDto } from '@/services/interfaces/operationDTO';
 import { Operation } from '@/core/model/operation';
-import { number } from 'zod';
+import { date, number } from 'zod';
 import { set } from 'date-fns';
 
 // Definir la interfaz para respuestas paginadas con nextPages
@@ -300,7 +300,26 @@ export function OperationProvider({ children }: OperationProviderProps) {
   const createOperation = async (data: any): Promise<Operation | null> => {
     setIsLoading(true);
     isLoadingAlert(true);
+
+    console.log("PASA POR AQUI*****************")
+
+
+
     try {
+
+
+      const groupsFmt = data.groups.map((group: any) => {
+        return {
+          dateStart: group.dateStart,
+          timeStart: group.timeStart,
+          dateEnd: group.dateEnd,
+          timeEnd: group.timeEnd,
+          workerIds: group.workers || group.workerIds,
+        };
+      });
+
+
+
       const dataFmt = {
         status: data.status,
         zone: parseInt(data.zone),
@@ -310,7 +329,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
         id_area: data.id_area,
         id_client: data.id_client,
         workerIds: data.workerIds,
-        groups: data.groups,
+        groups: groupsFmt,
         inChargedIds: data.inChargedIds,
         motorShip: undefined as string | undefined,
         dateEnd: undefined as string | undefined,
