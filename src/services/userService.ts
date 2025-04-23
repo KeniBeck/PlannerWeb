@@ -63,12 +63,13 @@ class UserService {
     try {
       const dataToSend = {
         occupation: userData.occupation,
-        role: this.getRoleFromCargo(userData.occupation),
+        role: userData.role,
         dni: userData.dni,
         phone: userData.phone,
         username: userData.username,
         password: userData.password,
         name: userData.name,
+        status: userData.status,
       };
 
       // En producción, usar la API

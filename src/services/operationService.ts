@@ -162,5 +162,20 @@ class OperationService {
       throw error;
     }
   }
+
+  async deleteOperation(id: number): Promise<any> {
+    try {
+      const response = await api.patch(`/operation/${id}`,
+        { status: "DEACTIVATED" }
+      );
+
+      console.log("Respuesta de eliminación:", response.data);
+
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  }
 }
 export const operationService = new OperationService();

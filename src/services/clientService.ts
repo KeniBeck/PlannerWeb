@@ -34,7 +34,7 @@ class ClientService {
 
     async updateClient(client: Client): Promise<Client> {
         try {
-            const response = await api.put(`${this.baseUrl}/client/${client.id}`, client);
+            const response = await api.patch(`${this.baseUrl}/client/${client.id}`, client);
 
             if (response.status !== 200) {
                 throw new Error("Error updating client");

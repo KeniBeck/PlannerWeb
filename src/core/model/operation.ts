@@ -8,7 +8,7 @@ import { User } from "./user";
 export interface Operation {
   id: number;
   name: string;
-  status: "PENDING" | "INPROGRESS" | "COMPLETED" | "CANCELED";
+  status: "PENDING" | "INPROGRESS" | "COMPLETED" | "CANCELED" | "DEACTIVATED";
   dateStart: string;
   dateEnd: string | null;
   timeStart: string;
