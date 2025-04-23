@@ -1,4 +1,5 @@
 export interface Service {
     id: number;
-    name: string;
+    name?: string;
+    status?: "ACTIVE" | "INACTIVE";
 }

@@ -17,8 +17,8 @@ import Swal from "sweetalert2";
 import { useOperationFilters } from "@/lib/hooks/useOperationFilters";
 import { formatOperationForEdit } from "@/lib/utils/operationHelpers";
 import { ActiveFilters } from "@/components/custom/filter/ActiveFilter";
-import { OperationCreateData } from "@/services/interfaces/operationDTO";
-
+import { set } from "date-fns";
+import { DeactivateItemAlert } from "@/components/dialog/CommonAlertActive";
 
 export default function Operation() {
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -26,9 +26,11 @@ export default function Operation() {
   const [selectedOperation, setSelectedOperation] = useState<
     OperationModel | undefined
   >(undefined);
-  const [viewOperation, setViewOperation] = useState<
-    OperationModel | null
-  >(null);
+  const [operationToActivate, setOperationToActivate] =
+    useState<OperationModel | null>(null);
+  const [viewOperation, setViewOperation] = useState<OperationModel | null>(
+    null
+  );
   // Contextos
   const { areas, refreshData } = useAreas();
   const { services } = useServices();
@@ -42,7 +44,10 @@ export default function Operation() {
     filters,
     setFilters,
     setPage,
+    updateOperation,
   } = useOperations();
+
+  console.log("Operaciones:", operations);
 
   // Extraer lógica de filtros a un hook personalizado
   const {
@@ -149,14 +154,7 @@ export default function Operation() {
   };
 
   const handleDeleteOperation = (operation: OperationModel) => {
-    if (
-      window.confirm(
-        `¿Estás seguro de eliminar la operación "${operation.name}"?`
-      )
-    ) {
-      console.log("Eliminar operación:", operation.id);
-      // Implementar eliminación
-    }
+    setOperationToActivate(operation);
   };
 
   const handleSave = async (data: any, isEdit: boolean) => {
@@ -221,10 +219,19 @@ export default function Operation() {
     refreshData();
   };
 
+  const ConfirmToActive = async () => {
+    if (!operationToActivate) return;
+    console.log("Activar operación:", operationToActivate);
+    await operationService
+      .deleteOperation(operationToActivate.id)
+      refreshDataLocal();
+  }
+
   // Columnas para exportación a Excel
   const exportColumns = getOperationExportColumns();
 
   return (
+    <>
     <div className="container mx-auto py-6 space-y-6">
       <div className="rounded-xl shadow-md">
         <SectionHeader
@@ -318,11 +325,20 @@ export default function Operation() {
         />
       )}
 
-<ViewOperationDialog
+      <ViewOperationDialog
         open={isViewOpen}
         onOpenChange={setIsViewOpen}
         operation={viewOperation}
       />
     </div>
+
+      <DeactivateItemAlert
+      open={!!operationToActivate}
+      onOpenChange={() => setOperationToActivate(null)}
+      onConfirm={ConfirmToActive}
+      itemName="operación"
+      isLoading={isLoading}
+      />
+    </>
   );
 }
