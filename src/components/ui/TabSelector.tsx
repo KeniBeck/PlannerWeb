@@ -1,6 +1,6 @@
 interface Tab {
   id: string;
-  label: string;
+  label: React.ReactNode;
 }
 
 interface TabSelectorProps {

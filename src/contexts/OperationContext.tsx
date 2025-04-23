@@ -7,6 +7,9 @@ import { Operation } from '@/core/model/operation';
 import { date, number } from 'zod';
 import { set } from 'date-fns';
 
+
+
+
 // Definir la interfaz para respuestas paginadas con nextPages
 interface PaginatedResponse {
   items: Operation[];
@@ -363,12 +366,72 @@ export function OperationProvider({ children }: OperationProviderProps) {
     }
   };
   
-  // Método para actualizar una operación
   const updateOperation = async (id: number, data: any): Promise<Operation | null> => {
     setIsLoading(true);
     isLoadingAlert(true);
     try {
-      const updatedOperation = await operationService.updateOperation(id, data);
+      console.log("Datos de actualización:****", data);
+      
+      // Formato de datos específico para la actualización
+      const formattedUpdateData = {
+        ...data,
+        // Asegurarnos de que removedWorkerIds existe
+        removedWorkerIds: data.removedWorkerIds || []
+      };
+  
+      // Si no hay trabajadores a remover pero hay campo originalWorkerIds, 
+      // podríamos calcular los eliminados comparando con los actuales
+      if (formattedUpdateData.removedWorkerIds.length === 0 && 
+          data.originalWorkerIds && Array.isArray(data.originalWorkerIds) && data.originalWorkerIds.length > 0) {
+        
+        // Recopilamos todos los trabajadores actuales de una forma más completa
+        const allCurrentWorkerIds = new Set();
+        
+        // Añadir trabajadores individuales si existen
+        if (data.workerIds && Array.isArray(data.workerIds)) {
+          data.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
+        }
+        
+        // Añadir trabajadores de grupos
+        if (data.workerGroups && Array.isArray(data.workerGroups)) {
+          data.workerGroups.forEach((group: any) => {
+            // Considerar diferentes formatos de datos de trabajadores
+            if (group.workers && Array.isArray(group.workers)) {
+              group.workers.forEach((w: any) => {
+                const workerId = typeof w === 'object' ? w.id : w;
+                allCurrentWorkerIds.add(workerId);
+              });
+            }
+            
+            if (group.workerIds && Array.isArray(group.workerIds)) {
+              group.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
+            }
+          });
+        }
+  
+        // También verificar si hay datos dentro de 'groups'
+        if (data.groups && Array.isArray(data.groups)) {
+          data.groups.forEach((group: any) => {
+            if (group.workers && Array.isArray(group.workers)) {
+              group.workers.forEach((id: number) => allCurrentWorkerIds.add(id));
+            }
+            if (group.workerIds && Array.isArray(group.workerIds)) {
+              group.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
+            }
+          });
+        }
+        
+        console.log("originalWorkerIds:", data.originalWorkerIds);
+        console.log("Todos los IDs actuales:", Array.from(allCurrentWorkerIds));
+        
+        // Encontrar IDs que estaban en los originales pero ya no están en los actuales
+        formattedUpdateData.removedWorkerIds = data.originalWorkerIds
+          .filter((id: number) => !allCurrentWorkerIds.has(id));
+        
+        console.log("Trabajadores removidos (calculados):", formattedUpdateData.removedWorkerIds);
+      }
+      
+      const updatedOperation = await operationService.updateOperation(id, formattedUpdateData);
       // Refrescar la lista después de actualizar
       await refreshOperations();
       return updatedOperation;

@@ -1,0 +1,269 @@
+import { useState, useMemo } from "react";
+import { Worker } from "@/core/model/worker";
+
+export function useWorkersForm(formData: any, setFormData: any, availableWorkers: Worker[]) {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [showGroupForm, setShowGroupForm] = useState(false);
+    const [selectedTab, setSelectedTab] = useState("individual");
+    const [currentGroup, setCurrentGroup] = useState({
+      workers: [] as number[],
+      dateStart: "",
+      dateEnd: "",
+      timeStart: "",
+      timeEnd: ""
+    });
+    const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null);
+  
+    // Obtener todos los trabajadores ya asignados a grupos
+    const workersInGroups = useMemo(() => {
+      const ids = new Set<number>();
+      formData.groups.forEach((group: any) => {
+        if (Array.isArray(group.workers)) {
+          group.workers.forEach((id: number) => {
+            ids.add(id);
+          });
+        }
+      });
+      return ids;
+    }, [formData.groups]);
+    
+    // Trabajadores disponibles para selección individual (excluye a los que están en grupos)
+    const workersForIndividualSelection = useMemo(() => {
+      return availableWorkers.filter(worker => 
+        worker.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !workersInGroups.has(worker.id)
+      );
+    }, [availableWorkers, searchTerm, workersInGroups]);
+    
+    // Trabajadores disponibles para grupos (excluye a los seleccionados individualmente excepto los del grupo actual)
+    const workersForGroupSelection = useMemo(() => {
+      // Excluir los que ya están en selección individual o en otros grupos
+      const excludedIds = new Set<number>([...formData.workerIds]);
+  
+        // Excluir los que están en OTROS grupos (no el que estamos editando)
+    formData.groups.forEach((group: any, idx: number) => {
+      // Si NO estamos editando este grupo o si no estamos editando ningún grupo,
+      // excluir todos sus trabajadores
+      if (editingGroupIndex !== idx && Array.isArray(group.workers)) {
+        group.workers.forEach((id: number) => {
+          excludedIds.add(id);
+        });
+      }
+    });
+      
+      // Si estamos editando un grupo, no excluir los trabajadores de ese grupo
+      if (editingGroupIndex !== null) {
+        const groupBeingEdited = formData.groups[editingGroupIndex];
+        if (groupBeingEdited && Array.isArray(groupBeingEdited.workers)) {
+          groupBeingEdited.workers.forEach((id: number) => {
+            excludedIds.delete(id);
+          });
+        }
+      }
+      
+      // No excluir los del grupo actual que estamos creando/editando
+      const availableForCurrentGroup = availableWorkers.filter(worker => 
+        worker.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        (!excludedIds.has(worker.id) || currentGroup.workers.includes(worker.id))
+      );
+      
+      return availableForCurrentGroup;
+    }, [availableWorkers, searchTerm, formData.workerIds, currentGroup.workers, editingGroupIndex, formData.groups]);
+  
+    // Manejar selección de trabajadores individuales
+    const handleWorkerSelection = (workerId: number, selected: boolean) => {
+      const newWorkerIds = selected 
+        ? [...formData.workerIds, workerId]
+        : formData.workerIds.filter((id: number) => id !== workerId);
+      
+      setFormData({ ...formData, workerIds: newWorkerIds });
+    };
+  
+    // Manejar selección de trabajadores para un grupo
+    const handleGroupWorkerSelection = (workerId: number, selected: boolean) => {
+      if (selected) {
+        if (!currentGroup.workers.includes(workerId)) {
+          setCurrentGroup({
+            ...currentGroup,
+            workers: [...currentGroup.workers, workerId]
+          });
+        }
+      } else {
+        setCurrentGroup({
+          ...currentGroup,
+          workers: currentGroup.workers.filter(id => id !== workerId)
+        });
+      }
+    };
+  
+    // Remover un trabajador específico de un grupo existente
+    const removeWorkerFromGroup = (groupIndex: number, workerId: number) => {
+      const newGroups = [...formData.groups];
+      
+      // Quitar el trabajador del grupo
+      newGroups[groupIndex] = {
+        ...newGroups[groupIndex],
+        workers: newGroups[groupIndex].workers.filter((id: number) => id !== workerId)
+      };
+      
+      // Comprobar si este trabajador estaba originalmente en la operación
+      const originalWorkerIds = formData.originalWorkerIds || [];
+      const removedWorkerIds = formData.removedWorkerIds || [];
+      
+      // Si estaba en los originales y no está ya en los eliminados, añadirlo
+      if (originalWorkerIds.includes(workerId) && !removedWorkerIds.includes(workerId)) {
+        // Actualizar el estado con los nuevos grupos y añadir el ID a los trabajadores a eliminar
+        setFormData({
+          ...formData,
+          groups: newGroups,
+          removedWorkerIds: [...removedWorkerIds, workerId]
+        });
+        console.log(`Trabajador ${workerId} eliminado del grupo y añadido a removedWorkerIds`);
+      } else {
+        // Si no estaba en los originales, solo actualizar los grupos
+        setFormData({ ...formData, groups: newGroups });
+        console.log(`Trabajador ${workerId} eliminado del grupo (no estaba en los originales)`);
+      }
+    };
+  
+    // Iniciar la edición de un grupo existente
+    const startEditingGroup = (groupIndex: number) => {
+      const group = formData.groups[groupIndex];
+      setCurrentGroup({
+        workers: [...group.workers],
+        dateStart: group.dateStart || "",
+        dateEnd: group.dateEnd || "",
+        timeStart: group.timeStart || "",
+        timeEnd: group.timeEnd || ""
+      });
+      setEditingGroupIndex(groupIndex);
+      setShowGroupForm(true);
+    };
+  
+  
+    const addOrUpdateWorkerGroup = () => {
+      if (currentGroup.workers.length > 0 && currentGroup.dateStart && currentGroup.timeStart) {
+        const newGroups = [...formData.groups];
+        
+        // Asegurar el formato consistente para el nuevo grupo
+        const formattedGroup = {
+          workers: [...currentGroup.workers],
+          workerIds: [...currentGroup.workers], // Asegurar que ambos formatos existen
+          dateStart: currentGroup.dateStart,
+          dateEnd: currentGroup.dateEnd || null,
+          timeStart: currentGroup.timeStart,
+          timeEnd: currentGroup.timeEnd || null,
+          // No incluir groupId para grupos nuevos, solo para los que estamos editando
+          ...(editingGroupIndex !== null && formData.groups[editingGroupIndex]?.groupId 
+              ? {groupId: formData.groups[editingGroupIndex].groupId} 
+              : {})
+        };
+        
+        if (editingGroupIndex !== null) {
+          // Actualizar grupo existente
+          newGroups[editingGroupIndex] = formattedGroup;
+        } else {
+          // Crear nuevo grupo - no incluir groupId
+          newGroups.push(formattedGroup);
+        }
+        
+        setFormData({
+          ...formData,
+          groups: newGroups
+        });
+        
+        
+        // Resetear el formulario
+        setCurrentGroup({
+          workers: [],
+          dateStart: "",
+          dateEnd: "",
+          timeStart: "",
+          timeEnd: ""
+        });
+        setShowGroupForm(false);
+        setEditingGroupIndex(null);
+      }
+    };
+  
+         // Eliminar un grupo completo y añadir sus trabajadores al array removedWorkerIds
+      const removeWorkerGroup = (index: number) => {
+        const newGroups = [...formData.groups];
+        
+        // Guardar los IDs de los trabajadores del grupo antes de eliminarlo
+        const workersInGroup = newGroups[index].workers || [];
+        
+        console.log("Trabajadores en grupo a eliminar:", workersInGroup);
+        
+        // Eliminar el grupo
+        newGroups.splice(index, 1);
+        
+        // Obtener los IDs de trabajadores originales y los ya marcados para eliminar
+        const originalWorkerIds = Array.isArray(formData.originalWorkerIds) ? formData.originalWorkerIds : [];
+        const removedWorkerIds = Array.isArray(formData.removedWorkerIds) ? formData.removedWorkerIds : [];
+        
+        // Verificar qué trabajadores del grupo eliminado estaban en la operación original
+        // y agregarlos al array de removedWorkerIds si no están ya incluidos
+        const newRemovedWorkerIds = [...removedWorkerIds];
+        
+        workersInGroup.forEach((workerId: number) => {
+          if (originalWorkerIds.includes(workerId) && !newRemovedWorkerIds.includes(workerId)) {
+            newRemovedWorkerIds.push(workerId);
+          }
+        });
+        
+        // Actualizar el estado con los nuevos grupos y los trabajadores a eliminar
+        setFormData({
+          ...formData,
+          groups: newGroups,
+          removedWorkerIds: newRemovedWorkerIds
+        });
+        
+        console.log("Lista actualizada de removedWorkerIds:", newRemovedWorkerIds);
+      };
+    // Obtener nombre de trabajador por ID
+    const getWorkerNameById = (id: number) => {
+      const worker = availableWorkers.find(w => w.id === id);
+      return worker ? worker.name : `Trabajador ${id}`;
+    };
+  
+    // Cancelar edición de grupo
+    const cancelGroupEditing = () => {
+      setCurrentGroup({
+        workers: [],
+        dateStart: "",
+        dateEnd: "",
+        timeStart: "",
+        timeEnd: ""
+      });
+      setShowGroupForm(false);
+      setEditingGroupIndex(null);
+    };
+
+  return {
+    // Estado
+    searchTerm,
+    showGroupForm, 
+    selectedTab,
+    currentGroup,
+    editingGroupIndex,
+    workersForIndividualSelection,
+    workersForGroupSelection,
+    
+    // Setters
+    setSearchTerm,
+    setShowGroupForm,
+    setSelectedTab,
+    setCurrentGroup,
+    setEditingGroupIndex,
+    cancelGroupEditing,    
+    // Acciones
+    handleWorkerSelection,
+    handleGroupWorkerSelection,
+    removeWorkerFromGroup,
+    startEditingGroup,
+    addOrUpdateWorkerGroup,
+    removeWorkerGroup,
+    getWorkerNameById,
+  };
+}
