@@ -28,7 +28,7 @@ import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
 
 const COLORS = {
-  darkBlue: "#1D2455", // Azul oscuro
+  darkBlue: "#155dfc", // Azul oscuro
   limeGreen: "#A5C739", // Verde limón claro
   skyBlue: "#0099ff"   // Azul cielo
 };
@@ -83,59 +83,69 @@ export default function Dashboard() {
 
         {/* Contenedor principal del sidebar */}
         <div className="overflow-y-auto h-full">
-          {/* Header del sidebar rediseñado */}
           <div 
+            className="relative overflow-hidden"
             style={{ 
-              background: COLORS.darkBlue,
-              padding: "24px 16px 20px", 
-              position: "relative",
-              overflow: "hidden"
+              background: `linear-gradient(135deg, ${COLORS.darkBlue} 0%, #1047c9 100%)`,
+              padding: "1.75rem 1rem 1.5rem", 
             }}
           >
-            {/* Elemento decorativo de ondas */}
-            <div 
-              style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: "12px",
-                opacity: 0.7,
-                borderRadius: "100% 100% 0 0",
-                transform: "scaleX(1.5)"
-              }}
-            ></div>
+            {/* Elemento decorativo con ondas */}
+            <div className="absolute inset-0 z-0">
+              <svg
+                className="absolute bottom-0 left-0 w-full"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1440 320"
+                preserveAspectRatio="none"
+                style={{ height: "60px" }}
+              >
+                <path
+                  fill="rgba(255, 255, 255, 0.08)"
+                  fillOpacity="1"
+                  d="M0,128L48,138.7C96,149,192,171,288,165.3C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,138.7C1248,117,1344,75,1392,53.3L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                ></path>
+              </svg>
+              
+              {/* Círculos decorativos */}
+              <div className="absolute top-2 right-2 w-12 h-12 rounded-full bg-white opacity-5"></div>
+              <div className="absolute top-10 left-3 w-6 h-6 rounded-full bg-white opacity-5"></div>
+            </div>
             
             {/* Logotipo y nombre */}
-            <div className={`flex ${isMenuOpen ? "items-center" : "justify-center"}`}>
-              <div className="relative">
-                <div 
-                  className="h-12 w-12 rounded-xl flex items-center justify-center font-bold text-xl"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${COLORS.skyBlue} 0%, ${COLORS.limeGreen} 100%)`,
-                    boxShadow: `0 3px 10px rgba(0, 0, 0, 0.2)`,
-                    color: COLORS.darkBlue
-                  }}
-                >
-                  CP
+            <div className={`flex relative z-10 ${isMenuOpen ? "items-center" : "justify-center"}`}>
+              {!isMenuOpen && (
+                <div className="flex justify-center items-center w-10 h-10 bg-white bg-opacity-10 rounded-full shadow-lg">
+                  <span className="text-lg font-bold text-white">CP</span>
                 </div>
-                <div 
-                  className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full"
-                  style={{ backgroundColor: COLORS.limeGreen }}
-                ></div>
-              </div>
+              )}
               
               {isMenuOpen && (
-                <div className="ml-3">
-                  <h2 className="font-bold text-xl" style={{ color: COLORS.skyBlue }}>
-                    Cargo<span style={{ color: COLORS.limeGreen }}>Planner</span>
+                <div className="ml-1">
+                  <h2 className=" tracking-wide" style={{ 
+                    color: "white", 
+                    fontFamily: "amertha",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    fontSize: "2rem",
+                  }}>
+                    Cargo<span style={{ 
+                      color: COLORS.limeGreen, 
+                      fontFamily: "amertha",
+                      textShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                    }}>Planner</span>
                   </h2>
-                  <p className="text-xs" style={{ color: "white" }}>
-                    Sistema de Gestión Marítima
-                  </p>
+                  <div className="flex items-center mt-1">
+                    <div className="h-0.5 w-2 bg-white opacity-50 rounded-full mr-1"></div>
+                    <p className="text-xs font-light tracking-wider text-white text-opacity-90">
+                      Sistema de Gestión Marítima
+                    </p>
+                    <div className="h-0.5 w-2 bg-white opacity-50 rounded-full ml-1"></div>
+                  </div>
                 </div>
               )}
             </div>
+            
+            {/* Barra decorativa en la parte inferior */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-50"></div>
           </div>
 
           {/* Enlaces de navegación */}
