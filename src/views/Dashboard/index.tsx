@@ -27,6 +27,12 @@ import Profile from "./profile/Profile";
 import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
 
+const COLORS = {
+  darkBlue: "#1D2455", // Azul oscuro
+  limeGreen: "#A5C739", // Verde limón claro
+  skyBlue: "#0099ff"   // Azul cielo
+};
+
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const location = useLocation();
@@ -43,6 +49,8 @@ export default function Dashboard() {
     );
   };
 
+ 
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Menú lateral */}
@@ -55,12 +63,16 @@ export default function Dashboard() {
         <button
           onClick={toggleMenu}
           className={`
-      absolute top-6
-      ${isMenuOpen ? "left-52" : "right-2"}
-      bg-blue-600 text-white rounded-full p-1.5 shadow-md hover:bg-blue-700 focus:outline-none
-      z-20
-    `}
-          style={{ transition: "right 0.3s" }}
+            absolute top-6
+            ${isMenuOpen ? "left-52" : "right-2"}
+            text-white rounded-full p-1.5 shadow-md hover:opacity-90 focus:outline-none
+            z-20
+          `}
+          style={{ 
+            backgroundColor: COLORS.limeGreen,
+            transition: "right 0.3s",
+            boxShadow: `0 2px 8px rgba(0, 0, 0, 0.15)`
+          }}
         >
           {isMenuOpen ? (
             <AiOutlineClose size={16} />
@@ -68,19 +80,62 @@ export default function Dashboard() {
             <AiOutlineMenu size={16} />
           )}
         </button>
-        <div className="overflow-y-auto h-full pt-16">
-          {/* Logo y encabezado */}
-          <div
-            className={`px-0 py-0 ${
-              isMenuOpen ? "text-center" : "flex justify-center"
-            }`}
+
+        {/* Contenedor principal del sidebar */}
+        <div className="overflow-y-auto h-full">
+          {/* Header del sidebar rediseñado */}
+          <div 
+            style={{ 
+              background: COLORS.darkBlue,
+              padding: "24px 16px 20px", 
+              position: "relative",
+              overflow: "hidden"
+            }}
           >
-            <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white font-bold text-xl mx-auto">
-              P
+            {/* Elemento decorativo de ondas */}
+            <div 
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "12px",
+                opacity: 0.7,
+                borderRadius: "100% 100% 0 0",
+                transform: "scaleX(1.5)"
+              }}
+            ></div>
+            
+            {/* Logotipo y nombre */}
+            <div className={`flex ${isMenuOpen ? "items-center" : "justify-center"}`}>
+              <div className="relative">
+                <div 
+                  className="h-12 w-12 rounded-xl flex items-center justify-center font-bold text-xl"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${COLORS.skyBlue} 0%, ${COLORS.limeGreen} 100%)`,
+                    boxShadow: `0 3px 10px rgba(0, 0, 0, 0.2)`,
+                    color: COLORS.darkBlue
+                  }}
+                >
+                  CP
+                </div>
+                <div 
+                  className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full"
+                  style={{ backgroundColor: COLORS.limeGreen }}
+                ></div>
+              </div>
+              
+              {isMenuOpen && (
+                <div className="ml-3">
+                  <h2 className="font-bold text-xl" style={{ color: COLORS.skyBlue }}>
+                    Cargo<span style={{ color: COLORS.limeGreen }}>Planner</span>
+                  </h2>
+                  <p className="text-xs" style={{ color: "white" }}>
+                    Sistema de Gestión Marítima
+                  </p>
+                </div>
+              )}
             </div>
-            {isMenuOpen && (
-              <h2 className="text-xl font-bold text-gray-800 mt-2">CargoPlanner</h2>
-            )}
           </div>
 
           {/* Enlaces de navegación */}

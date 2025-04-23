@@ -57,29 +57,15 @@ class OperationService {
     try {
       if (!id) throw new Error("Se requiere un ID de operación válido");
 
-      console.log("Datos de actualización:", updateData);
+      console.log("Datos de actualización recibidos:", updateData);
 
       // Separar la lógica de trabajadores para simplificar
       const workers: {
-        connect: Array<{
-          workerIds: any[];
-          dateStart: string | null;
-          dateEnd: string | null;
-          timeStart: string | null;
-          timeEnd: string | null;
-        }>;
+        connect: Array<any>;
         disconnect: Array<{ id: number }>;
-        update: Array<{
-          workerIds: any[];
-          dateStart: string | null;
-          dateEnd: string | null;
-          timeStart: string | null;
-          timeEnd: string | null;
-        }>;
+        update: Array<any>;
       } = {
-        // Conectar nuevos trabajadores individuales y grupos
         connect: [],
-        // Desconectar trabajadores que se eliminaron
         disconnect: [],
         update: [],
       };
@@ -87,7 +73,7 @@ class OperationService {
       // Crear estructura base para los datos a enviar
       const dataFmt: any = {
         dateStart: updateData.dateStart || "",
-        timeStrat: updateData.timeStrat || "",
+        timeStrat: updateData.timeStart || updateData.timeStrat || "",
         inCharged: updateData.inChargedIds || [],
         status: updateData.status || null,
         zone: updateData.zone || null,
@@ -98,63 +84,66 @@ class OperationService {
       if (updateData.dateEnd) dataFmt.dateEnd = updateData.dateEnd;
       if (updateData.motorShip) dataFmt.motorShip = updateData.motorShip;
 
-      // Procesar grupos y trabajadores
-      if (updateData.groups && updateData.groups.length > 0) {
-        // Grupos con fechas (cada uno se envía como un connect)
-        const realGroups = updateData.groups.filter(
-          (group: any) => group.dateStart && group.timeStart
-        );
+      // Procesar workerGroups si existen
+      if (updateData.workerGroups && Array.isArray(updateData.workerGroups)) {
+        console.log("Procesando workerGroups:", updateData.workerGroups.length);
 
-        const individualWorker = updateData.groups.filter(
-          (group: any) => !group.dateStart && !group.timeStart
-        );
+        updateData.workerGroups.forEach((group: any) => {
+          // Extraer los IDs de trabajadores
+          const workerIds = Array.isArray(group.workers)
+            ? group.workers.map((w: any) => typeof w === 'object' ? w.id : w)
+            : (group.workerIds || []);
 
-        individualWorker.forEach((worker: any) => {
-          workers.update.push({
-            workerIds: worker.workers || worker.workerIds || [],
-            dateStart: null,
-            dateEnd: null,
-            timeStart: null,
-            timeEnd: null
-          });
-        });
+          if (workerIds.length === 0) return; // Saltar grupos vacíos
 
+          // Determinar si es un grupo programado o trabajadores individuales
+          const isScheduled =
+            group.dateStart &&
+            group.timeStart &&
+            group.dateStart !== null &&
+            group.timeStart !== null;
 
-        
-
-        if (updateData.removedWorkerIds
-          && updateData.removedWorkerIds
-          .length > 0) {
-          workers.disconnect = updateData.removedWorkerIds
-          .map((id: number) => ({ id }));
-        }
-
-        // Para cada grupo real, crear una entrada en connect
-        if (realGroups.length > 0) {
-          realGroups.forEach((group: any)  => {
+          // Verificar si el grupo tiene un ID (existente) o es nuevo
+          if (group.groupId) {
+            // GRUPOS EXISTENTES - Actualizar mediante 'update'
             workers.update.push({
-              workerIds: group.workers || group.workerIds || [],
-              dateStart: group.dateStart,
-              dateEnd: group.dateEnd || null,
-              timeStart: group.timeStart,
-              timeEnd: group.timeEnd || null
+              groupId: group.groupId,
+              workerIds: workerIds,
+              dateStart: isScheduled ? group.dateStart : null,
+              dateEnd: isScheduled ? (group.dateEnd || null) : null,
+              timeStart: isScheduled ? group.timeStart : null,
+              timeEnd: isScheduled ? (group.timeEnd || null) : null
             });
-          });
-        }
+            console.log(`Actualizando grupo existente ${group.groupId} con ${workerIds.length} trabajadores`);
+          } else {
+            // GRUPOS NUEVOS - Añadir mediante 'connect'
+            workers.connect.push({
+              workerIds: workerIds,
+              dateStart: isScheduled ? group.dateStart : null,
+              dateEnd: isScheduled ? (group.dateEnd || null) : null,
+              timeStart: isScheduled ? group.timeStart : null,
+              timeEnd: isScheduled ? (group.timeEnd || null) : null
+            });
+            console.log(`Creando nuevo grupo con ${workerIds.length} trabajadores`);
+          }
+        });
       }
 
-     
-      // Si hay workers que ya no están incluidos, agregarlos a disconnect
-      if (updateData.removedWorkerIds && updateData.removedWorkerIds.length > 0) {
-        workers.disconnect = updateData.removedWorkerIds.map((id: number) => ({ id }));
+      // Procesar trabajadores a desconectar
+      if (updateData.removedWorkerIds && Array.isArray(updateData.removedWorkerIds) && updateData.removedWorkerIds.length > 0) {
+        workers.disconnect = [...new Set(updateData.removedWorkerIds)]
+          .filter((id: any) => id !== undefined && id !== null)
+          .map((id: any) => ({ id: Number(id) }));
+
+        console.log("Trabajadores a desconectar:", workers.disconnect);
       }
 
-          // Solo incluir workers en el payload si hay algo para conectar, desconectar o actualizar
+      // Solo incluir workers en el payload si hay algo para conectar, desconectar o actualizar
       if (workers.connect.length > 0 || workers.disconnect.length > 0 || workers.update.length > 0) {
         dataFmt.workers = workers;
       }
 
-      console.log("Enviando datos de actualización:", dataFmt);
+      console.log("Enviando datos de actualización:", JSON.stringify(dataFmt, null, 2));
       const response = await api.patch(`/operation/${id}`, dataFmt);
       return response.data;
     } catch (error) {

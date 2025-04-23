@@ -19,6 +19,7 @@ import { formatOperationForEdit } from "@/lib/utils/operationHelpers";
 import { ActiveFilters } from "@/components/custom/filter/ActiveFilter";
 import { set } from "date-fns";
 import { DeactivateItemAlert } from "@/components/dialog/CommonAlertActive";
+import { OperationCreateData } from "@/services/interfaces/operationDTO";
 
 export default function Operation() {
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -174,17 +175,15 @@ export default function Operation() {
         status: data.status || "PENDING",
         workerGroups: data.workerGroups || [],
         inChargedIds: data.inChargedIds || [],
+        removedWorkerIds: data.removedWorkerIds || [],
+        removedWorkerGroupIds: data.removedWorkerGroupIds || [],
       };
 
       if (isEdit) {
-        await operationService.updateOperation(data.id, formattedData);
-        Swal.fire({
-          title: "Operación actualizada",
-          text: "La operación ha sido actualizada correctamente.",
-          icon: "success",
-          confirmButtonText: "Aceptar",
-          confirmButtonColor: "#3085d6",
-        });
+        await updateOperation(
+          data.id,
+          formattedData as OperationCreateData
+        );
       } else {
         await operationService.createOperation(formattedData);
         Swal.fire({
