@@ -213,7 +213,7 @@ export default function SectionHeader({
   };
 
   return (
-    <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md">
+    <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md ">
       <div>
         <h1 className="text-3xl font-bold">
           {title}
