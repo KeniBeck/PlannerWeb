@@ -63,12 +63,13 @@ class UserService {
     try {
       const dataToSend = {
         occupation: userData.occupation,
-        role: this.getRoleFromCargo(userData.occupation),
+        role: userData.role,
         dni: userData.dni,
         phone: userData.phone,
         username: userData.username,
         password: userData.password,
         name: userData.name,
+        status: userData.status,
       };
 
       // En producción, usar la API
@@ -84,7 +85,9 @@ class UserService {
   async deleteUser(userId: number): Promise<void> {
     try {
       // En producción, usar la API
-      await api.delete(`${this.baseUrl}/user/${userId}`);
+      await api.patch(`${this.baseUrl}/user/${userId}`,
+        { status: "INACTIVE" }
+      );
     } catch (error) {
       console.error("Error deleting user:", error);
       throw error;

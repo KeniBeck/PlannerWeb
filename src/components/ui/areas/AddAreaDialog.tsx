@@ -15,6 +15,7 @@ export function AddAreaDialog({ open, onOpenChange, area, onSave }: AddAreaDialo
   const [formData, setFormData] = useState({
     id: area?.id || undefined,
     name: area?.name || "",
+    status: area?.status || "ACTIVE",
   });
 
   // Estado para validación
@@ -28,6 +29,7 @@ export function AddAreaDialog({ open, onOpenChange, area, onSave }: AddAreaDialo
       setFormData({
         id: area?.id || undefined,
         name: area?.name || "",
+        status: area?.status || "ACTIVE",
       });
       setErrors({ name: "" });
     }

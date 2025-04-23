@@ -34,7 +34,7 @@ class ServiceService {
 
     async updateService(service: Service): Promise<Service> {
         try {
-            const response = await api.put(`${this.baseUrl}/task/${service.id}`, service);
+            const response = await api.patch(`${this.baseUrl}/task/${service.id}`, service);
 
             if (response.status !== 200) {
                 throw new Error("Error updating service");
@@ -48,7 +48,9 @@ class ServiceService {
 
     async deleteService(serviceId: number): Promise<void> {
         try {
-            const response = await api.delete(`${this.baseUrl}/task/${serviceId}`);
+            const response = await api.patch(`${this.baseUrl}/task/${serviceId}`,
+                { status: "INACTIVE" } 
+            );
 
             if (response.status !== 200) {
                 throw new Error("Error deleting service");
