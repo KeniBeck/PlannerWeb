@@ -1,4 +1,5 @@
 import { RiCalendarScheduleFill } from "react-icons/ri";
+import { FaCheck } from "react-icons/fa"; // Añadir este import
 
 // Tipos
 interface Worker {
@@ -22,6 +23,8 @@ interface WorkerGroup {
 interface WorkerGroupCardProps {
   group: WorkerGroup;
   index: number;
+  onCompleteWorker?: (worker: Worker) => void;
+  showCompleteButtons?: boolean; 
 }
 
 // Función para generar colores dinámicos basados en el nombre
@@ -46,7 +49,12 @@ const getColorForName = (name: string) => {
   return colors[sum % colors.length];
 }
 
-export const WorkerGroupCard = ({ group, index }: WorkerGroupCardProps) => {
+export const WorkerGroupCard = ({ 
+  group, 
+  index, 
+  onCompleteWorker,
+  showCompleteButtons = false 
+}: WorkerGroupCardProps) => {
   // Verificar si es un grupo sin programación
   const hasNoSchedule = 
     !group.groupId || 
@@ -153,6 +161,20 @@ export const WorkerGroupCard = ({ group, index }: WorkerGroupCardProps) => {
                   <p className="font-medium text-gray-800 truncate">{worker.name}</p>
                   <p className="text-xs text-gray-500">ID: {worker.id}</p>
                 </div>
+                
+                {/* Botón para completar trabajador individualmente */}
+                {showCompleteButtons && onCompleteWorker && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCompleteWorker(worker);
+                    }}
+                    className="ml-2 p-1.5 bg-green-100 hover:bg-green-200 text-green-600 rounded-full transition-colors"
+                    title="Completar trabajador individual"
+                  >
+                    <FaCheck className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             );
           })}

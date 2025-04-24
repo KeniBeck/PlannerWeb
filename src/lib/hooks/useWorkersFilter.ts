@@ -27,7 +27,6 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
     assignedWorkers: W[],
     deactivatedWorkers: W[],
     incapacitatedWorkers: W[],
-    faults: F[]
 ) {
     const [filters, setFilters] = useState<WorkerFilters>({
         searchTerm: '',
@@ -81,7 +80,6 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
     const filteredAssignedWorkers = filterWorkersBySearchTerm(assignedWorkers);
     const filteredDeactivatedWorkers = filterWorkersBySearchTerm(deactivatedWorkers);
     const filteredIncapacitatedWorkers = filterWorkersBySearchTerm(incapacitatedWorkers);
-    const filteredFaults = filterFaultsBySearchTerm(faults);
 
     const setSearchTerm = (term: string) => {
         setFilters(prev => ({ ...prev, searchTerm: term }));
@@ -119,7 +117,6 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
             case 'assigned': return filteredAssignedWorkers.length;
             case 'deactivated': return filteredDeactivatedWorkers.length;
             case 'incapacitated': return filteredIncapacitatedWorkers.length;
-            case 'faults': return filteredFaults.length;
             default: return filteredAllWorkers.length;
         }
     };
@@ -138,7 +135,6 @@ export function useWorkersFilter<W extends Worker, F extends Fault>(
         filteredAssignedWorkers,
         filteredDeactivatedWorkers,
         filteredIncapacitatedWorkers,
-        filteredFaults,
         setSearchTerm,
         setActiveTab,
         getActiveTabLabel,

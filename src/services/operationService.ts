@@ -50,6 +50,31 @@ class OperationService {
     }
   }
 
+
+    async updateWorkerGroups(
+    operationId: number,
+    groupData: {
+      workers: {
+        disconnect: Array<{
+          id: number;
+        }>;
+      }
+    }
+  ): Promise<any> {
+    try {
+      if (!operationId) throw new Error("Se requiere un ID de operación válido");
+      
+      console.log("Actualizando grupos de trabajadores:", groupData);
+      
+      // Enviar directamente el objeto de actualización de grupos sin procesar
+      const response = await api.patch(`/operation/${operationId}`, groupData);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  }
+
   async updateOperation(
     id: number,
     updateData: any

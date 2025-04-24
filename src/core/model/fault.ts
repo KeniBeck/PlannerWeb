@@ -8,10 +8,11 @@ interface Fault {
   createAt: string;
 }
 
+
 enum FaultType {
-  INASSISTANCE = "INASISTENCIA",
-  IRRESPECTFUL = "IRRESPETO",
-  ABANDONMENT = "ABANDONO",
+  INASSISTANCE = "INASSISTANCE",
+  IRRESPECTFUL = "IRRESPECTFUL",
+  ABANDONMENT = "ABANDONMENT",
 }
 
 interface PaginatedResponse {
