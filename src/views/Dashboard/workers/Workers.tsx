@@ -14,8 +14,6 @@ import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { WorkersList } from "@/components/ui/workers/WorkerList";
-import { FaultsList } from "@/components/ui/faults/FaultList";
-import { useFaults } from "@/contexts/FaultContext";
 import { FaultTypeBadge } from "@/components/ui/faults/FaultTypeBadge";
 
 export default function Workers() {
@@ -29,7 +27,6 @@ export default function Workers() {
   } = useWorkers();
   const { areas } = useAreas();
 
-  const { faults, refreshFaults, isLoading: isLoadingFaults } = useFaults();
 
 
   // Todas las distintas categorías de trabajadores
@@ -44,7 +41,6 @@ export default function Workers() {
     filteredAssignedWorkers,
     filteredDeactivatedWorkers,
     filteredIncapacitatedWorkers,
-    filteredFaults,
     setSearchTerm,
     setActiveTab,
   } = useWorkersFilter<Worker, Fault>(
@@ -53,7 +49,6 @@ export default function Workers() {
     assignedWorkers,
     deactivatedWorkers,
     incapacitatedWorkers,
-    faults
   );
 
   // Hook para la vista y acciones
@@ -64,7 +59,6 @@ export default function Workers() {
       filteredAssignedWorkers,
       filteredDeactivatedWorkers,
       filteredIncapacitatedWorkers,
-      filteredFaults,
       activeTab
     );
 
@@ -393,7 +387,6 @@ export default function Workers() {
                   <option value="available">Disponibles</option>
                   <option value="deactivated">Retirados</option>
                   <option value="incapacitated">Incapacitados</option>
-                  <option value="faults">Faltas</option>
                 </select>
                 <div className="absolute right-3 top-3 pointer-events-none">
                   <svg
@@ -421,14 +414,7 @@ export default function Workers() {
       {activeTab && (
         <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
           <div className="bg-white">
-            {currentView.type === "workers" ? (
               <WorkersList workers={currentView.items as Worker[]} />
-            ) : (
-              <FaultsList
-                filteredFaults={filteredFaults}
-                searchTerm={searchTerm}
-              />
-            )}
           </div>
         </div>
       )}

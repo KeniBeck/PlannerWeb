@@ -17,7 +17,6 @@ export function useWorkersView<W extends Worker, F extends Fault>(
     filteredAssignedWorkers: W[],
     filteredDeactivatedWorkers: W[],
     filteredIncapacitatedWorkers: W[],
-    filteredFaults: F[],
     activeTab: WorkerViewTab
 ) {
     const [isAddWorkerOpen, setIsAddWorkerOpen] = useState(false);
@@ -34,8 +33,6 @@ export function useWorkersView<W extends Worker, F extends Fault>(
                 return { type: 'workers', items: filteredDeactivatedWorkers };
             case 'incapacitated':
                 return { type: 'workers', items: filteredIncapacitatedWorkers };
-            case 'faults':
-                return { type: 'faults', items: filteredFaults as unknown as F[] };
             default:
                 return { type: 'workers', items: filteredAllWorkers };
         }
@@ -48,7 +45,6 @@ export function useWorkersView<W extends Worker, F extends Fault>(
             case 'assigned': return filteredAssignedWorkers.length;
             case 'deactivated': return filteredDeactivatedWorkers.length;
             case 'incapacitated': return filteredIncapacitatedWorkers.length;
-            case 'faults': return filteredFaults.length;
             default: return filteredAllWorkers.length;
         }
     };

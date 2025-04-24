@@ -46,6 +46,7 @@ interface OperationContextType {
   updateOperation: (id: number, data: any) => Promise<Operation | null>;
   lastUpdated: Date | null;
   preloadNextPages: () => void;
+  completeIndividualWorker: (workerId: number, data: any) => Promise<Operation | null>;
 }
 
 // Crear el contexto
@@ -304,7 +305,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
     setIsLoading(true);
     isLoadingAlert(true);
 
-    console.log("PASA POR AQUI*****************")
 
 
 
@@ -430,6 +430,8 @@ export function OperationProvider({ children }: OperationProviderProps) {
         
         console.log("Trabajadores removidos (calculados):", formattedUpdateData.removedWorkerIds);
       }
+
+      console.log("Formatted Update Data:", formattedUpdateData);
       
       const updatedOperation = await operationService.updateOperation(id, formattedUpdateData);
       // Refrescar la lista después de actualizar
@@ -437,6 +439,25 @@ export function OperationProvider({ children }: OperationProviderProps) {
       return updatedOperation;
     } catch (err) {
       console.error("[OperationContext] Error updating operation:", err);
+      return null;
+    } finally {
+      setIsLoading(false);
+      isLoadingAlert(false);
+    }
+  };
+
+
+  const completeIndividualWorker = async (idOperation: number, data: any) => {
+    setIsLoading(true);
+    isLoadingAlert(true);
+
+    try {
+      const updatedOperation = await operationService.updateWorkerGroups(idOperation, data);
+      // Refrescar la lista después de actualizar
+      await refreshOperations();
+      return updatedOperation;
+    } catch (err) {
+      console.error("[OperationContext] Error completing individual worker:", err);
       return null;
     } finally {
       setIsLoading(false);
@@ -500,7 +521,8 @@ export function OperationProvider({ children }: OperationProviderProps) {
     createOperation,
     updateOperation,
     lastUpdated,
-    preloadNextPages
+    preloadNextPages,
+    completeIndividualWorker,
   };
   
   return (
