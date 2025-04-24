@@ -26,6 +26,7 @@ import { GiExitDoor } from "react-icons/gi";
 import Profile from "./profile/Profile";
 import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
+import Faults from "./faults/Faults";
 
 const COLORS = {
   darkBlue: "#155dfc", // Azul oscuro
@@ -219,6 +220,14 @@ export default function Dashboard() {
                 isActive={isActive("/dashboard/clients")}
               />
 
+              <MenuItem
+                to="/dashboard/faults"
+                icon={<AiOutlineUser size={20} />}
+                label="Faltas"
+                isOpen={isMenuOpen}
+                isActive={isActive("/dashboard/faults")}
+              />
+
               <li className="my-3">
                 {isMenuOpen ? (
                   <hr className="border-gray-200" />
@@ -297,6 +306,15 @@ export default function Dashboard() {
               element={
                 <LayeredProviders features={[Feature.SERVICES]}>
                   <Services />
+                </LayeredProviders>
+              }
+            />
+
+            <Route
+              path="/faults"
+              element={
+                <LayeredProviders features={[Feature.FAULTS, Feature.WORKERS]}>
+                  <Faults />
                 </LayeredProviders>
               }
             />

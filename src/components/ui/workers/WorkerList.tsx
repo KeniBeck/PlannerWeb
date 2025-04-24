@@ -1,16 +1,29 @@
 import { useState, useMemo } from "react";
-import { Worker } from "@/core/model/worker";
+import { Worker, WorkerStatus } from "@/core/model/worker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { DataTable, TableColumn } from "../DataTable";
+import { DataTable, TableColumn, TableAction } from "../DataTable";
+import { BsPencil, BsTrash, BsCheckCircle, BsXCircle } from "react-icons/bs";
+import { FiRefreshCw } from "react-icons/fi";
+import Swal from "sweetalert2";
 
 interface WorkersListProps {
   workers: Worker[];
   isLoading?: boolean;
   searchTerm?: string;
+  onEdit?: (worker: Worker) => void;
+  onActivate?: (worker: Worker) => void;
+  onDeactivate?: (worker: Worker) => void;
 }
 
-export function WorkersList({ workers, isLoading = false, searchTerm = '' }: WorkersListProps) {
+export function WorkersList({ 
+  workers, 
+  isLoading = false, 
+  searchTerm = '', 
+  onEdit,
+  onActivate,
+  onDeactivate 
+}: WorkersListProps) {
   // Estados para manejar la paginación interna
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -18,35 +31,35 @@ export function WorkersList({ workers, isLoading = false, searchTerm = '' }: Wor
   // Configuración de estados de trabajador para estilos
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case "AVALIABLE":
+      case WorkerStatus.AVAILABLE:
         return {
           label: "Disponible",
           bgColor: "bg-green-100",
           textColor: "text-green-800",
           borderColor: "border-green-200",
         };
-      case "ASSIGNED":
+      case WorkerStatus.ASSIGNED:
         return {
           label: "Asignado",
           bgColor: "bg-blue-100",
           textColor: "text-blue-800",
           borderColor: "border-blue-200",
         };
-      case "DEACTIVATED":
+      case WorkerStatus.DEACTIVATED:
         return {
           label: "Retirado",
           bgColor: "bg-gray-100",
           textColor: "text-gray-800",
           borderColor: "border-gray-200",
         };
-      case "DISABLE":
+      case WorkerStatus.UNAVAILABLE:
         return {
           label: "Deshabilitado",
           bgColor: "bg-red-100",
           textColor: "text-red-800",
           borderColor: "border-red-200",
         };
-      case "INCAPACITATED":
+      case WorkerStatus.INCAPACITATED:
         return {
           label: "Incapacitado",
           bgColor: "bg-purple-100",
@@ -61,6 +74,80 @@ export function WorkersList({ workers, isLoading = false, searchTerm = '' }: Wor
           borderColor: "border-gray-200",
         };
     }
+  };
+
+  // Manejadores para acciones confirmadas
+  const handleEdit = (worker: Worker) => {
+    if (onEdit) onEdit(worker);
+  };
+
+  const handleDeactivate = (worker: Worker) => {
+    if (!onDeactivate) return;
+    
+    Swal.fire({
+      title: '¿Desactivar trabajador?',
+      html: `¿Estás seguro de que deseas desactivar a <strong>${worker.name}</strong>?<br/><br/><span class="text-sm text-gray-600">El trabajador no podrá ser asignado a nuevas operaciones.</span>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, desactivar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        onDeactivate(worker);
+      }
+    });
+  };
+  
+  const handleActivate = (worker: Worker) => {
+    if (!onActivate) return;
+    
+    Swal.fire({
+      title: '¿Activar trabajador?',
+      html: `¿Estás seguro de que deseas activar a <strong>${worker.name}</strong>?<br/><br/><span class="text-sm text-gray-600">El trabajador volverá a estar disponible para ser asignado.</span>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, activar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6b7280'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        onActivate(worker);
+      }
+    });
+  };
+
+  // Definir acciones dinámicamente según el estado del trabajador
+  const getActionsForWorker = (worker: Worker): TableAction<Worker>[] => {
+    const actions: TableAction<Worker>[] = [
+      {
+        label: "Editar",
+        icon: <BsPencil className="h-4 w-4" />,
+        onClick: handleEdit,
+        className: "text-blue-600",
+      }
+    ];
+    
+    // Agregar acción según estado
+    if (worker.status === WorkerStatus.DEACTIVATED) {
+      actions.push({
+        label: "Activar",
+        icon: <BsCheckCircle className="h-4 w-4" />,
+        onClick: handleActivate,
+        className: "text-green-600",
+      });
+    } else {
+      actions.push({
+        label: "Desactivar",
+        icon: <BsXCircle className="h-4 w-4" />,
+        onClick: handleDeactivate,
+        className: "text-red-600",
+      });
+    }
+    
+    return actions;
   };
 
   // Definir columnas usando useMemo
@@ -145,7 +232,6 @@ export function WorkersList({ workers, isLoading = false, searchTerm = '' }: Wor
         }
         className="mb-4"
         initialSort={{ key: "code", direction: "asc" }}
-        // Usamos paginación interna (no externa), así que no necesitamos estas props
         externalPagination={false}
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}
