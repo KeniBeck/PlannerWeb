@@ -7,8 +7,10 @@ interface Worker {
     dni: string;
     createAt: Date;
     endDate?: Date;
-    incapacity?: Incapacity;
-    deactivationDate?: Date;
+   failures:number;
+   dateDisableStart?: Date;
+    dateDisableEnd?: Date;
+    dateRetierment?: Date;
     jobArea: Area;
     status: WorkerStatus;
     code: string;

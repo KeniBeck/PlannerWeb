@@ -3,9 +3,10 @@ import { Worker, WorkerStatus } from "@/core/model/worker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
-import { BsPencil, BsTrash, BsCheckCircle, BsXCircle } from "react-icons/bs";
-import { FiRefreshCw } from "react-icons/fi";
+import { BsPencil, BsCheckCircle, BsXCircle, BsEye } from "react-icons/bs";
 import Swal from "sweetalert2";
+import { HiOutlineBan, HiOutlineRefresh } from "react-icons/hi";
+import { on } from "events";
 
 interface WorkersListProps {
   workers: Worker[];
@@ -13,6 +14,7 @@ interface WorkersListProps {
   searchTerm?: string;
   onEdit?: (worker: Worker) => void;
   onActivate?: (worker: Worker) => void;
+  onView?: (worker: Worker) => void;
   onDeactivate?: (worker: Worker) => void;
 }
 
@@ -22,6 +24,7 @@ export function WorkersList({
   searchTerm = '', 
   onEdit,
   onActivate,
+  onView,
   onDeactivate 
 }: WorkersListProps) {
   // Estados para manejar la paginación interna
@@ -76,79 +79,51 @@ export function WorkersList({
     }
   };
 
-  // Manejadores para acciones confirmadas
-  const handleEdit = (worker: Worker) => {
-    if (onEdit) onEdit(worker);
-  };
-
-  const handleDeactivate = (worker: Worker) => {
-    if (!onDeactivate) return;
-    
-    Swal.fire({
-      title: '¿Desactivar trabajador?',
-      html: `¿Estás seguro de que deseas desactivar a <strong>${worker.name}</strong>?<br/><br/><span class="text-sm text-gray-600">El trabajador no podrá ser asignado a nuevas operaciones.</span>`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, desactivar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        onDeactivate(worker);
-      }
-    });
-  };
-  
-  const handleActivate = (worker: Worker) => {
-    if (!onActivate) return;
-    
-    Swal.fire({
-      title: '¿Activar trabajador?',
-      html: `¿Estás seguro de que deseas activar a <strong>${worker.name}</strong>?<br/><br/><span class="text-sm text-gray-600">El trabajador volverá a estar disponible para ser asignado.</span>`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, activar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#6b7280'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        onActivate(worker);
-      }
-    });
-  };
-
-  // Definir acciones dinámicamente según el estado del trabajador
-  const getActionsForWorker = (worker: Worker): TableAction<Worker>[] => {
-    const actions: TableAction<Worker>[] = [
-      {
-        label: "Editar",
-        icon: <BsPencil className="h-4 w-4" />,
-        onClick: handleEdit,
-        className: "text-blue-600",
-      }
+  // Definir acciones de la tabla
+  const actions: TableAction<Worker>[] = useMemo(() => {
+    const tableActions: TableAction<Worker>[] = [
+       {
+           label: (worker) => (worker.status != WorkerStatus.DEACTIVATED ? "Eliminar" : "Activar"),
+           icon: (worker) =>
+             worker.status != WorkerStatus.DEACTIVATED ? (
+               <HiOutlineBan className="h-4 w-4" />
+             ) : (
+               <HiOutlineRefresh className="h-4 w-4" />
+             ),
+           onClick: (worker) =>
+             worker.status === WorkerStatus.DEACTIVATED
+               ? onActivate && onActivate(worker) 
+               : onDeactivate && onDeactivate(worker),
+           className: (worker) =>
+             worker.status === WorkerStatus.DEACTIVATED
+               ? "text-orange-600 hover:bg-red-50"
+               : "text-green-600 hover:bg-green-50",
+         },
     ];
     
-    // Agregar acción según estado
-    if (worker.status === WorkerStatus.DEACTIVATED) {
-      actions.push({
-        label: "Activar",
-        icon: <BsCheckCircle className="h-4 w-4" />,
-        onClick: handleActivate,
-        className: "text-green-600",
-      });
-    } else {
-      actions.push({
-        label: "Desactivar",
-        icon: <BsXCircle className="h-4 w-4" />,
-        onClick: handleDeactivate,
-        className: "text-red-600",
+    // Acción para editar (siempre presente)
+    if (onEdit) {
+      tableActions.push({
+        label: "Editar",
+        icon: <BsPencil className="h-4 w-4" />,
+        onClick: onEdit,
+        className: "text-blue-600",
       });
     }
     
-    return actions;
-  };
+    // Acción para ver detalles
+    if (onView) {
+      tableActions.push({
+        label: "Ver detalles",
+        icon: <BsEye className="h-4 w-4" />,
+        onClick: onView,
+        className: "text-gray-600",
+      });
+    }
+    
+    
+    return tableActions;
+  }, [onEdit, onView, onActivate, onDeactivate]);
 
   // Definir columnas usando useMemo
   const columns: TableColumn<Worker>[] = useMemo(
@@ -219,8 +194,9 @@ export function WorkersList({
   return (
     <div className="w-full">
       <DataTable
-        data={workers}
+        data={workers || []}
         columns={columns}
+        actions={actions}
         itemsPerPage={itemsPerPage}
         itemsPerPageOptions={[10, 20, 30, 50]}
         itemName="trabajadores"
@@ -236,7 +212,7 @@ export function WorkersList({
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}
         currentPage={currentPage}
-        totalItems={workers.length}
+        totalItems={workers?.length || 0}
         emptyIcon={
           <svg
             className="h-12 w-12 text-gray-300 mb-3"
