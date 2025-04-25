@@ -4,6 +4,10 @@ import { getTokenRole, isTokenExpired } from "@/lib/utils/jwtutils";
 import { UserRole } from "@/lib/utils/interfaces/role";
 import api from "./client/axiosConfig";
 
+export interface AuthServiceInterface {
+  axios: AxiosError;
+}
+
 class AuthService {
   private baseUrl = import.meta.env.VITE_API_URL;
 

@@ -1,9 +1,3 @@
-import { Worker } from "./worker";
-import { Area } from "./area";
-import { Service } from "./service";
-import { Client } from "./client";
-import { WorkersGroup } from "./workersGroup";
-import { User } from "./user";
 
 export interface Operation {
   id: number;

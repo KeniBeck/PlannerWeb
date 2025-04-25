@@ -421,17 +421,12 @@ export function OperationProvider({ children }: OperationProviderProps) {
           });
         }
         
-        console.log("originalWorkerIds:", data.originalWorkerIds);
-        console.log("Todos los IDs actuales:", Array.from(allCurrentWorkerIds));
-        
         // Encontrar IDs que estaban en los originales pero ya no están en los actuales
         formattedUpdateData.removedWorkerIds = data.originalWorkerIds
           .filter((id: number) => !allCurrentWorkerIds.has(id));
-        
-        console.log("Trabajadores removidos (calculados):", formattedUpdateData.removedWorkerIds);
+       
       }
 
-      console.log("Formatted Update Data:", formattedUpdateData);
       
       const updatedOperation = await operationService.updateOperation(id, formattedUpdateData);
       // Refrescar la lista después de actualizar

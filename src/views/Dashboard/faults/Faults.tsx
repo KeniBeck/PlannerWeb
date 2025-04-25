@@ -2,8 +2,6 @@ import { useMemo, useState } from "react";
 import { Fault, FaultType } from "@/core/model/fault";
 import { AiOutlineSearch } from "react-icons/ai";
 import { FiFilter } from "react-icons/fi";
-import { BsEye, BsPencil, BsTrash } from "react-icons/bs";
-import { TableAction } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -63,42 +61,7 @@ export default function Faults() {
     });
   };
   
-  const handleEditFault = (fault: Fault) => {
-    console.log("Editar falta:", fault);
-    // Implementar lógica de edición
-  };
   
-  const handleDeleteFault = async (fault: Fault) => {
-    const result = await Swal.fire({
-      title: '¿Eliminar registro de falta?',
-      text: `¿Estás seguro de eliminar la falta de ${fault.worker?.name || 'este trabajador'}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6'
-    });
-    
-    if (result.isConfirmed) {
-      try {
-        await faultService.deleteFault(fault.id);
-        await refreshFaults();
-        Swal.fire(
-          'Eliminada',
-          'La falta ha sido eliminada correctamente',
-          'success'
-        );
-      } catch (error) {
-        console.error("Error al eliminar falta:", error);
-        Swal.fire(
-          'Error',
-          'No se pudo eliminar la falta',
-          'error'
-        );
-      }
-    }
-  };
 
   // Función para obtener etiqueta de tipo de falta
   const getFaultTypeLabel = (type: string): string => {
@@ -151,31 +114,6 @@ export default function Faults() {
         field: "createAt",
         value: (fault) =>
           format(new Date(fault.createAt), "dd/MM/yyyy", { locale: es }),
-      },
-    ],
-    []
-  );
-
-  // Acciones para la tabla de faltas
-  const faultActions: TableAction<Fault>[] = useMemo(
-    () => [
-      {
-        label: "Ver detalles",
-        icon: <BsEye className="h-4 w-4" />,
-        onClick: handleViewFault,
-        className: "text-blue-600",
-      },
-      {
-        label: "Editar",
-        icon: <BsPencil className="h-4 w-4" />,
-        onClick: handleEditFault,
-        className: "text-gray-700",
-      },
-      {
-        label: "Eliminar",
-        icon: <BsTrash className="h-4 w-4" />,
-        onClick: handleDeleteFault,
-        className: "text-red-600",
       },
     ],
     []

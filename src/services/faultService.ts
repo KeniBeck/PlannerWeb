@@ -1,5 +1,6 @@
 import { Fault, PaginatedResponse } from "@/core/model/fault";
 import api from "./client/axiosConfig";
+import { Incidence } from "@/components/ui/workers/WorkerIncidencesList";
 
 class FaultService {
   async getPaginatedFaults(page = 1, limit = 10): Promise<PaginatedResponse> {
@@ -10,6 +11,26 @@ class FaultService {
       return response.data;
     } catch (error) {
       console.error("Error obteniendo faltas:", error);
+      throw error;
+    }
+  }
+
+  async getFaultById(id: number): Promise<Fault> {
+    try {
+      const response = await api.get(`/called-attention/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error obteniendo falta por ID:", error);
+      throw error;
+    }
+  }
+
+  async getFaultByIdWorker(id: number): Promise<Incidence[]> {
+    try {
+      const response = await api.get(`/called-attention/by-worker/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error obteniendo falta por ID de trabajador:", error);
       throw error;
     }
   }

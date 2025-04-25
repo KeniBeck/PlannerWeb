@@ -113,9 +113,6 @@ export function useOperationSubmit(
       const { allRemovedWorkerIds, originalWorkerIds } = getRemovedWorkerIds();
       const normalizedGroups = prepareWorkerGroups();
       
-      console.log("IDs de trabajadores originales:", originalWorkerIds);
-      console.log("IDs de trabajadores eliminados (final):", allRemovedWorkerIds);
-      
       const dataToSave = {
         id: isEditMode ? formData.id : undefined,
         status: formData.status,
@@ -135,7 +132,6 @@ export function useOperationSubmit(
         originalWorkerIds: originalWorkerIds
       };
       
-      console.log("Datos a guardar:", dataToSave);
       await onSave?.(dataToSave, isEditMode);
   
       Swal.fire({
