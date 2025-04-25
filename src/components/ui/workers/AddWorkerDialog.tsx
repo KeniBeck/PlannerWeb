@@ -1,17 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Worker, WorkerStatus } from '@/core/model/worker';
 import { Area } from '@/core/model/area';
-import { fail } from 'assert';
-import { fromTheme } from 'tailwind-merge';
 
 interface AddWorkerDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     areas?: Area[];
+    worker?: Worker; // Si se proporciona, estamos en modo edición
     onAddWorker?: (worker: Omit<Worker, 'id'>) => void;
+    onUpdateWorker?: (worker: Worker) => void; // Nueva prop para actualizar trabajador
 }
 
-export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }: AddWorkerDialogProps) {
+export function AddWorkerDialog({ 
+    open, 
+    onOpenChange, 
+    areas = [], 
+    worker,
+    onAddWorker,
+    onUpdateWorker
+}: AddWorkerDialogProps) {
+    // Determinar si estamos en modo edición
+    const isEditMode = !!worker;
+
     // Estado para el formulario
     const [formData, setFormData] = useState({
         name: '',
@@ -30,16 +40,30 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
         areaId: '',
     });
 
-    // Restablecer el formulario cuando se abre/cierra
+    // Cargar datos del trabajador si estamos editando
     useEffect(() => {
-        if (!open) {
-            setFormData({
-                name: '',
-                dni: '',
-                code: '',
-                phone: '',
-                areaId: '',
-            });
+        if (open) {
+            if (worker) {
+                // Si tenemos un trabajador, estamos en modo edición
+                setFormData({
+                    name: worker.name || '',
+                    dni: worker.dni || '',
+                    code: worker.code || '',
+                    phone: worker.phone || '',
+                    areaId: worker.jobArea?.id.toString() || '',
+                });
+            } else {
+                // En modo creación, resetear formulario
+                setFormData({
+                    name: '',
+                    dni: '',
+                    code: '',
+                    phone: '',
+                    areaId: '',
+                });
+            }
+
+            // Resetear errores en ambos casos
             setErrors({
                 name: '',
                 dni: '',
@@ -48,7 +72,7 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
                 areaId: '',
             });
         }
-    }, [open]);
+    }, [open, worker]);
 
     const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, ''); // Solo permitir números
@@ -125,7 +149,6 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
         }));
     };
 
-
     // Validar el formulario
     const validateForm = () => {
         const newErrors = {
@@ -185,17 +208,34 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
             return;
         }
 
-        const newWorker = {
-            name: formData.name,
-            dni: formData.dni,
-            code: formData.code,
-            phone: formData.phone,
-            jobArea: selectedArea,
-            status: WorkerStatus.AVAILABLE,
-            createAt: new Date(),
-        };
-
-        onAddWorker?.(newWorker);
+        if (isEditMode && worker) {
+            // Modo edición: actualizar trabajador existente
+            const updatedWorker: Worker = {
+                ...worker,
+                name: formData.name,
+                dni: formData.dni,
+                code: formData.code,
+                phone: formData.phone,
+                jobArea: selectedArea
+                // Mantener el estado y fecha de creación
+            };
+            
+            onUpdateWorker?.(updatedWorker);
+        } else {
+            // Modo creación: nuevo trabajador
+            const newWorker = {
+                name: formData.name,
+                dni: formData.dni,
+                code: formData.code,
+                phone: formData.phone,
+                jobArea: selectedArea,
+                status: WorkerStatus.AVAILABLE,
+                createAt: new Date(),
+            };
+            
+            onAddWorker?.(newWorker);
+        }
+        
         onOpenChange(false);
     };
 
@@ -204,10 +244,12 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500/70" >
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all">
-                {/* Header */}
+                {/* Header con título dinámico según el modo */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-lg">
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-white">Nuevo Trabajador</h3>
+                        <h3 className="text-xl font-bold text-white">
+                            {isEditMode ? 'Editar Trabajador' : 'Nuevo Trabajador'}
+                        </h3>
                         <button
                             onClick={() => onOpenChange(false)}
                             className="text-white hover:text-blue-200 focus:outline-none"
@@ -339,7 +381,7 @@ export function AddWorkerDialog({ open, onOpenChange, areas = [], onAddWorker }:
                             type="submit"
                             className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            Guardar
+                            {isEditMode ? 'Actualizar' : 'Guardar'}
                         </button>
                     </div>
                 </form>

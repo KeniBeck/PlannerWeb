@@ -118,11 +118,9 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
           groups: newGroups,
           removedWorkerIds: [...removedWorkerIds, workerId]
         });
-        console.log(`Trabajador ${workerId} eliminado del grupo y añadido a removedWorkerIds`);
       } else {
         // Si no estaba en los originales, solo actualizar los grupos
         setFormData({ ...formData, groups: newGroups });
-        console.log(`Trabajador ${workerId} eliminado del grupo (no estaba en los originales)`);
       }
     };
   
@@ -193,7 +191,6 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
         // Guardar los IDs de los trabajadores del grupo antes de eliminarlo
         const workersInGroup = newGroups[index].workers || [];
         
-        console.log("Trabajadores en grupo a eliminar:", workersInGroup);
         
         // Eliminar el grupo
         newGroups.splice(index, 1);
@@ -219,7 +216,6 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
           removedWorkerIds: newRemovedWorkerIds
         });
         
-        console.log("Lista actualizada de removedWorkerIds:", newRemovedWorkerIds);
       };
     // Obtener nombre de trabajador por ID
     const getWorkerNameById = (id: number) => {

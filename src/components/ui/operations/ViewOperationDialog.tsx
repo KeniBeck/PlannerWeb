@@ -157,7 +157,6 @@ export function ViewOperationDialog({
   
     // método para completar trabajador individual
   const handleCompleteIndividualWorker = async (worker: any, group: any) => {
-    console.log("Trabajador a completar:", worker);
     const now = new Date();
     const formattedDate = formatDateForApi(now);
     const formattedTime = format(now, 'HH:mm');
@@ -274,7 +273,6 @@ export function ViewOperationDialog({
   
   // Y modificar también handleCompleteWorkerGroup para usar el contexto
   const handleCompleteWorkerGroup = async (group: any, groupIndex: number) => {
-    console.log("Grupo a completar:", group);
     const now = new Date();
     const formattedDate = formatDateForApi(now);
     const formattedTime = format(now, 'HH:mm');

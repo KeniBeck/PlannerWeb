@@ -12,7 +12,10 @@ import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { WorkersList } from "@/components/ui/workers/WorkerList";
-import { ActivateItemAlert, DeactivateItemAlert } from "@/components/dialog/CommonAlertActive";
+import {
+  ActivateItemAlert,
+  DeactivateItemAlert,
+} from "@/components/dialog/CommonAlertActive";
 import { workerService } from "@/services/workerService";
 import { ViewWorkerDialog } from "@/components/ui/workers/ViewWorkerDialog";
 
@@ -33,6 +36,7 @@ export default function Workers() {
   const [workerToActivate, setWorkerToActivate] = useState<Worker | null>(null);
   const [viewWorker, setViewWorker] = useState<Worker | null>(null);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+  const [isEditWorkerOpen, setIsEditWorkerOpen] = useState(false);
 
   // Todas las distintas categorías de trabajadores
   const allWorkers = workers;
@@ -71,8 +75,8 @@ export default function Workers() {
 
   // Manejadores de acciones para los trabajadores
   const handleEditWorker = (worker: Worker) => {
-    console.log("Editar trabajador:", worker);
     setSelectedWorker(worker);
+    setIsEditWorkerOpen(true);
   };
 
   const handleDeleteWorker = (worker: Worker) => {
@@ -81,32 +85,46 @@ export default function Workers() {
 
   const handleActivateWorker = (worker: Worker) => {
     setWorkerToActivate(worker);
-  }
-
+  };
 
   const handleViewWorker = (worker: Worker) => {
     setViewWorker(worker);
   };
 
+  const handleTabChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setActiveTab(e.target.value as WorkerViewTab);
+  };
+
+  const handleUpdateWorker = async (worker: Worker) => {
+    try {
+      await workerService.updateWorker(worker.id, worker);
+      refreshWorkers();
+      setIsEditWorkerOpen(false);
+      setSelectedWorker(null);
+    } catch (error) {
+      console.error("Error updating worker:", error);
+    }
+  }
+
   const ConfirmToDeactivated = async () => {
-    if(!workerToDeactivate)return;
-    await workerService.updateWorker(workerToDeactivate.id,{
+    if (!workerToDeactivate) return;
+    await workerService.updateWorker(workerToDeactivate.id, {
       ...workerToDeactivate,
-      status: WorkerStatus.DEACTIVATED
-    })
+      status: WorkerStatus.DEACTIVATED,
+    });
     refreshWorkers();
     setWorkerToDeactivate(null);
   };
 
-  const ConfirmToActivated = async ()=>{
-    if(!workerToActivate)return;
-    await workerService.updateWorker(workerToActivate.id,{
+  const ConfirmToActivated = async () => {
+    if (!workerToActivate) return;
+    await workerService.updateWorker(workerToActivate.id, {
       ...workerToActivate,
-      status: WorkerStatus.AVAILABLE
-    })
+      status: WorkerStatus.AVAILABLE,
+    });
     refreshWorkers();
     setWorkerToActivate(null);
-  }
+  };
 
   // Definir columnas para exportar trabajadores
   const workerExportColumns: ExcelColumn[] = useMemo(
@@ -189,11 +207,6 @@ export default function Workers() {
       ? workerExportColumns
       : faultExportColumns;
   }, [currentView.type, workerExportColumns, faultExportColumns]);
-
-  // Controlador para el cambio de pestaña
-  const handleTabChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setActiveTab(e.target.value as WorkerViewTab);
-  };
 
   return (
     <>
@@ -312,9 +325,17 @@ export default function Workers() {
       />
 
       <ViewWorkerDialog
-      open={!!viewWorker}
-      onOpenChange={() => setViewWorker(null)}
-      worker={viewWorker} 
+        open={!!viewWorker}
+        onOpenChange={() => setViewWorker(null)}
+        worker={viewWorker}
+      />
+
+      <AddWorkerDialog
+      open={isEditWorkerOpen}
+      onOpenChange={setIsEditWorkerOpen}
+      worker={selectedWorker || undefined}
+      areas={areas}
+      onUpdateWorker={handleUpdateWorker}
       />
     </>
   );

@@ -63,7 +63,6 @@ class OperationService {
     try {
       if (!operationId) throw new Error("Se requiere un ID de operación válido");
       
-      console.log("Actualizando grupos de trabajadores:", groupData);
       
       // Enviar directamente el objeto de actualización de grupos sin procesar
       const response = await api.patch(`/operation/${operationId}`, groupData);
@@ -81,7 +80,6 @@ class OperationService {
     try {
       if (!id) throw new Error("Se requiere un ID de operación válido");
 
-      console.log("Datos de actualización recibidos:", updateData);
 
       // Separar la lógica de trabajadores para simplificar
       const workers: {
@@ -110,7 +108,7 @@ class OperationService {
 
       // Procesar workerGroups si existen
       if (updateData.workerGroups && Array.isArray(updateData.workerGroups)) {
-        console.log("Procesando workerGroups:", updateData.workerGroups.length);
+  
 
         updateData.workerGroups.forEach((group: any) => {
           // Extraer los IDs de trabajadores
@@ -138,7 +136,7 @@ class OperationService {
               timeStart: isScheduled ? group.timeStart : null,
               timeEnd: isScheduled ? (group.timeEnd || null) : null
             });
-            console.log(`Actualizando grupo existente ${group.groupId} con ${workerIds.length} trabajadores`);
+      
           } else {
             // GRUPOS NUEVOS - Añadir mediante 'connect'
             workers.connect.push({
@@ -148,7 +146,7 @@ class OperationService {
               timeStart: isScheduled ? group.timeStart : null,
               timeEnd: isScheduled ? (group.timeEnd || null) : null
             });
-            console.log(`Creando nuevo grupo con ${workerIds.length} trabajadores`);
+  
           }
         });
       }
@@ -159,7 +157,7 @@ class OperationService {
           .filter((id: any) => id !== undefined && id !== null)
           .map((id: any) => ({ id: Number(id) }));
 
-        console.log("Trabajadores a desconectar:", workers.disconnect);
+      
       }
 
       // Solo incluir workers en el payload si hay algo para conectar, desconectar o actualizar
@@ -167,7 +165,6 @@ class OperationService {
         dataFmt.workers = workers;
       }
 
-      console.log("Enviando datos de actualización:", JSON.stringify(dataFmt, null, 2));
       const response = await api.patch(`/operation/${id}`, dataFmt);
       return response.data;
     } catch (error) {
@@ -182,7 +179,6 @@ class OperationService {
         { status: "DEACTIVATED" }
       );
 
-      console.log("Respuesta de eliminación:", response.data);
 
       return response.data;
     } catch (error) {
@@ -194,7 +190,6 @@ class OperationService {
   async getOperationByIdWithWorkers(id: number): Promise<any> {
     try {
       const response = await api.get(`/operation/by-worker/${id}`);
-      console.log("Respuesta de operación por ID:", response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {

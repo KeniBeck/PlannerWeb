@@ -141,7 +141,6 @@ export default function Operation() {
 
   // Manejadores para acciones de operaciones
   const handleEditOperation = (operation: any) => {
-    console.log("Editar operación:", operation);
     const formattedOperation = formatOperationForEdit(operation);
     setSelectedOperation(formattedOperation);
     setIsAddOpen(true);
@@ -218,7 +217,6 @@ export default function Operation() {
 
   const ConfirmToActive = async () => {
     if (!operationToActivate) return;
-    console.log("Activar operación:", operationToActivate);
     await operationService
       .deleteOperation(operationToActivate.id)
       refreshDataLocal();

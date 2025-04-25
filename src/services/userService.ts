@@ -22,7 +22,6 @@ class UserService {
   }
 
   getRoleFromCargo(cargo: string): string {
-    console.log("Cargo:", cargo);
     switch (cargo) {
       case "SUPERVISOR":
         return "ADMIN";

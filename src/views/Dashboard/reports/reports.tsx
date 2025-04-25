@@ -41,7 +41,7 @@ export default function Reports() {
             const opDate = op.dateStart ? op.dateStart.split('T')[0] : null;
             const matchesDate = opDate === todaysDate;
 
-            console.log("status", statusFilter, op.status);
+    
             // Verificar el estado
             const matchesStatus = statusFilter === "all" || op.status === statusFilter;
 
@@ -228,7 +228,7 @@ export default function Reports() {
             const workerCount = op.workers?.length || 0;
             const workersInGroups = op.workerGroups?.reduce((acc, group) => acc + (group.workers?.length || 0), 0) || 0;
 
-            console.log("count", op.workerGroups);
+    
             serviceWorkerCounts[serviceName] = (serviceWorkerCounts[serviceName] || 0) + workerCount + workersInGroups;
         });
 
