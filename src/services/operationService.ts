@@ -1,9 +1,8 @@
 import { handleApiError } from "@/lib/utils/apiUtils";
 import api from "./client/axiosConfig";
+import axios from "axios";
 import {
-  OperationCreateData,
-  OperationFilterDto,
-  OperationUpdateData,
+  OperationFilterDto
 } from "./interfaces/operationDTO";
 
 
@@ -188,6 +187,21 @@ class OperationService {
       return response.data;
     } catch (error) {
       handleApiError(error);
+      throw error;
+    }
+  }
+
+  async getOperationByIdWithWorkers(id: number): Promise<any> {
+    try {
+      const response = await api.get(`/operation/by-worker/${id}`);
+      console.log("Respuesta de operación por ID:", response.data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        // Manejar silenciosamente el caso cuando no hay operaciones
+        return [];
+      }
+      // Para otros errores, propagar para manejo adecuado
       throw error;
     }
   }

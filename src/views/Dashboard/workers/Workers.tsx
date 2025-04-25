@@ -14,6 +14,7 @@ import { es } from "date-fns/locale";
 import { WorkersList } from "@/components/ui/workers/WorkerList";
 import { ActivateItemAlert, DeactivateItemAlert } from "@/components/dialog/CommonAlertActive";
 import { workerService } from "@/services/workerService";
+import { ViewWorkerDialog } from "@/components/ui/workers/ViewWorkerDialog";
 
 export default function Workers() {
   const {
@@ -84,7 +85,6 @@ export default function Workers() {
 
 
   const handleViewWorker = (worker: Worker) => {
-    console.log("Ver detalles del trabajador:", worker);
     setViewWorker(worker);
   };
 
@@ -309,6 +309,12 @@ export default function Workers() {
         onConfirm={ConfirmToActivated}
         itemName="trabajador"
         isLoading={isLoading}
+      />
+
+      <ViewWorkerDialog
+      open={!!viewWorker}
+      onOpenChange={() => setViewWorker(null)}
+      worker={viewWorker} 
       />
     </>
   );

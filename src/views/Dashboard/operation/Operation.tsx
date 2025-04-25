@@ -48,8 +48,6 @@ export default function Operation() {
     updateOperation,
   } = useOperations();
 
-  console.log("Operaciones:", operations);
-
   // Extraer lógica de filtros a un hook personalizado
   const {
     searchTerm,

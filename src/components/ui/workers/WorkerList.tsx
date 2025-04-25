@@ -3,10 +3,9 @@ import { Worker, WorkerStatus } from "@/core/model/worker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
-import { BsPencil, BsCheckCircle, BsXCircle, BsEye } from "react-icons/bs";
-import Swal from "sweetalert2";
+import { BsPencil, BsEye } from "react-icons/bs";
 import { HiOutlineBan, HiOutlineRefresh } from "react-icons/hi";
-import { on } from "events";
+
 
 interface WorkersListProps {
   workers: Worker[];
@@ -82,24 +81,16 @@ export function WorkersList({
   // Definir acciones de la tabla
   const actions: TableAction<Worker>[] = useMemo(() => {
     const tableActions: TableAction<Worker>[] = [
-       {
-           label: (worker) => (worker.status != WorkerStatus.DEACTIVATED ? "Eliminar" : "Activar"),
-           icon: (worker) =>
-             worker.status != WorkerStatus.DEACTIVATED ? (
-               <HiOutlineBan className="h-4 w-4" />
-             ) : (
-               <HiOutlineRefresh className="h-4 w-4" />
-             ),
-           onClick: (worker) =>
-             worker.status === WorkerStatus.DEACTIVATED
-               ? onActivate && onActivate(worker) 
-               : onDeactivate && onDeactivate(worker),
-           className: (worker) =>
-             worker.status === WorkerStatus.DEACTIVATED
-               ? "text-orange-600 hover:bg-red-50"
-               : "text-green-600 hover:bg-green-50",
-         },
     ];
+     // Acción para ver detalles
+     if (onView) {
+      tableActions.push({
+        label: "Ver detalles",
+        icon: <BsEye className="h-4 w-4" />,
+        onClick: onView,
+        className: "text-blue-600",
+      });
+    }
     
     // Acción para editar (siempre presente)
     if (onEdit) {
@@ -107,18 +98,31 @@ export function WorkersList({
         label: "Editar",
         icon: <BsPencil className="h-4 w-4" />,
         onClick: onEdit,
-        className: "text-blue-600",
+        className: "text-gray-600",
       });
     }
     
-    // Acción para ver detalles
-    if (onView) {
+   
+
+    if(onActivate && onDeactivate) {
       tableActions.push({
-        label: "Ver detalles",
-        icon: <BsEye className="h-4 w-4" />,
-        onClick: onView,
-        className: "text-gray-600",
+        label: (worker) => (worker.status === WorkerStatus.DEACTIVATED ? "Activar" : "Desactivar"),
+        icon: (worker) =>
+          worker.status === WorkerStatus.DEACTIVATED ? (
+            <HiOutlineRefresh className="h-4 w-4" />
+          ) : (
+            <HiOutlineBan className="h-4 w-4" />
+          ),
+        onClick: (worker) =>
+          worker.status === WorkerStatus.DEACTIVATED
+            ? onActivate(worker)
+            : onDeactivate(worker),
+        className: (worker) =>
+          worker.status === WorkerStatus.DEACTIVATED
+            ? "text-green-600 hover:bg-green-50"
+            : "text-orange-600 hover:bg-red-50",
       });
+
     }
     
     
