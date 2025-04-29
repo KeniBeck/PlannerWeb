@@ -28,6 +28,12 @@ interface SectionHeaderProps {
   showDownloadButton?: boolean;
 }
 
+const COLORS = {
+  darkBlue: "#155dfc", // Azul oscuro
+  limeGreen: "#A5C739", // Verde limón claro
+  skyBlue: "#0099ff"   // Azul cielo
+};
+
 export default function SectionHeader({
   title,
   subtitle,
@@ -213,44 +219,80 @@ export default function SectionHeader({
   };
 
   return (
-    <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md ">
-      <div>
-        <h1 className="text-3xl font-bold">
-          {title}
-        </h1>
-        <p className="text-blue-100 mt-1 font-light">
-          {subtitle}
-        </p>
+    <header 
+      className="relative rounded-t-md overflow-hidden"
+      style={{ 
+        background: `linear-gradient(135deg, ${COLORS.darkBlue} 0%, #1047c9 100%)`,
+        minHeight: "90px"
+      }}
+    >
+      {/* Elementos decorativos */}
+      <div className="absolute inset-0 z-0">
+        {/* SVG de ondas */}
+        <svg
+          className="absolute bottom-0 left-0 w-full"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1440 320"
+          preserveAspectRatio="none"
+          style={{ height: "60px" }}
+        >
+          <path
+            fill="rgba(255, 255, 255, 0.08)"
+            fillOpacity="1"
+            d="M0,128L48,138.7C96,149,192,171,288,165.3C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,138.7C1248,117,1344,75,1392,53.3L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+          ></path>
+        </svg>
+        
+        {/* Círculos decorativos */}
+        <div className="absolute top-2 right-10 w-12 h-12 rounded-full bg-white opacity-5"></div>
+        <div className="absolute bottom-5 right-40 w-8 h-8 rounded-full bg-white opacity-5"></div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          title="Exportar datos"
-          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
-          onClick={handleExportToExcel}
-          disabled={!exportData || exportData.length === 0}
-        >
-          <AiOutlineDownload className="h-5 w-5" />
-        </button>
+      {/* Contenido principal */}
+      <div className="flex justify-between items-center p-5 relative z-10">
+        <div>
+          <h1 className="text-3xl font-bold text-white">
+            {title}
+          </h1>
+          <p className="text-blue-100 mt-1 font-light">
+            {subtitle}
+          </p>
+        </div>
 
-        <button
-          title="Actualizar datos"
-          className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
-          onClick={() => refreshData()}
-          disabled={loading}
-        >
-          <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          {showDownloadButton && (
+            <button
+              title="Exportar datos"
+              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
+              onClick={handleExportToExcel}
+              disabled={!exportData || exportData.length === 0}
+            >
+              <AiOutlineDownload className="h-5 w-5" />
+            </button>
+          )}
 
-        {showAddButton && (
           <button
-            className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all cursor-pointer"
-            onClick={handleAddArea}
+            title="Actualizar datos"
+            className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
+            onClick={() => refreshData()}
+            disabled={loading}
           >
-            <AiOutlinePlusCircle className="mr-2" /> {btnAddText}
+            <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
-        )}
+
+          {showAddButton && (
+            <button
+              className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all cursor-pointer"
+              onClick={handleAddArea}
+            >
+              <AiOutlinePlusCircle className="mr-2" /> {btnAddText}
+            </button>
+          )}
+        </div>
       </div>
+      
+      {/* Barra decorativa en la parte inferior */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-50"></div>
     </header>
   );
 }
