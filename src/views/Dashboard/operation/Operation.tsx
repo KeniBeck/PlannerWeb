@@ -17,9 +17,12 @@ import Swal from "sweetalert2";
 import { useOperationFilters } from "@/lib/hooks/useOperationFilters";
 import { formatOperationForEdit } from "@/lib/utils/operationHelpers";
 import { ActiveFilters } from "@/components/custom/filter/ActiveFilter";
-import { set } from "date-fns";
 import { DeactivateItemAlert } from "@/components/dialog/CommonAlertActive";
 import { OperationCreateData } from "@/services/interfaces/operationDTO";
+import { Workbook } from 'exceljs';
+import { saveAs } from 'file-saver';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function Operation() {
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -222,8 +225,313 @@ export default function Operation() {
       refreshDataLocal();
   }
 
+
+
   // Columnas para exportación a Excel
   const exportColumns = getOperationExportColumns();
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "Pendiente";
+      case "INPROGRESS":
+        return "En Curso";
+      case "COMPLETED":
+        return "Finalizado";
+      case "CANCELED":
+        return "Cancelado";
+      default:
+        return status || "Desconocido";
+    }
+  }
+
+  const getWorkerDni = (idWorker: number) => {
+    const worker = workers?.find((w) => w.id === idWorker);
+    return worker ? worker.dni : "Sin DNI";
+  }
+  
+  
+  const exportOperationsByWorker = async () => {
+    try {
+      // Obtener todas las operaciones con los filtros actuales
+      const response = await operationService.getPaginatedOperations(
+        1, 10000, filters
+      );
+      let operations = response.items;
+      
+      // Aplicar filtro de búsqueda si existe
+      if (searchTerm) {
+        operations = operations.filter((op: any) => 
+          op.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          op.jobArea?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          op.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          op.motorShip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          op.id?.toString().includes(searchTerm)
+        );
+      }
+      
+      // Crear un nuevo libro de trabajo
+      const workbook = new Workbook();
+      workbook.creator = 'PlannerWeb';
+      workbook.created = new Date();
+      
+      const worksheet = workbook.addWorksheet('Operaciones-Trabajadores', {
+        pageSetup: { fitToPage: true, fitToHeight: 5, fitToWidth: 7 }
+      });
+      
+      // Definir encabezados
+      const headers = [
+        'ID Operación', 'Estado', 'Área', 'Cliente',
+        'Supervisores', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin',
+        'Embarcación', 'Tarea', 'Grupo #', 'DNI Trabajador', 'Nombre Trabajador'
+      ];
+      
+      // Añadir fila de encabezados
+      worksheet.addRow(headers);
+      
+      // Aplicar estilo a los encabezados (exactamente igual que en SectionHeader)
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 28;
+      
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: '4472C4' }
+        };
+        
+        cell.font = {
+          bold: true,
+          color: { argb: 'FFFFFF' },
+          size: 12
+        };
+        
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: 'center',
+          wrapText: true
+        };
+        
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+
+      // Variable para seguir la operación actual (para colorear por operación)
+      let currentOperationId: any = null;
+      let rowIsEven = false;
+      
+      // Para cada operación expandir los trabajadores
+      operations.forEach((operation: any) => {
+        let workerAdded = false;
+        
+        // Si la operación tiene grupos de trabajadores
+        if (operation.workerGroups && operation.workerGroups.length > 0) {
+          // Para cada grupo
+          operation.workerGroups.forEach((group: any, groupIndex: number) => {
+            if (group.workers && group.workers.length > 0) {
+              // Para cada trabajador en el grupo
+              group.workers.forEach((worker: any) => {
+                // Si cambiamos de operación, alternar el color
+                if (currentOperationId !== operation.id) {
+                  currentOperationId = operation.id;
+                  rowIsEven = !rowIsEven; // Alterna entre true/false
+                }
+                
+                // Datos para la fila
+                interface Worker {
+                  dni:  string;
+                  name: string;
+                }
+
+                interface Supervisor {
+                  name: string;
+                }
+
+                interface JobArea {
+                  name?: string;
+                }
+
+                interface Client {
+                  name?: string;
+                }
+
+                interface Task {
+                  name?: string;
+                }
+
+                interface Operation {
+                  id: number | string;
+                  status: string;
+                  jobArea?: JobArea;
+                  client?: Client;
+                  inCharge?: Supervisor[];
+                  dateStart?: string | Date;
+                  timeStrat?: string;
+                  timeEnd?: string;
+                  dateEnd?: string | Date;
+                  motorShip?: string;
+                  task?: Task;
+                }
+
+                const rowData: (string | number)[] = [
+                  operation.id,
+                  getStatusLabel(operation.status),
+                  operation.jobArea?.name || 'Sin área',
+                  operation.client?.name || 'Sin cliente',
+                  operation.inCharge?.map((sup: Supervisor) => sup.name).join(', ') || 'Sin supervisor',
+                  operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
+                  operation.timeStrat || 'N/A',
+                  operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
+                  operation.timeEnd || 'N/A',
+                  operation.motorShip || 'N/A',
+                  operation.task?.name || 'Sin tarea',
+                  `Grupo ${groupIndex + 1}`,
+                  getWorkerDni(worker.id),
+                  worker.name
+                ];
+                
+                // Añadir la fila
+                const row = worksheet.addRow(rowData);
+                
+                // Aplicar estilo a filas (por operación)
+                if (rowIsEven) {
+                  row.eachCell((cell) => {
+                    cell.fill = {
+                      type: 'pattern',
+                      pattern: 'solid',
+                      fgColor: { argb: 'F2F7FF' }
+                    };
+                  });
+                }
+                
+                // Bordes para todas las celdas
+                row.eachCell((cell) => {
+                  cell.border = {
+                    top: { style: 'thin', color: { argb: 'E0E0E0' } },
+                    left: { style: 'thin', color: { argb: 'E0E0E0' } },
+                    bottom: { style: 'thin', color: { argb: 'E0E0E0' } },
+                    right: { style: 'thin', color: { argb: 'E0E0E0' } }
+                  };
+                  cell.alignment = { vertical: 'middle' };
+                });
+                
+                workerAdded = true;
+              });
+            }
+          });
+        }
+        
+        // Si no hay trabajadores, añadir una fila para la operación
+        if (!workerAdded) {
+          // Si cambiamos de operación, alternar el color
+          if (currentOperationId !== operation.id) {
+            currentOperationId = operation.id;
+            rowIsEven = !rowIsEven;
+          }
+          
+            interface Supervisor {
+            name: string;
+            }
+
+            interface JobArea {
+            name?: string;
+            }
+
+            interface Client {
+            name?: string;
+            }
+
+            interface Task {
+            name?: string;
+            }
+
+            interface Operation {
+            id: number | string;
+            status: string;
+            jobArea?: JobArea;
+            client?: Client;
+            inCharge?: Supervisor[];
+            dateStart?: string | Date;
+            timeStrat?: string;
+            timeEnd?: string;
+            dateEnd?: string | Date;
+            motorShip?: string;
+            task?: Task;
+            }
+
+            const rowData: (string | number)[] = [
+            operation.id,
+            getStatusLabel(operation.status),
+            operation.jobArea?.name || 'Sin área',
+            operation.client?.name || 'Sin cliente',
+            operation.inCharge?.map((sup: Supervisor) => sup.name).join(', ') || 'Sin supervisor',
+            operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
+            operation.timeStrat || 'N/A',
+            operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
+            operation.timeEnd || 'N/A',
+            operation.motorShip || 'N/A',
+            operation.task?.name || 'Sin tarea',
+            '',
+            '',
+            'Sin trabajadores'
+            ];
+          
+          const row = worksheet.addRow(rowData);
+          
+          if (rowIsEven) {
+            row.eachCell((cell) => {
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'F2F7FF' }
+              };
+            });
+          }
+          
+          row.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'E0E0E0' } },
+              left: { style: 'thin', color: { argb: 'E0E0E0' } },
+              bottom: { style: 'thin', color: { argb: 'E0E0E0' } },
+              right: { style: 'thin', color: { argb: 'E0E0E0' } }
+            };
+            cell.alignment = { vertical: 'middle' };
+          });
+        }
+      });
+      
+      // Ajustar ancho de columnas automáticamente
+      worksheet.columns.forEach(column => {
+        if (!column || typeof column.eachCell !== 'function') return;
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? String(cell.value).length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = Math.min(maxLength + 4, 30);
+      });
+      
+      // Guardar el archivo
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      const fileName = `operaciones_trabajadores_${new Date().toISOString().split('T')[0]}.xlsx`;
+      saveAs(blob, fileName);
+      
+    } catch (error) {
+      console.error('Error al exportar operaciones por trabajador:', error);
+      alert('Ocurrió un error al exportar los datos.');
+    }
+  };
+
 
   return (
     <>
@@ -240,6 +548,7 @@ export default function Operation() {
           exportFileName="operaciones"
           exportColumns={exportColumns}
           currentView="operations"
+          customExportFunction={exportOperationsByWorker}
         />
 
         <FilterBar
