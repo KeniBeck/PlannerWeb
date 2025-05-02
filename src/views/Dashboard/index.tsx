@@ -6,7 +6,6 @@ import {
   AiOutlineMenu,
   AiOutlineClose,
   AiOutlineUser,
-  AiOutlineSetting,
   AiOutlineTeam,
   AiOutlineDashboard,
   AiOutlineBarChart,
@@ -31,7 +30,7 @@ import Faults from "./faults/Faults";
 const COLORS = {
   darkBlue: "#155dfc", // Azul oscuro
   limeGreen: "#A5C739", // Verde limón claro
-  skyBlue: "#0099ff"   // Azul cielo
+  skyBlue: "#0099ff", // Azul cielo
 };
 
 export default function Dashboard() {
@@ -50,8 +49,6 @@ export default function Dashboard() {
     );
   };
 
- 
-
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Menú lateral */}
@@ -69,10 +66,10 @@ export default function Dashboard() {
             text-white rounded-full p-1.5 shadow-md hover:opacity-90 focus:outline-none
             z-20
           `}
-          style={{ 
+          style={{
             backgroundColor: COLORS.limeGreen,
             transition: "right 0.3s",
-            boxShadow: `0 2px 8px rgba(0, 0, 0, 0.15)`
+            boxShadow: `0 2px 8px rgba(0, 0, 0, 0.15)`,
           }}
         >
           {isMenuOpen ? (
@@ -84,11 +81,11 @@ export default function Dashboard() {
 
         {/* Contenedor principal del sidebar */}
         <div className="overflow-y-auto h-full">
-          <div 
+          <div
             className="relative overflow-hidden"
-            style={{ 
+            style={{
               background: `linear-gradient(135deg, ${COLORS.darkBlue} 0%, #1047c9 100%)`,
-              padding: "1.75rem 1rem 1.5rem", 
+              padding: "1.75rem 1rem 1.5rem",
             }}
           >
             {/* Elemento decorativo con ondas */}
@@ -106,33 +103,45 @@ export default function Dashboard() {
                   d="M0,128L48,138.7C96,149,192,171,288,165.3C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,138.7C1248,117,1344,75,1392,53.3L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
                 ></path>
               </svg>
-              
+
               {/* Círculos decorativos */}
               <div className="absolute top-2 right-2 w-12 h-12 rounded-full bg-white opacity-5"></div>
               <div className="absolute top-10 left-3 w-6 h-6 rounded-full bg-white opacity-5"></div>
             </div>
-            
+
             {/* Logotipo y nombre */}
-            <div className={`flex relative z-10 ${isMenuOpen ? "items-center" : "justify-center"}`}>
+            <div
+              className={`flex relative z-10 ${
+                isMenuOpen ? "items-center" : "justify-center"
+              }`}
+            >
               {!isMenuOpen && (
                 <div className="flex justify-center items-center w-10 h-10 bg-white bg-opacity-10 rounded-full shadow-lg">
                   <span className="text-lg font-bold text-white">CP</span>
                 </div>
               )}
-              
+
               {isMenuOpen && (
                 <div className="ml-1">
-                  <h2 className=" tracking-wide" style={{ 
-                    color: "white", 
-                    fontFamily: "amertha",
-                    textShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                    fontSize: "2rem",
-                  }}>
-                    Cargo<span style={{ 
-                      color: COLORS.limeGreen, 
+                  <h2
+                    className=" tracking-wide"
+                    style={{
+                      color: "white",
                       fontFamily: "amertha",
-                      textShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                    }}>Planner</span>
+                      textShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                      fontSize: "2rem",
+                    }}
+                  >
+                    Cargo
+                    <span
+                      style={{
+                        color: COLORS.limeGreen,
+                        fontFamily: "amertha",
+                        textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      Planner
+                    </span>
                   </h2>
                   <div className="flex items-center mt-1">
                     <div className="h-0.5 w-2 bg-white opacity-50 rounded-full mr-1"></div>
@@ -144,7 +153,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            
+
             {/* Barra decorativa en la parte inferior */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-50"></div>
           </div>
@@ -267,7 +276,17 @@ export default function Dashboard() {
             <Route
               path="/"
               element={
-                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS, Feature.OPERATION, Feature.AREAS, Feature.USERS, Feature.SERVICES, Feature.CLIENTS]}>
+                <LayeredProviders
+                  features={[
+                    Feature.WORKERS,
+                    Feature.FAULTS,
+                    Feature.OPERATION,
+                    Feature.AREAS,
+                    Feature.USERS,
+                    Feature.SERVICES,
+                    Feature.CLIENTS,
+                  ]}
+                >
                   <DashboardHome />
                 </LayeredProviders>
               }
@@ -275,7 +294,9 @@ export default function Dashboard() {
             <Route
               path="/workers"
               element={
-                <LayeredProviders features={[Feature.WORKERS, Feature.FAULTS, Feature.AREAS]}>
+                <LayeredProviders
+                  features={[Feature.WORKERS, Feature.FAULTS, Feature.AREAS]}
+                >
                   <Workers />
                 </LayeredProviders>
               }
@@ -285,7 +306,16 @@ export default function Dashboard() {
             <Route
               path="/operations"
               element={
-                <LayeredProviders features={[Feature.OPERATION, Feature.AREAS, Feature.WORKERS, Feature.USERS, Feature.SERVICES, Feature.CLIENTS]}>
+                <LayeredProviders
+                  features={[
+                    Feature.OPERATION,
+                    Feature.AREAS,
+                    Feature.WORKERS,
+                    Feature.USERS,
+                    Feature.SERVICES,
+                    Feature.CLIENTS,
+                  ]}
+                >
                   <Operation />
                 </LayeredProviders>
               }
