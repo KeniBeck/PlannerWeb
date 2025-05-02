@@ -388,7 +388,7 @@ export default function Operation() {
                   operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
                   operation.timeEnd || 'N/A',
                   operation.motorShip || 'N/A',
-                  operation.task?.name || 'Sin tarea',
+                  operation.task?.name?.toUpperCase() || 'Sin tarea',
                   `Grupo ${groupIndex + 1}`,
                   getWorkerDni(worker.id),
                   worker.name
@@ -474,7 +474,7 @@ export default function Operation() {
             operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
             operation.timeEnd || 'N/A',
             operation.motorShip || 'N/A',
-            operation.task?.name || 'Sin tarea',
+            operation.task?.name?.toUpperCase() || 'Sin tarea',
             '',
             '',
             'Sin trabajadores'
