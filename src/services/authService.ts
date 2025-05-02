@@ -25,7 +25,10 @@ class AuthService {
     } catch (error) {
       const status = (error as AxiosError).response?.data;
       if (axios.isAxiosError(error)) {
-        console.error("Error durante el login:", error.response?.data);
+        if(error.code === "ERR_NETWORK") {
+         return Promise.reject({code:"ERR_NETWORK"});
+        }
+        console.error("Error durante el login:", error);
       }
       throw status;
     }
