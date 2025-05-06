@@ -148,9 +148,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
     // Verificar si ya hay una solicitud activa para los mismos parámetros
     const requestKey = getRequestKey(page, limit, filterStr);
     if (activeRequestsRef.current.has(requestKey)) {
-      console.log(
-        `[OperationContext] Reutilizando solicitud en curso para página ${page}`
-      );
       return activeRequestsRef.current.get(requestKey);
     }
 
@@ -175,11 +172,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
           currentFilters
         )) as PaginatedResponse;
 
-        console.log(`[OperationContext] Datos obtenidos para página ${page}:`, {
-          totalItems: data.pagination.totalItems,
-          itemCount: data.items.length,
-          filters: filterStr,
-        });
 
         // Actualizar los estados solo si no es una carga silenciosa o es la página actual
         if (!silent || page === currentPage) {
@@ -208,9 +200,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
                 nextPage.pageNumber,
                 currentFilters
               );
-              console.log(
-                `[OperationContext] Guardando nextPage ${nextPage.pageNumber} en caché con filtros: ${filterStr}`
-              );
+             
               newCachedPages.set(nextPageCacheKey, nextPage.items);
             }
           });
@@ -266,7 +256,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
   // Cargar inicialmente las operaciones UNA SOLA VEZ
   useEffect(() => {
     if (!initialLoadRef.current && authService.isLocallyAuthenticated()) {
-      console.log("[OperationContext] Realizando carga inicial");
       initialLoadRef.current = true;
       fetchOperations(1, itemsPerPage, true);
     }
@@ -275,7 +264,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
   // Efecto para recargar cuando cambian los filtros
   useEffect(() => {
     if (initialLoadRef.current && authService.isLocallyAuthenticated()) {
-      console.log("[OperationContext] Recargando debido a cambios en filtros");
       // No limpiamos toda la caché, solo cargamos con nuevos filtros
       fetchOperations(1, itemsPerPage, true, filters);
     }
@@ -291,9 +279,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
       const isCacheUsable = cachedPages.has(cacheKey);
 
       if (isCacheUsable) {
-        console.log(
-          `[OperationContext] Usando caché para página ${page} con filtros actuales`
-        );
         setOperations(cachedPages.get(cacheKey) || []);
         setCurrentPage(page);
 

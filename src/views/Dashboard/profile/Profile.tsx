@@ -4,7 +4,7 @@ import { User } from "@/core/model/user";
 import { StatusSuccessAlert, StatusCodeAlert } from "@/components/dialog/AlertsLogin";
 import api from "@/services/client/axiosConfig";
 import { z } from "zod";
-import EditableInput from "@/components/ui/EditableInput";
+import  { ViewOnlyInput } from "@/components/ui/ViewOnlyInput";
 import { FaUserCircle, FaSave, FaIdCard, FaMobileAlt, FaBriefcase } from "react-icons/fa";
 
 // Definir los roles disponibles
@@ -55,38 +55,6 @@ export default function Profile() {
     fetchUser();
   }, []);
 
-  // Guardar cambios
-  const handleSave = async () => {
-    if (!user?.id || !hasChanges) return;
-    
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      
-      // Asegurate de que occupation también se actualiza
-      const dataToSave = {
-        name: user.name,
-        dni: user.dni,
-        phone: user.phone,
-        username: user.username,
-        occupation: user.occupation,
-      };
-      
-      await api.patch(
-        `/user/${user.dni}`,
-        dataToSave,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setOriginalData(JSON.parse(JSON.stringify(user))); // Actualizar original tras guardar
-      setHasChanges(false);
-      StatusSuccessAlert("Perfil actualizado", "Tus datos han sido actualizados correctamente.");
-    } catch (error) {
-      StatusCodeAlert(error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Detectar cambios para habilitar/deshabilitar el botón de guardar
   useEffect(() => {
@@ -100,27 +68,6 @@ export default function Profile() {
       setHasChanges(changed);
     }
   }, [user, originalData]);
-
-  // Manejar cambio en un campo
-  const handleFieldChange = (field: string, value: string) => {
-    // Validar el campo según su tipo
-    if (field === "dni" && !/^\d+$/.test(value)) {
-      return; // Solo números
-    }
-    if (field === "phone" && !/^\d+$/.test(value)) {
-      return; // Solo números
-    }
-    if(field === "name" && !/^[a-zA-Z\s]+$/.test(value)) {
-      return; // Solo letras y espacios
-    }
-    if(field === "phone" && (value.length < 9 || value.length > 12)) {
-      return; // Longitud entre 9 y 12 caracteres
-    }
-
-    if (user) {
-      setUser({ ...user, [field]: value });
-    }
-  };
 
   // Restaurar cambios
   const handleCancel = () => {
@@ -172,72 +119,47 @@ export default function Profile() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <EditableInput
+              <ViewOnlyInput
                 label="Nombre Completo"
                 id="name"
                 value={user.name}
-                onChange={(value) => handleFieldChange('name', value)}
-                required
               />
             </div>
             
             <div>
-              <EditableInput
+              <ViewOnlyInput
                 label="Nombre de Usuario"
                 id="username"
                 value={user.username}
-                onChange={(value) =>  handleFieldChange('username', value)}
               />
             </div>
             
             <div>
-              <EditableInput
+              <ViewOnlyInput
                 label="Número de Identificación (DNI)"
                 id="dni"
                 value={user.dni}
-                onChange={(value) => handleFieldChange('dni', value)}
-                required
-                pattern="^\d+$"
-                minLength={8}
-                maxLength={12}
               />
             </div>
             
             <div>
-              <EditableInput
+              <ViewOnlyInput
                 label="Teléfono de Contacto"
                 id="phone"
                 value={user.phone}
-                onChange={(value) => handleFieldChange('phone', value)}
-                required
-                pattern="^\d+$"
-                minLength={9}
-                maxLength={12}
               />
             </div>
             
             <div className="md:col-span-2">
               <div className="mb-4">
                 <label htmlFor="cargo" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cargo <span className="text-red-500">*</span>
+                  Cargo 
                 </label>
-                <select
-                  id="cargo"
-                  name="cargo"
-                  value={user.occupation}
-                  onChange={(e) => handleFieldChange('cargo', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="" disabled>Selecciona un cargo</option>
-                  {AVAILABLE_ROLES.map(role => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-                {!user.occupation && (
-                  <p className="mt-1 text-sm text-red-500">El cargo es obligatorio</p>
-                )}
+                <div className="flex items-center border border-gray-200 bg-gray-50 rounded-md px-3 py-2 transition-all duration-200 ease-in-out">
+                  <FaBriefcase className="text-gray-400 mr-2" />
+                  <span className="text-gray-800">{user.occupation}</span>
+                  </div>
+               
               </div>
             </div>
           </div>
@@ -253,22 +175,6 @@ export default function Profile() {
                 Cancelar
               </button>
             )}
-            
-            <button
-              type="button"
-              onClick={handleSave}
-              className={`
-                px-5 py-2.5 rounded-lg font-medium flex items-center gap-2
-                ${hasChanges 
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md" 
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"}
-                transition-all
-              `}
-              disabled={!hasChanges || loading}
-            >
-              <FaSave />
-              {loading ? "Guardando..." : "Guardar Cambios"}
-            </button>
           </div>
         </div>
       </div>

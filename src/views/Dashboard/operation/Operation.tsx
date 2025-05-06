@@ -225,8 +225,6 @@ export default function Operation() {
       refreshDataLocal();
   }
 
-
-
   // Columnas para exportación a Excel
   const exportColumns = getOperationExportColumns();
 
@@ -249,6 +247,68 @@ export default function Operation() {
     const worker = workers?.find((w) => w.id === idWorker);
     return worker ? worker.dni : "Sin DNI";
   }
+  const calculateHoursWorked = (dateStart?: string | Date, timeStart?: string, dateEnd?: string | Date, timeEnd?: string): string => {
+    if (!dateStart || !timeStart || !dateEnd || !timeEnd) {
+      return "N/A";
+    }
+  
+    try {
+      // Crear objetos Date para inicio y fin
+      let startDateObj = new Date(dateStart);
+      let endDateObj = new Date(dateEnd);
+  
+      // Extraer componentes de fecha
+      const startYear = startDateObj.getFullYear();
+      const startMonth = startDateObj.getMonth();
+      const startDay = startDateObj.getDate();
+      
+      const endYear = endDateObj.getFullYear();
+      const endMonth = endDateObj.getMonth();
+      const endDay = endDateObj.getDate();
+  
+      // Parsear horas y minutos
+      let startHours = 0, startMinutes = 0;
+      let endHours = 0, endMinutes = 0;
+  
+      if (timeStart) {
+        const parts = timeStart.split(':');
+        startHours = parseInt(parts[0], 10);
+        startMinutes = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+      }
+  
+      if (timeEnd) {
+        const parts = timeEnd.split(':');
+        endHours = parseInt(parts[0], 10);
+        endMinutes = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+      }
+  
+      // Crear fechas completas con hora
+      const startDateTime = new Date(startYear, startMonth, startDay, startHours, startMinutes);
+      const endDateTime = new Date(endYear, endMonth, endDay, endHours, endMinutes);
+  
+      // Verificar fechas válidas
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        return "N/A";
+      }
+      
+      // Calcular diferencia en milisegundos
+      const diffMs = endDateTime.getTime() - startDateTime.getTime();
+      
+      // Si la fecha fin es menor que inicio
+      if (diffMs < 0) {
+        return "0";
+      }
+      
+      // Convertir a horas decimales
+      const diffHours = diffMs / (1000 * 60 * 60);
+      
+      // Formatear a 2 decimales
+      return diffHours.toFixed(2);
+    } catch (error) {
+      console.error("Error calculando horas trabajadas:", error);
+      return "N/A";
+    }
+  };
   
   
   const exportOperationsByWorker = async () => {
@@ -275,22 +335,22 @@ export default function Operation() {
       workbook.creator = 'PlannerWeb';
       workbook.created = new Date();
       
-      const worksheet = workbook.addWorksheet('Operaciones-Trabajadores', {
+      const worksheetWorkers = workbook.addWorksheet('reporte-trabajador', {
         pageSetup: { fitToPage: true, fitToHeight: 5, fitToWidth: 7 }
       });
       
       // Definir encabezados
-      const headers = [
+      const headersWorkers = [
         'ID Operación', 'Estado', 'Área', 'Cliente',
-        'Supervisores', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin',
-        'Embarcación', 'Tarea', 'Grupo #', 'DNI Trabajador', 'Nombre Trabajador'
+        'Supervisores', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin', 'Horas Trabajadas', 
+        'Embarcación', 'Tarea', 'Turno', 'DNI Trabajador', 'Nombre Trabajador'
       ];
       
       // Añadir fila de encabezados
-      worksheet.addRow(headers);
+      worksheetWorkers.addRow(headersWorkers);
       
       // Aplicar estilo a los encabezados (exactamente igual que en SectionHeader)
-      const headerRow = worksheet.getRow(1);
+      const headerRow = worksheetWorkers.getRow(1);
       headerRow.height = 28;
       
       headerRow.eachCell((cell) => {
@@ -377,6 +437,13 @@ export default function Operation() {
                   task?: Task;
                 }
 
+                const hoursWorked = calculateHoursWorked(
+                  operation.dateStart,
+                  operation.timeStrat,
+                  operation.dateEnd,
+                  operation.timeEnd
+                );
+
                 const rowData: (string | number)[] = [
                   operation.id,
                   getStatusLabel(operation.status),
@@ -387,15 +454,16 @@ export default function Operation() {
                   operation.timeStrat || 'N/A',
                   operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
                   operation.timeEnd || 'N/A',
+                  hoursWorked || 'N/A',
                   operation.motorShip || 'N/A',
                   operation.task?.name?.toUpperCase() || 'Sin tarea',
-                  `Grupo ${groupIndex + 1}`,
+                  `Turno ${groupIndex + 1}`,
                   getWorkerDni(worker.id),
                   worker.name
                 ];
                 
                 // Añadir la fila
-                const row = worksheet.addRow(rowData);
+                const row = worksheetWorkers.addRow(rowData);
                 
                 // Aplicar estilo a filas (por operación)
                 if (rowIsEven) {
@@ -463,24 +531,32 @@ export default function Operation() {
             task?: Task;
             }
 
+            const hoursWorkedNoWorker = calculateHoursWorked(
+              operation.dateStart,
+              operation.timeStrat,
+              operation.dateEnd,
+              operation.timeEnd
+            );
+            
             const rowData: (string | number)[] = [
-            operation.id,
-            getStatusLabel(operation.status),
-            operation.jobArea?.name || 'Sin área',
-            operation.client?.name || 'Sin cliente',
-            operation.inCharge?.map((sup: Supervisor) => sup.name).join(', ') || 'Sin supervisor',
-            operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
-            operation.timeStrat || 'N/A',
-            operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
-            operation.timeEnd || 'N/A',
-            operation.motorShip || 'N/A',
-            operation.task?.name?.toUpperCase() || 'Sin tarea',
-            '',
-            '',
-            'Sin trabajadores'
+              operation.id,
+              getStatusLabel(operation.status),
+              operation.jobArea?.name || 'Sin área',
+              operation.client?.name || 'Sin cliente',
+              operation.inCharge?.map((sup: Supervisor) => sup.name).join(', ') || 'Sin supervisor',
+              operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
+              operation.timeStrat || 'N/A',
+              operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
+              operation.timeEnd || 'N/A',
+              hoursWorkedNoWorker, // AÑADIDO: Columna de horas trabajadas
+              operation.motorShip || 'N/A',
+              operation.task?.name?.toUpperCase() || 'Sin tarea',
+              '',
+              '',
+              'Sin trabajadores'
             ];
           
-          const row = worksheet.addRow(rowData);
+          const row = worksheetWorkers.addRow(rowData);
           
           if (rowIsEven) {
             row.eachCell((cell) => {
@@ -503,9 +579,155 @@ export default function Operation() {
           });
         }
       });
+
+      const worksheetGeneral = workbook.addWorksheet('reporte-general', {
+        pageSetup: { fitToPage: true, fitToHeight: 5, fitToWidth: 7 }
+      });
+      
+      // Definir encabezados para la hoja de reporte general
+      const headersGeneral = [
+        'ID Operación', 
+        'Estado', 
+        'Área', 
+        'Cliente',
+        'Supervisores', 
+        'Fecha Inicio', 
+        'Hora Inicio', 
+        'Fecha Fin', 
+        'Hora Fin', 
+        'Horas Trabajadas', 
+        'Embarcación', 
+        'Tarea',
+        'Total Trabajadores',
+        'Turnos'
+      ];
+      
+      // Añadir fila de encabezados
+      worksheetGeneral.addRow(headersGeneral);
+      
+      // Aplicar estilo a los encabezados
+      const headerRowGeneral = worksheetGeneral.getRow(1);
+      headerRowGeneral.height = 28;
+      
+      headerRowGeneral.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: '4472C4' }
+        };
+        
+        cell.font = {
+          bold: true,
+          color: { argb: 'FFFFFF' },
+          size: 12
+        };
+        
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: 'center',
+          wrapText: true
+        };
+        
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+  
+      // Resetear para la segunda hoja
+      rowIsEven = false;
+      
+      // Para cada operación, añadir una única fila en el reporte general
+      operations.forEach((operation: any, index: number) => {
+        // Alternar color de fondo para cada fila
+        rowIsEven = !rowIsEven;
+        
+        // Calcular total de trabajadores en la operación
+        let totalWorkers = 0;
+        let totalGroups = 0;
+        
+        if (operation.workerGroups && operation.workerGroups.length > 0) {
+          totalGroups = operation.workerGroups.length;
+          operation.workerGroups.forEach((group: any) => {
+            if (group.workers && group.workers.length > 0) {
+              totalWorkers += group.workers.length;
+            }
+          });
+        }
+        
+        // Calcular horas trabajadas
+        const hoursWorked = calculateHoursWorked(
+          operation.dateStart,
+          operation.timeStrat,
+          operation.dateEnd,
+          operation.timeEnd
+        );
+        
+        // Datos para la fila
+        interface Supervisor {
+          name: string;
+        }
+        
+        const rowData: (string | number)[] = [
+          operation.id,
+          getStatusLabel(operation.status),
+          operation.jobArea?.name || 'Sin área',
+          operation.client?.name || 'Sin cliente',
+          operation.inCharge?.map((sup: Supervisor) => sup.name).join(', ') || 'Sin supervisor',
+          operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
+          operation.timeStrat || 'N/A',
+          operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
+          operation.timeEnd || 'N/A',
+          hoursWorked || 'N/A',
+          operation.motorShip || 'N/A',
+          operation.task?.name?.toUpperCase() || 'Sin tarea',
+          totalWorkers, // Total de trabajadores
+          totalGroups  // Número de turnos/grupos
+        ];
+        
+        // Añadir la fila
+        const row = worksheetGeneral.addRow(rowData);
+        
+        // Aplicar estilo a filas alternadas
+        if (rowIsEven) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'F2F7FF' }
+            };
+          });
+        }
+        
+        // Bordes para todas las celdas
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'E0E0E0' } },
+            left: { style: 'thin', color: { argb: 'E0E0E0' } },
+            bottom: { style: 'thin', color: { argb: 'E0E0E0' } },
+            right: { style: 'thin', color: { argb: 'E0E0E0' } }
+          };
+          cell.alignment = { vertical: 'middle' };
+        });
+      });
       
       // Ajustar ancho de columnas automáticamente
-      worksheet.columns.forEach(column => {
+      worksheetGeneral.columns.forEach(column => {
+        if (!column || typeof column.eachCell !== 'function') return;
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? String(cell.value).length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = Math.min(maxLength + 4, 30);
+      });
+      
+      // Ajustar ancho de columnas automáticamente
+      worksheetWorkers.columns.forEach(column => {
         if (!column || typeof column.eachCell !== 'function') return;
         let maxLength = 0;
         column.eachCell({ includeEmpty: true }, (cell) => {

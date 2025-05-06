@@ -117,7 +117,7 @@ export const getOperationExportColumns = (): ExcelColumn[] => {
               
               if (workerNames.length > 0) {
                 // Identificar cada grupo con un número 
-                groupedDetails.push(`Grupo ${index + 1}: ${workerNames.join(", ")}`);
+                groupedDetails.push(`Turno ${index + 1}: ${workerNames.join(", ")}`);
               }
             }
           });

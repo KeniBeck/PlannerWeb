@@ -322,7 +322,7 @@ export function DataTable<T extends { id: number | string }>({
 
                 {actions && actions.length > 0 && (
                   <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end space-x-2">
+                    <div className="flex items-center justify-center space-x-2">
                       {actions.map((action, index) => {
                         // Evaluar si la acción debe ocultarse para este item
                         const isHidden = evaluateConditionalProp(action.hidden, item, false);

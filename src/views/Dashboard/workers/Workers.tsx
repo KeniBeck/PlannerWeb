@@ -18,6 +18,8 @@ import {
 } from "@/components/dialog/CommonAlertActive";
 import { workerService } from "@/services/workerService";
 import { ViewWorkerDialog } from "@/components/ui/workers/ViewWorkerDialog";
+import {  EndIncapacityAlert } from "@/components/dialog/IncapacityAlert";
+import { IncapacityCauseEnum, IncapacityFormDialog, IncapacityTypeEnum } from "@/components/dialog/IncapacityFormDialog";
 
 export default function Workers() {
   const {
@@ -37,6 +39,11 @@ export default function Workers() {
   const [viewWorker, setViewWorker] = useState<Worker | null>(null);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [isEditWorkerOpen, setIsEditWorkerOpen] = useState(false);
+  const [workerForIncapacity, setWorkerForIncapacity] = useState<Worker | null>(null);
+  const [isIncapacityFormOpen, setIsIncapacityFormOpen] = useState(false);
+  const [workerToEndIncapacity, setWorkerToEndIncapacity] = useState<Worker | null>(null);
+  const [isIncapacityLoading, setIsIncapacityLoading] = useState(false);
+
 
   // Todas las distintas categorías de trabajadores
   const allWorkers = workers;
@@ -125,6 +132,72 @@ export default function Workers() {
     refreshWorkers();
     setWorkerToActivate(null);
   };
+
+
+  const handleStartIncapacity = (worker: Worker) => {
+    setWorkerForIncapacity(worker);
+  };
+
+  const handleEndIncapacity = (worker: Worker) => {
+    setWorkerToEndIncapacity(worker);
+  };
+
+  // Confirmar inicio de proceso de incapacidad
+  const confirmStartIncapacity = () => {
+    setIsIncapacityFormOpen(true);
+  };
+
+  // Guardar datos de incapacidad
+  const saveIncapacityData = async (data: {
+    startDate: Date;
+    endDate: Date | null;
+    cause: IncapacityCauseEnum; 
+    type: IncapacityTypeEnum 
+  }) => {
+    if (!workerForIncapacity) return;
+
+    setIsIncapacityLoading(true);
+    try {
+      await workerService.updateWorker(workerForIncapacity.id, {
+        ...workerForIncapacity,
+        status: WorkerStatus.INCAPACITATED,
+        dateDisableStart: data.startDate,
+        dateDisableEnd: data.endDate || undefined,
+      });
+
+      await refreshWorkers();
+
+      setWorkerForIncapacity(null);
+      setIsIncapacityFormOpen(false);
+    } catch (error) {
+      console.error("Error al registrar incapacidad:", error);
+
+    } finally {
+      setIsIncapacityLoading(false);
+    }
+  };
+
+  // Confirmar finalización de incapacidad
+  const confirmEndIncapacity = async () => {
+    if (!workerToEndIncapacity) return;
+
+    setIsIncapacityLoading(true);
+    try {
+      await workerService.updateWorker(workerToEndIncapacity.id, {
+        ...workerToEndIncapacity,
+        status: WorkerStatus.AVAILABLE,
+        dateDisableEnd: new Date()
+      });
+
+      await refreshWorkers();
+      setWorkerToEndIncapacity(null);
+    } catch (error) {
+      console.error("Error al finalizar incapacidad:", error);
+    } finally {
+      setIsIncapacityLoading(false);
+    }
+  };
+
 
   // Definir columnas para exportar trabajadores
   const workerExportColumns: ExcelColumn[] = useMemo(
@@ -221,9 +294,8 @@ export default function Workers() {
             refreshData={() => Promise.resolve(refreshWorkers())}
             loading={false}
             exportData={currentView.items}
-            exportFileName={`${
-              currentView.type === "workers" ? "trabajadores" : "faltas"
-            }_${activeTab}`}
+            exportFileName={`${currentView.type === "workers" ? "trabajadores" : "faltas"
+              }_${activeTab}`}
             exportColumns={currentExportColumns}
             currentView={currentView.type}
           />
@@ -296,11 +368,44 @@ export default function Workers() {
                 onActivate={handleActivateWorker}
                 onEdit={handleEditWorker}
                 onView={handleViewWorker}
+                onIncapacity={handleStartIncapacity}
+                onEndIncapacity={handleEndIncapacity}
               />
             </div>
           </div>
         )}
 
+        <DeactivateItemAlert
+          open={!!workerToDeactivate}
+          onOpenChange={() => setWorkerToDeactivate(null)}
+          onConfirm={ConfirmToDeactivated}
+          itemName="trabajador"
+          isLoading={isLoading}
+        />
+
+     
+
+        <EndIncapacityAlert
+          open={!!workerToEndIncapacity}
+          onOpenChange={() => setWorkerToEndIncapacity(null)}
+          onConfirm={confirmEndIncapacity}
+          workerName={workerToEndIncapacity?.name}
+          isLoading={isIncapacityLoading}
+        />
+
+        <IncapacityFormDialog
+          open={!!workerForIncapacity}
+          onOpenChange={(open) => {
+            if (!open) {
+              // Si se está cerrando el diálogo, limpia el worker seleccionado
+              setWorkerForIncapacity(null);
+            }
+            setIsIncapacityFormOpen(open);
+          }}
+          worker={workerForIncapacity}
+          onSave={saveIncapacityData}
+          isLoading={isIncapacityLoading}
+        />
         {/* Diálogos */}
         <AddWorkerDialog
           open={isAddWorkerOpen}
@@ -331,11 +436,11 @@ export default function Workers() {
       />
 
       <AddWorkerDialog
-      open={isEditWorkerOpen}
-      onOpenChange={setIsEditWorkerOpen}
-      worker={selectedWorker || undefined}
-      areas={areas}
-      onUpdateWorker={handleUpdateWorker}
+        open={isEditWorkerOpen}
+        onOpenChange={setIsEditWorkerOpen}
+        worker={selectedWorker || undefined}
+        areas={areas}
+        onUpdateWorker={handleUpdateWorker}
       />
     </>
   );
