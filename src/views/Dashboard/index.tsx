@@ -186,7 +186,7 @@ export default function Dashboard() {
               <MenuItem
                 to="/dashboard/reports"
                 icon={<AiOutlineBarChart size={20} />}
-                label="Reportes"
+                label="Graficas"
                 isOpen={isMenuOpen}
                 isActive={isActive("/dashboard/reports")}
               />

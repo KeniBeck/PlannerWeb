@@ -16,6 +16,7 @@ import {
 } from "@/services/interfaces/operationDTO";
 import { Operation } from "@/core/model/operation";
 
+
 // Definir la interfaz para respuestas paginadas con nextPages
 interface PaginatedResponse {
   items: Operation[];
