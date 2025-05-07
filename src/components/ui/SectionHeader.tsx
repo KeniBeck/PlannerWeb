@@ -26,6 +26,7 @@ interface SectionHeaderProps {
   currentView?: string;
   showAddButton?: boolean;
   showDownloadButton?: boolean;
+  customExportFunction?: () => void; 
 }
 
 const COLORS = {
@@ -47,6 +48,7 @@ export default function SectionHeader({
   currentView,
   showAddButton = true,
   showDownloadButton = true,
+  customExportFunction
 }: SectionHeaderProps) {
   
   // Función para exportar a Excel usando ExcelJS
@@ -264,7 +266,7 @@ export default function SectionHeader({
             <button
               title="Exportar datos"
               className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-blue-500/60 text-white transition-all shadow-sm cursor-pointer"
-              onClick={handleExportToExcel}
+              onClick={customExportFunction ||handleExportToExcel}
               disabled={!exportData || exportData.length === 0}
             >
               <AiOutlineDownload className="h-5 w-5" />

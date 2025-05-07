@@ -216,10 +216,10 @@ export function OperationList({
     []
   );
 
-  // Definir acciones usando useMemo - Siempre debe ejecutarse
   const actions: TableAction<Operation>[] = useMemo(() => {
     const actionsList: TableAction<Operation>[] = [];
-
+  
+    // Acción de Ver - siempre disponible para todas las operaciones
     if (onView) {
       actionsList.push({
         label: "Ver detalles",
@@ -228,28 +228,34 @@ export function OperationList({
         className: "text-blue-600",
       });
     }
-
+  
+    // Acción de Editar - solo disponible si la operación NO está finalizada
     if (onEdit) {
       actionsList.push({
         label: "Editar",
         icon: <BsPencil className="h-4 w-4" />,
         onClick: onEdit,
         className: "text-gray-700",
+        // Ocultar si el estado es COMPLETED (finalizada)
+        hidden: (operation) => operation.status === "COMPLETED",
       });
     }
-
+  
+    // Acción de Eliminar - solo disponible si la operación NO está finalizada
     if (onDelete) {
       actionsList.push({
         label: "Eliminar",
         icon: <BsTrash className="h-4 w-4" />,
         onClick: onDelete,
         className: "text-red-600",
+        // Ocultar si el estado es COMPLETED (finalizada)
+        hidden: (operation) => operation.status === "COMPLETED",
       });
     }
-
+  
     return actionsList;
   }, [onView, onEdit, onDelete]);
-
+  
   // Evitar returns tempranos antes de otros hooks
   if (error) {
     return (

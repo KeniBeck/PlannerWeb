@@ -1,144 +1,159 @@
-import Swal, { SweetAlertIcon } from "sweetalert2";
+import { ShipLoader } from './Loading';
+import ReactDOM from 'react-dom/client';
+import { PiUserCircleCheckDuotone, PiShieldWarningDuotone } from "react-icons/pi";
+import { TbFaceIdError } from "react-icons/tb";
+
+
 
 export const StatusCodeAlert = (error: any) => {
   // Analizar el error para determinar el código de estado
   let statusCode;
   if (error) {
     if (error.code === "ERR_NETWORK") {
-      // Si es un error de red
       statusCode = "ERR_NETWORK";
     } 
 
     if (error.statusCode) {
-      // Si el error ya tiene un statusCode definido
       statusCode = error.statusCode;
     } else if (error.response && error.response.status) {
-      // Si es un error de Axios
       statusCode = error.response.status;
     }
   }
 
-
   let title = "Error";
-  let text = "Ocurrió un error inesperado.";
-  let icon: SweetAlertIcon = "error";
+  let message = "Ocurrió un error inesperado.";
+  let type: 'success' | 'error' | 'warning' = "error";
 
   switch (statusCode) {
     case "ERR_NETWORK":
       title = "Error de conexión";
-      text = "Verifica tu conexión a internet.";
-      icon = "error";
+      message = "Verifica tu conexión a internet.";
       break;
     case 400:
       title = "Solicitud incorrecta";
-      text = "Los datos enviados son incorrectos.";
-      icon = "warning";
+      message = "Los datos enviados son incorrectos.";
+      type = "warning";
       break;
     case 401:
       title = "No autorizado";
-      text = "Usuario o contraseña incorrectos.";
-      icon = "error";
+      message = "Usuario o contraseña incorrectos.";
       break;
     case 403:
       title = "Prohibido";
-      text = "Acceso denegado.";
-      icon = "error";
+      message = "Acceso denegado.";
       break;
     case 404:
       title = "No encontrado";
-      text = "El recurso solicitado no fue encontrado.";
-      icon = "error";
+      message = "El recurso solicitado no fue encontrado.";
       break;
     case 429:
       title = "Demasiadas solicitudes";
-      text =
-        "Has realizado demasiadas solicitudes en un corto período de tiempo.";
-      icon = "warning";
+      message = "Has realizado demasiadas solicitudes en un corto período de tiempo.";
+      type = "warning";
       break;
     case 500:
       title = "Error interno del servidor";
-      text = "Ocurrió un error en el servidor. Inténtalo de nuevo más tarde.";
-      icon = "error";
+      message = "Ocurrió un error en el servidor. Inténtalo de nuevo más tarde.";
       break;
     default:
       title = "Error de conexión";
-      text =
-        "No se pudo conectar con el servidor. Verifica tu conexión a internet.";
-      icon = "error";
+      message = "No se pudo conectar con el servidor. Verifica tu conexión a internet.";
   }
 
-  Swal.fire({
-    title: title,
-    text: text,
-    icon: icon,
-    confirmButtonText: "Aceptar",
-  });
+  showAlert(type, title, message);
 };
 
-export const StatusSuccessAlert = (title: string, text: string) => {
-  Swal.fire({
-    title: title,
-    text: text,
-    icon: "success",
-    confirmButtonText: "Aceptar",
-  });
+export const StatusSuccessAlert = (title: string, message: string) => {
+  showAlert('success', title, message);
 };
 
 // Variables para controlar el timing de la alerta de carga
-let loadingAlert: ReturnType<typeof Swal.fire> | null = null; // Tipado más estricto
-let isLoading = false; // Flag para controlar el estado
+let isLoading = false;
 let loadingStartTime: number = 0;
-const MIN_LOADING_DURATION = 1000; // Duración mínima en milisegundos (1 segundo)
+const MIN_LOADING_DURATION = 1000;
+
+// Función para mostrar alertas
+const showAlert = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+  const container = document.createElement('div');
+  container.className = 'fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm';
+  document.body.appendChild(container);
+
+  const root = ReactDOM.createRoot(container);
+  
+  root.render(
+    <div className="bg-white/90 rounded-lg shadow-xl p-6 max-w-md mx-4">
+      <div className="flex gap-4">
+        <div className={`text-2xl ${
+          type === 'success' ? 'text-green-500' :
+          type === 'error' ? 'text-red-500' : 'text-yellow-500'
+        }`}>
+          {type === 'success' ? <PiUserCircleCheckDuotone/> : type === 'error' ? <TbFaceIdError/> : <PiShieldWarningDuotone/>}
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">{title}</h3>
+          <p className="text-gray-600">{message}</p>
+        </div>
+      </div>
+      <button
+        onClick={() => {
+          root.unmount();
+          document.body.removeChild(container);
+        }}
+        className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors"
+      >
+        Aceptar
+      </button>
+    </div>
+  );
+};
+
+// Componente para el loader
+const LoaderPortal = () => {
+  if (!isLoading) return null;
+  return <ShipLoader />;
+};
+
+// Asegurar que existe el contenedor del loader
+const ensureLoaderContainer = () => {
+  let container = document.getElementById('loader-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'loader-container';
+    document.body.appendChild(container);
+  }
+  return container;
+};
 
 export const isLoadingAlert = async (status: boolean) => {
   if (status) {
     if (isLoading) {
-      // Si ya hay una alerta de carga, simplemente actualiza el tiempo de inicio
       loadingStartTime = Date.now();
       return;
     }
 
     isLoading = true;
     loadingStartTime = Date.now();
-
-    if (loadingAlert) {
-      Swal.close();
-      loadingAlert = null;
-    }
-
-    loadingAlert = Swal.fire({
-      title: "Cargando...",
-      text: "Por favor, espera un momento.",
-      allowOutsideClick: false,
-      showConfirmButton: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
+    
+    const container = ensureLoaderContainer();
+    const root = ReactDOM.createRoot(container);
+    root.render(<LoaderPortal />);
   } else {
-    if (!isLoading) {
-      // Si no hay alerta de carga activa, no hacemos nada
-      return;
-    }
+    if (!isLoading) return;
 
-    isLoading = false;
-
-    // Calcular el tiempo transcurrido
     const elapsed = Date.now() - loadingStartTime;
     const remainingTime = Math.max(0, MIN_LOADING_DURATION - elapsed);
 
-    // Si ha pasado menos del tiempo mínimo, espera antes de cerrar
     if (remainingTime > 0) {
-      await new Promise((resolve) => setTimeout(resolve, remainingTime));
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
     }
 
-    // Cerrar la alerta de carga de forma segura
-    try {
-      Swal.close(); // Usamos Swal.close() en lugar de loadingAlert.close()
-      loadingAlert = null;
-    } catch (e) {
-      console.warn("Error al intentar cerrar la alerta de carga:", e);
-      loadingAlert = null;
+    isLoading = false;
+    
+    const container = document.getElementById('loader-container');
+    if (container) {
+      const root = ReactDOM.createRoot(container);
+      root.unmount();
+      document.body.removeChild(container);
     }
   }
 };
