@@ -1,13 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
-import { operationService } from '@/services/operationService';
-import { isLoadingAlert } from '@/components/dialog/AlertsLogin';
-import { authService } from '@/services/authService';
-import { OperationCreateData, OperationFilterDto } from '@/services/interfaces/operationDTO';
-import { Operation } from '@/core/model/operation';
-import { date, number } from 'zod';
-import { set } from 'date-fns';
-
-
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+  useRef,
+} from "react";
+import { operationService } from "@/services/operationService";
+import { isLoadingAlert } from "@/components/dialog/AlertsLogin";
+import { authService } from "@/services/authService";
+import {
+  OperationCreateData,
+  OperationFilterDto,
+} from "@/services/interfaces/operationDTO";
+import { Operation } from "@/core/model/operation";
 
 
 // Definir la interfaz para respuestas paginadas con nextPages
@@ -19,10 +26,11 @@ interface PaginatedResponse {
     itemsPerPage: number;
     totalPages: number;
     totalInProgress: number;
+    totalCanceled: number;
     totalPending: number;
     totalCompleted: number;
   };
-  nextPages?: Array<{pageNumber: number, items: Operation[]}>;
+  nextPages?: Array<{ pageNumber: number; items: Operation[] }>;
 }
 
 // Definir la interfaz del contexto
@@ -35,6 +43,7 @@ interface OperationContextType {
   itemsPerPage: number;
   totalPages: number;
   totalInProgress: number;
+  totalCanceled: number;
   totalPending: number;
   totalCompleted: number;
   setPage: (page: number) => void;
@@ -46,24 +55,29 @@ interface OperationContextType {
   updateOperation: (id: number, data: any) => Promise<Operation | null>;
   lastUpdated: Date | null;
   preloadNextPages: () => void;
-  completeIndividualWorker: (workerId: number, data: any) => Promise<Operation | null>;
+  completeIndividualWorker: (
+    workerId: number,
+    data: any
+  ) => Promise<Operation | null>;
 }
 
 // Crear el contexto
-const OperationContext = createContext<OperationContextType | undefined>(undefined);
+const OperationContext = createContext<OperationContextType | undefined>(
+  undefined
+);
 
 // Props para el proveedor
 interface OperationProviderProps {
   children: ReactNode;
 }
 
-// Proveedor del contexto
+
 export function OperationProvider({ children }: OperationProviderProps) {
   // Estados principales
   const [operations, setOperations] = useState<Operation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Estados de paginación
   const [totalItems, setTotalItems] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -72,30 +86,36 @@ export function OperationProvider({ children }: OperationProviderProps) {
   const [totalInProgress, setTotalInProgress] = useState<number>(0);
   const [totalPending, setTotalPending] = useState<number>(0);
   const [totalCompleted, setTotalCompleted] = useState<number>(0);
-  
+  const [totalCanceled, setTotalCanceled] = useState<number>(0);
+
   // Estado de filtros
   const [filters, setFilters] = useState<OperationFilterDto>({});
-  
+
   // Estado para caché y actualización
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   // Cambiar la estructura de la caché para incluir filtros
-  const [cachedPages, setCachedPages] = useState<Map<string, Operation[]>>(new Map());
-  
+  const [cachedPages, setCachedPages] = useState<Map<string, Operation[]>>(
+    new Map()
+  );
+
   // Referencia para controlar solicitudes iniciales y repetidas
   const initialLoadRef = useRef(false);
   const activeRequestsRef = useRef(new Map<string, Promise<any>>());
-  
+
   // Generar una clave única para el request basada en parámetros
   const getRequestKey = (page: number, limit: number, filterStr: string) => {
     return `${page}-${limit}-${filterStr}`;
   };
 
   // Nueva función para generar clave de caché que incluye filtros
-  const getCacheKey = (page: number, currentFilters: OperationFilterDto = {}) => {
+  const getCacheKey = (
+    page: number,
+    currentFilters: OperationFilterDto = {}
+  ) => {
     const filterStr = JSON.stringify(currentFilters);
     return `${page}-${filterStr}`;
   };
-  
+
   // Función para cargar operaciones
   const fetchOperations = async (
     page = currentPage,
@@ -111,52 +131,51 @@ export function OperationProvider({ children }: OperationProviderProps) {
 
     // Convertir filtros a string para caché y comparación
     const filterStr = JSON.stringify(currentFilters);
-    
+
     // Determinar la clave de caché que ahora incluye los filtros
     const cacheKey = getCacheKey(page, currentFilters);
-    
+
     // Si la página está en caché y no es forzado, usar la caché
     const isCacheUsable = !force && cachedPages.has(cacheKey);
-    
+
     if (isCacheUsable) {
-      console.log(`[OperationContext] Usando caché para página ${page} con filtros: ${filterStr}`);
+      console.log(
+        `[OperationContext] Usando caché para página ${page} con filtros: ${filterStr}`
+      );
       if (page === currentPage) {
         setOperations(cachedPages.get(cacheKey) || []);
       }
       return;
     }
-    
+
     // Verificar si ya hay una solicitud activa para los mismos parámetros
     const requestKey = getRequestKey(page, limit, filterStr);
     if (activeRequestsRef.current.has(requestKey)) {
-      console.log(`[OperationContext] Reutilizando solicitud en curso para página ${page}`);
       return activeRequestsRef.current.get(requestKey);
     }
-    
+
     // Iniciar carga solo si no es silenciosa
     if (!silent) {
       setIsLoading(true);
       setError(null);
       isLoadingAlert(true);
     } else {
-      console.log(`[OperationContext] Precargando silenciosamente página ${page} con filtros: ${filterStr}`);
+      console.log(
+        `[OperationContext] Precargando silenciosamente página ${page} con filtros: ${filterStr}`
+      );
     }
-    
+
     // Crear una nueva solicitud y guardarla en el registro de solicitudes activas
     const request = (async () => {
       try {
         // Obtener los datos paginados con filtros
-        const data = await operationService.getPaginatedOperations(
+        const data = (await operationService.getPaginatedOperations(
           page,
           limit,
           currentFilters
-        ) as PaginatedResponse;
+        )) as PaginatedResponse;
 
 
-        console.log(`[OperationContext] Datos obtenidos para página ${page}:`, 
-          { totalItems: data.pagination.totalItems, itemCount: data.items.length, filters: filterStr }
-        );
-        
         // Actualizar los estados solo si no es una carga silenciosa o es la página actual
         if (!silent || page === currentPage) {
           setOperations(data.items);
@@ -164,35 +183,41 @@ export function OperationProvider({ children }: OperationProviderProps) {
           setCurrentPage(data.pagination.currentPage);
           setItemsPerPage(data.pagination.itemsPerPage);
           setTotalInProgress(data.pagination.totalInProgress);
+          setTotalCanceled(data.pagination.totalCanceled);
           setTotalPending(data.pagination.totalPending);
           setTotalCompleted(data.pagination.totalCompleted);
           setTotalPages(data.pagination.totalPages);
           setLastUpdated(new Date());
         }
-        
+
         // Siempre guardar en caché, incluso con filtros
         const newCachedPages = new Map(cachedPages);
         // Usar la clave que incluye los filtros
         newCachedPages.set(cacheKey, data.items);
-        
+
         // Guardar también las nextPages si existen en la respuesta
         if (data.nextPages && Array.isArray(data.nextPages)) {
-          data.nextPages.forEach(nextPage => {
+          data.nextPages.forEach((nextPage) => {
             if (nextPage.pageNumber && nextPage.items) {
               // La clave de caché para nextPages también incluye los filtros actuales
-              const nextPageCacheKey = getCacheKey(nextPage.pageNumber, currentFilters);
-              console.log(`[OperationContext] Guardando nextPage ${nextPage.pageNumber} en caché con filtros: ${filterStr}`);
+              const nextPageCacheKey = getCacheKey(
+                nextPage.pageNumber,
+                currentFilters
+              );
+             
               newCachedPages.set(nextPageCacheKey, nextPage.items);
             }
           });
         }
-        
+
         setCachedPages(newCachedPages);
         return data;
       } catch (err) {
         console.error("[OperationContext] Error fetching operations:", err);
         if (!silent) {
-          setError("No se pudieron cargar las operaciones. Intente nuevamente.");
+          setError(
+            "No se pudieron cargar las operaciones. Intente nuevamente."
+          );
         }
         throw err;
       } finally {
@@ -204,78 +229,83 @@ export function OperationProvider({ children }: OperationProviderProps) {
         activeRequestsRef.current.delete(requestKey);
       }
     })();
-    
+
     // Registrar la solicitud
     activeRequestsRef.current.set(requestKey, request);
     return request;
   };
-  
+
   // Método para precargar páginas siguientes
   const preloadNextPages = useCallback(() => {
     if (currentPage < totalPages) {
       const nextPage = currentPage + 1;
-      
+
       // Clave de caché que incluye filtros actuales
       const nextPageCacheKey = getCacheKey(nextPage, filters);
-      
+
       // Solo precargar si la página no está ya en caché
       if (!cachedPages.has(nextPageCacheKey)) {
-        console.log(`[OperationContext] Precargando página ${nextPage} con filtros actuales`);
+        console.log(
+          `[OperationContext] Precargando página ${nextPage} con filtros actuales`
+        );
         fetchOperations(nextPage, itemsPerPage, false, filters, true);
       } else {
-        console.log(`[OperationContext] La página ${nextPage} con filtros actuales ya está en caché`);
+        console.log(
+          `[OperationContext] La página ${nextPage} con filtros actuales ya está en caché`
+        );
       }
     }
   }, [currentPage, totalPages, cachedPages, itemsPerPage, filters]);
-  
+
   // Cargar inicialmente las operaciones UNA SOLA VEZ
   useEffect(() => {
     if (!initialLoadRef.current && authService.isLocallyAuthenticated()) {
-      console.log("[OperationContext] Realizando carga inicial");
       initialLoadRef.current = true;
       fetchOperations(1, itemsPerPage, true);
     }
   }, [itemsPerPage]);
-  
+
   // Efecto para recargar cuando cambian los filtros
   useEffect(() => {
     if (initialLoadRef.current && authService.isLocallyAuthenticated()) {
-      console.log("[OperationContext] Recargando debido a cambios en filtros");
       // No limpiamos toda la caché, solo cargamos con nuevos filtros
       fetchOperations(1, itemsPerPage, true, filters);
     }
   }, [filters, itemsPerPage]);
-  
+
   // Método para cambiar la página
   const setPage = (page: number) => {
     if (page !== currentPage && page > 0 && page <= totalPages) {
       // Clave de caché que incluye filtros actuales
       const cacheKey = getCacheKey(page, filters);
-      
+
       // Verificar si la página está en caché
       const isCacheUsable = cachedPages.has(cacheKey);
-      
+
       if (isCacheUsable) {
-        console.log(`[OperationContext] Usando caché para página ${page} con filtros actuales`);
         setOperations(cachedPages.get(cacheKey) || []);
         setCurrentPage(page);
-        
+
         // Precargar siguiente página si no está en caché, con un pequeño retraso
         setTimeout(() => {
           preloadNextPages();
         }, 100);
       } else {
         // Si no está en caché, cargar del servidor
-        console.log(`[OperationContext] Cambiando a página ${page} (carga desde servidor)`);
+        console.log(
+          `[OperationContext] Cambiando a página ${page} (carga desde servidor)`
+        );
         fetchOperations(page, itemsPerPage, false, filters);
       }
     }
   };
-  
+
   // Método para cambiar items por página
   const changeItemsPerPage = (items: number) => {
     if (items !== itemsPerPage) {
-      console.log(`[OperationContext] Cambiando a ${items} elementos por página`);
+      console.log(
+        `[OperationContext] Cambiando a ${items} elementos por página`
+      );
       setItemsPerPage(items);
       // Resetear caché al cambiar la cantidad de elementos por página
       setCachedPages(new Map());
@@ -283,7 +313,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       fetchOperations(1, items, true, filters);
     }
   };
-  
+
   // Método para actualizar filtros
   const updateFilters = (newFilters: OperationFilterDto) => {
     console.log("[OperationContext] Actualizando filtros:", newFilters);
@@ -291,7 +321,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
     // Al cambiar filtros, volvemos a la primera página
     setCurrentPage(1);
   };
-  
+
   // Método para refrescar operaciones
   const refreshOperations = async () => {
     // Limpiar caché al refrescar
@@ -299,18 +329,13 @@ export function OperationProvider({ children }: OperationProviderProps) {
     setCachedPages(new Map());
     await fetchOperations(currentPage, itemsPerPage, true, filters);
   };
-  
+
   // Método para crear una operación
   const createOperation = async (data: any): Promise<Operation | null> => {
     setIsLoading(true);
     isLoadingAlert(true);
 
-
-
-
     try {
-
-
       const groupsFmt = data.groups.map((group: any) => {
         return {
           dateStart: group.dateStart,
@@ -320,8 +345,6 @@ export function OperationProvider({ children }: OperationProviderProps) {
           workerIds: group.workers || group.workerIds,
         };
       });
-
-
 
       const dataFmt = {
         status: data.status,
@@ -336,9 +359,8 @@ export function OperationProvider({ children }: OperationProviderProps) {
         inChargedIds: data.inChargedIds,
         motorShip: undefined as string | undefined,
         dateEnd: undefined as string | undefined,
-        timeEnd: undefined as string | undefined
-      }
-
+        timeEnd: undefined as string | undefined,
+      };
 
       if (data.motorShip) {
         dataFmt.motorShip = data.motorShip;
@@ -351,9 +373,9 @@ export function OperationProvider({ children }: OperationProviderProps) {
         dataFmt.timeEnd = data.timeEnd;
       }
 
-
-
-      const newOperation = await operationService.createOperation(dataFmt as OperationCreateData);
+      const newOperation = await operationService.createOperation(
+        dataFmt as OperationCreateData
+      );
       // Refrescar la lista después de crear
       await refreshOperations();
       return newOperation;
@@ -365,70 +387,84 @@ export function OperationProvider({ children }: OperationProviderProps) {
       isLoadingAlert(false);
     }
   };
-  
-  const updateOperation = async (id: number, data: any): Promise<Operation | null> => {
+
+  const updateOperation = async (
+    id: number,
+    data: any
+  ): Promise<Operation | null> => {
     setIsLoading(true);
     isLoadingAlert(true);
     try {
       console.log("Datos de actualización:****", data);
-      
+
       // Formato de datos específico para la actualización
       const formattedUpdateData = {
         ...data,
         // Asegurarnos de que removedWorkerIds existe
-        removedWorkerIds: data.removedWorkerIds || []
+        removedWorkerIds: data.removedWorkerIds || [],
       };
-  
-      // Si no hay trabajadores a remover pero hay campo originalWorkerIds, 
+
+      // Si no hay trabajadores a remover pero hay campo originalWorkerIds,
       // podríamos calcular los eliminados comparando con los actuales
-      if (formattedUpdateData.removedWorkerIds.length === 0 && 
-          data.originalWorkerIds && Array.isArray(data.originalWorkerIds) && data.originalWorkerIds.length > 0) {
-        
+      if (
+        formattedUpdateData.removedWorkerIds.length === 0 &&
+        data.originalWorkerIds &&
+        Array.isArray(data.originalWorkerIds) &&
+        data.originalWorkerIds.length > 0
+      ) {
         // Recopilamos todos los trabajadores actuales de una forma más completa
         const allCurrentWorkerIds = new Set();
-        
+
         // Añadir trabajadores individuales si existen
         if (data.workerIds && Array.isArray(data.workerIds)) {
           data.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
         }
-        
+
         // Añadir trabajadores de grupos
         if (data.workerGroups && Array.isArray(data.workerGroups)) {
           data.workerGroups.forEach((group: any) => {
             // Considerar diferentes formatos de datos de trabajadores
             if (group.workers && Array.isArray(group.workers)) {
               group.workers.forEach((w: any) => {
-                const workerId = typeof w === 'object' ? w.id : w;
+                const workerId = typeof w === "object" ? w.id : w;
                 allCurrentWorkerIds.add(workerId);
               });
             }
-            
+
             if (group.workerIds && Array.isArray(group.workerIds)) {
-              group.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
+              group.workerIds.forEach((id: number) =>
+                allCurrentWorkerIds.add(id)
+              );
             }
           });
         }
-  
+
         // También verificar si hay datos dentro de 'groups'
         if (data.groups && Array.isArray(data.groups)) {
           data.groups.forEach((group: any) => {
             if (group.workers && Array.isArray(group.workers)) {
-              group.workers.forEach((id: number) => allCurrentWorkerIds.add(id));
+              group.workers.forEach((id: number) =>
+                allCurrentWorkerIds.add(id)
+              );
             }
             if (group.workerIds && Array.isArray(group.workerIds)) {
-              group.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
+              group.workerIds.forEach((id: number) =>
+                allCurrentWorkerIds.add(id)
+              );
             }
           });
         }
-        
+
         // Encontrar IDs que estaban en los originales pero ya no están en los actuales
-        formattedUpdateData.removedWorkerIds = data.originalWorkerIds
-          .filter((id: number) => !allCurrentWorkerIds.has(id));
-       
+        formattedUpdateData.removedWorkerIds = data.originalWorkerIds.filter(
+          (id: number) => !allCurrentWorkerIds.has(id)
+        );
       }
 
-      
-      const updatedOperation = await operationService.updateOperation(id, formattedUpdateData);
+      const updatedOperation = await operationService.updateOperation(
+        id,
+        formattedUpdateData
+      );
       // Refrescar la lista después de actualizar
       await refreshOperations();
       return updatedOperation;
@@ -441,25 +477,30 @@ export function OperationProvider({ children }: OperationProviderProps) {
     }
   };
 
-
   const completeIndividualWorker = async (idOperation: number, data: any) => {
     setIsLoading(true);
     isLoadingAlert(true);
 
     try {
-      const updatedOperation = await operationService.updateWorkerGroups(idOperation, data);
+      const updatedOperation = await operationService.updateWorkerGroups(
+        idOperation,
+        data
+      );
       // Refrescar la lista después de actualizar
       await refreshOperations();
       return updatedOperation;
     } catch (err) {
-      console.error("[OperationContext] Error completing individual worker:", err);
+      console.error(
+        "[OperationContext] Error completing individual worker:",
+        err
+      );
       return null;
     } finally {
       setIsLoading(false);
       isLoadingAlert(false);
     }
   };
-  
+
   // Escuchar eventos de autenticación
   useEffect(() => {
     // Función para manejar logout
@@ -469,6 +510,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       setCurrentPage(1);
       setTotalPages(0);
       setTotalInProgress(0);
+      setTotalCanceled(0);
       setTotalPending(0);
       setTotalCompleted(0);
       setLastUpdated(null);
@@ -476,7 +518,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       setFilters({});
       initialLoadRef.current = false;
     };
-    
+
     // Función para manejar login
     const handleLogin = () => {
       if (!initialLoadRef.current) {
@@ -484,18 +526,18 @@ export function OperationProvider({ children }: OperationProviderProps) {
         fetchOperations(1, itemsPerPage, true);
       }
     };
-    
+
     // Registrar eventos globales
     window.addEventListener("auth:logout", handleLogout);
     window.addEventListener("auth:login_success", handleLogin);
-    
+
     // Limpiar evento al desmontar
     return () => {
       window.removeEventListener("auth:logout", handleLogout);
       window.removeEventListener("auth:login_success", handleLogin);
     };
   }, [itemsPerPage]);
-  
+
   // Valor del contexto
   const value: OperationContextType = {
     operations,
@@ -503,6 +545,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
     isLoading,
     error,
     totalInProgress,
+    totalCanceled,
     totalPending,
     totalCompleted,
     currentPage,
@@ -519,7 +562,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
     preloadNextPages,
     completeIndividualWorker,
   };
-  
+
   return (
     <OperationContext.Provider value={value}>
       {children}

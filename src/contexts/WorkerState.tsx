@@ -28,7 +28,6 @@ class WorkersStateManager {
 
   getState(): WorkerState {
     if (this.isDataExpired()) {
-        console.log('Datos expirados, marcando como no cargados');
         this.state.dataFetched = false;
       }
     return this.state;

@@ -1,5 +1,5 @@
-import { Route, Routes } from "react-router-dom";
-import { useState } from "react";
+import { Route, Routes, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Workers from "./workers/Workers";
 import {
@@ -10,13 +10,11 @@ import {
   AiOutlineDashboard,
   AiOutlineBarChart,
 } from "react-icons/ai";
-import { MdAssignment, MdHomeRepairService } from "react-icons/md";
+import { MdAssignment, MdHomeRepairService, MdKeyboardArrowDown, MdKeyboardArrowRight, MdSecurity, MdRestaurantMenu } from "react-icons/md";
 import { PiMapPinSimpleAreaBold } from "react-icons/pi";
-import { FaPersonMilitaryPointing } from "react-icons/fa6";
-import { BsBuildingsFill } from "react-icons/bs";
+import { BsBuildingsFill, BsLayoutWtf } from "react-icons/bs";
 import { Feature, LayeredProviders } from "@/contexts/LayeredProviders";
 import Areas from "./areas/Areas";
-import Supervisors from "./supervisors/Supervisors";
 import Services from "./services/Services";
 import Clients from "./clients/Clients";
 import Operation from "./operation/Operation";
@@ -26,6 +24,8 @@ import Profile from "./profile/Profile";
 import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
 import Faults from "./faults/Faults";
+import { jwtDecode } from "jwt-decode";
+
 
 const COLORS = {
   darkBlue: "#155dfc", // Azul oscuro
@@ -33,9 +33,57 @@ const COLORS = {
   skyBlue: "#0099ff", // Azul cielo
 };
 
+// Interfaz para el menú de categoría
+interface MenuCategory {
+  title: string;
+  icon: React.ReactNode;
+  requiredRole?: string; // Añadido para restricción por rol
+  items: {
+    path: string;
+    label: string;
+    icon: React.ReactNode;
+    requiredRole?: string; // También podemos restringir items individuales
+  }[];
+}
+
+// Componente para rutas protegidas por rol
+const ProtectedRoute = ({ element, requiredRole }: { element: React.ReactNode, requiredRole: string }) => {
+  // Función para verificar si el usuario tiene el rol requerido
+  const hasRequiredRole = () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+      
+      const decodedToken: any = jwtDecode(token);
+      return decodedToken?.role === requiredRole;
+    } catch (error) {
+      console.error("Error al verificar el rol:", error);
+      return false;
+    }
+  };
+  
+  // Si el usuario tiene el rol, muestra el componente, si no, redirige al dashboard
+  return hasRequiredRole() ? <>{element}</> : <Navigate to="/dashboard" replace />;
+};
+
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(['dashboard']);
+  const [userRole, setUserRole] = useState<string>("");
   const location = useLocation();
+
+  // Obtener el rol del usuario del token
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const decodedToken: any = jwtDecode(token);
+        setUserRole(decodedToken?.role || "");
+      }
+    } catch (error) {
+      console.error("Error al decodificar el token:", error);
+    }
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -48,6 +96,53 @@ export default function Dashboard() {
       (path !== "/dashboard" && location.pathname.startsWith(path))
     );
   };
+  
+  // Función para expandir/contraer una categoría
+  const toggleCategory = (category: string) => {
+    if (expandedCategories.includes(category)) {
+      setExpandedCategories(expandedCategories.filter(cat => cat !== category));
+    } else {
+      setExpandedCategories([...expandedCategories, category]);
+    }
+  };
+  
+  // Define las categorías del menú y sus elementos
+  const menuCategories: MenuCategory[] = [
+    {
+      title: 'Operaciones',
+      icon: <MdAssignment size={20} />,
+      items: [
+        { path: '/dashboard/operations', label: 'Gestión de operaciones', icon: <MdAssignment size={18} /> },
+        { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
+        { path: '/dashboard/reports', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
+        { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
+        { path: '/dashboard/food', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
+      ]
+    },
+    {
+      title: 'Seguridad',
+      icon: <MdSecurity size={20} />,
+      requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
+      items: [
+        { path: '/dashboard/users', label: 'Usuarios', icon: <AiOutlineUser size={18} /> }
+      ]
+    },
+    {
+      title: 'Maestra',
+      icon: <BsLayoutWtf size={20} />,
+      requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
+      items: [
+        { path: '/dashboard/clients', label: 'Clientes', icon: <BsBuildingsFill size={18} />, requiredRole: "SUPERADMIN" },
+        { path: '/dashboard/areas', label: 'Áreas', icon: <PiMapPinSimpleAreaBold size={18} />, requiredRole: "SUPERADMIN" },
+        { path: '/dashboard/services', label: 'Servicios', icon: <MdHomeRepairService size={18} />, requiredRole: "SUPERADMIN" }
+      ]
+    }
+  ];
+
+  // Filtra las categorías según el rol del usuario
+  const filteredCategories = menuCategories.filter(category => 
+    !category.requiredRole || category.requiredRole === userRole
+  );
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -159,111 +254,136 @@ export default function Dashboard() {
           </div>
 
           {/* Enlaces de navegación */}
-          <nav className="mt-6 px-3">
-            <ul className="space-y-1">
-              <MenuItem
-                to="/dashboard"
-                icon={<AiOutlineDashboard size={20} />}
-                label="Dashboard"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard")}
-              />
-              <MenuItem
-                to="/dashboard/operations"
-                icon={<MdAssignment size={20} />}
-                label="Operaciones"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/operations")}
-              />
-              <MenuItem
-                to="/dashboard/workers"
-                icon={<AiOutlineTeam size={20} />}
-                label="Trabajadores"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/workers")}
-              />
+          <nav className="mt-4 flex flex-col min-h-[78vh] justify-between">
+            <ul className="space-y-0.5 flex flex-col justify-between h-min">
+                <Link
+                  to="/dashboard"
+                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all
+                    ${isMenuOpen ? "" : "justify-center"} 
+                    ${isActive("/dashboard") 
+                      ? "bg-blue-50 text-blue-700" 
+                      : "text-gray-600 hover:bg-gray-100"}`}
+                >
+                  <span className={`${isActive("/dashboard") ? "text-blue-600" : ""}`}>
+                    <AiOutlineDashboard size={20} />
+                  </span>
+                  {isMenuOpen && (
+                    <span className="ml-3 text-sm font-medium">Principal</span>
+                  )}
+                </Link>
+              
+              {/* Solo mostrar categorías filtradas por rol */}
+              {filteredCategories.map((category) => {
+                const isExpanded = expandedCategories.includes(category.title.toLowerCase());
+                // Filtrar items por rol para verificar elementos activos
+                const visibleItems = category.items.filter(item => !item.requiredRole || item.requiredRole === userRole);
+                const hasActiveChild = visibleItems.some(item => isActive(item.path));
+                
+                return (
+                  <li key={category.title} className="mb-1">
+                    {/* Cabecera de la categoría */}
+                    <button
+                      onClick={() => toggleCategory(category.title.toLowerCase())}
+                      className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all
+                        ${isMenuOpen ? "justify-between" : "justify-center"} 
+                        ${hasActiveChild ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-100"}`}
+                    >
+                      <div className="flex items-center">
+                        <span className={`${hasActiveChild ? "text-blue-600" : ""}`}>
+                          {category.icon}
+                        </span>
+                        {isMenuOpen && (
+                          <span className="ml-3 text-sm font-medium">{category.title}</span>
+                        )}
+                      </div>
+                      
+                      {isMenuOpen && visibleItems.length > 0 && (
+                        <span className="text-gray-500">
+                          {isExpanded ? <MdKeyboardArrowDown size={18} /> : <MdKeyboardArrowRight size={18} />}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {/* Elementos del submenú - solo mostrar items permitidos */}
+                    <div className={`${isExpanded ? "max-h-96" : "max-h-0"} overflow-hidden transition-all duration-300`}>
+                      <ul className={`pl-2 space-y-1 mt-1 ${isMenuOpen ? "" : "text-center"}`}>
+                        {visibleItems.map((item) => {
+                          const itemIsActive = isActive(item.path);
+                          
+                          return (
+                            <li key={item.path}>
+                              <Link
+                                to={item.path}
+                                className={`flex items-center py-2 px-3 rounded-lg transition-all
+                                  ${isMenuOpen ? "" : "justify-center"} 
+                                  ${itemIsActive 
+                                    ? "bg-blue-50 text-blue-700" 
+                                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}
+                              >
+                                <span className={`${itemIsActive ? "text-blue-600" : ""}`}>
+                                  {item.icon}
+                                </span>
+                                {isMenuOpen && (
+                                  <span className="ml-3 text-sm">{item.label}</span>
+                                )}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
 
-              <MenuItem
-                to="/dashboard/reports"
-                icon={<AiOutlineBarChart size={20} />}
-                label="Reportes"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/reports")}
-              />
-              <MenuItem
-                to="/dashboard/areas"
-                icon={<PiMapPinSimpleAreaBold size={20} />}
-                label="Áreas"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/areas")}
-              />
-
-              <MenuItem
-                to="/dashboard/services"
-                icon={<MdHomeRepairService size={20} />}
-                label="Servicios"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/services")}
-              />
-              <MenuItem
-                to="/dashboard/supersvisors"
-                icon={<FaPersonMilitaryPointing size={20} />}
-                label="Supervisores"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/supersvisors")}
-              />
-
-              <MenuItem
-                to="/dashboard/users"
-                icon={<AiOutlineUser size={20} />}
-                label="Usuarios"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/users")}
-              />
-
-              <MenuItem
-                to="/dashboard/clients"
-                icon={<BsBuildingsFill size={20} />}
-                label="Clientes"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/clients")}
-              />
-
-              <MenuItem
-                to="/dashboard/faults"
-                icon={<AiOutlineUser size={20} />}
-                label="Faltas"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/faults")}
-              />
-
-              <li className="my-3">
+            <div>
+              {/* Separador */}
+              <div className="my-2 px-3">
                 {isMenuOpen ? (
                   <hr className="border-gray-200" />
                 ) : (
-                  <div className="h-1 w-6 bg-gray-200 rounded-full mx-auto"></div>
+                  <div className="h-0.5 w-6 bg-gray-200 rounded-full mx-auto"></div>
                 )}
-              </li>
+              </div>
 
-              <MenuItem
-                to="/dashboard/profile"
-                icon={<AiOutlineUser size={20} />}
-                label="Perfil"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/profile")}
-              />
-              <MenuItem
-                to="/dashboard/login"
-                icon={<GiExitDoor size={20} />}
-                label="Salir"
-                isOpen={isMenuOpen}
-                isActive={isActive("/dashboard/settings")}
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  window.location.href = "/login";
-                }}
-              />
-            </ul>
+              {/* Perfil y cerrar sesión fuera de categorías */}
+              <div>
+                <Link
+                  to="/dashboard/profile"
+                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all
+                    ${isMenuOpen ? "" : "justify-center"} 
+                    ${isActive("/dashboard/profile") 
+                      ? "bg-blue-50 text-blue-700" 
+                      : "text-gray-600 hover:bg-gray-100"}`}
+                >
+                  <span className={`${isActive("/dashboard/profile") ? "text-blue-600" : ""}`}>
+                    <AiOutlineUser size={20} />
+                  </span>
+                  {isMenuOpen && (
+                    <span className="ml-3 text-sm font-medium">Perfil</span>
+                  )}
+                </Link>
+              </div>
+              <div>
+                <Link
+                  to="/login"
+                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all
+                    ${isMenuOpen ? "" : "justify-center"} text-gray-600 hover:bg-gray-100`}
+                  onClick={() => {
+                    localStorage.removeItem("token");
+                    window.location.href = "/login";
+                  }}
+                >
+                  <span>
+                    <GiExitDoor size={20} />
+                  </span>
+                  {isMenuOpen && (
+                    <span className="ml-3 text-sm font-medium">Salir</span>
+                  )}
+                </Link>
+              </div>
+            </div>
           </nav>
         </div>
       </aside>
@@ -301,8 +421,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-            {/* Aquí puedes agregar más rutas según necesites */}
-
             <Route
               path="/operations"
               element={
@@ -330,16 +448,22 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
+            
+            {/* Rutas protegidas con ProtectedRoute */}
             <Route
               path="/services"
               element={
-                <LayeredProviders features={[Feature.SERVICES]}>
-                  <Services />
-                </LayeredProviders>
+                <ProtectedRoute
+                  requiredRole="ADMON_PLATFORM"
+                  element={
+                    <LayeredProviders features={[Feature.SERVICES]}>
+                      <Services />
+                    </LayeredProviders>
+                  }
+                />
               }
             />
-
+            
             <Route
               path="/faults"
               element={
@@ -349,27 +473,26 @@ export default function Dashboard() {
               }
             />
             <Route
-              path="/supersvisors"
-              element={
-                <LayeredProviders features={[Feature.USERS]}>
-                  <Supervisors />
-                </LayeredProviders>
-              }
-            />
-            <Route
-              path="/reports"
+              path="/food"
               element={
                 <div className="text-center p-10 text-gray-600">
-                  Reportes en desarrollo
+                  Módulo de Alimentación en desarrollo
                 </div>
               }
             />
+            
+            {/* Rutas protegidas para la categoría Maestra */}
             <Route
               path="/clients"
               element={
-                <LayeredProviders features={[Feature.CLIENTS]}>
-                  <Clients />
-                </LayeredProviders>
+                <ProtectedRoute
+                  requiredRole="ADMON_PLATFORM"
+                  element={
+                    <LayeredProviders features={[Feature.CLIENTS]}>
+                      <Clients />
+                    </LayeredProviders>
+                  }
+                />
               }
             />
             <Route
@@ -383,56 +506,20 @@ export default function Dashboard() {
             <Route
               path="/areas"
               element={
-                <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
-                  <Areas />
-                </LayeredProviders>
+                <ProtectedRoute
+                  requiredRole="ADMON_PLATFORM"
+                  element={
+                    <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
+                      <Areas />
+                    </LayeredProviders>
+                  }
+                />
               }
             />
-
             <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
       </div>
     </div>
-  );
-}
-
-// Componente para los elementos del menú
-interface MenuItemProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  isOpen: boolean;
-  isActive: boolean;
-  onClick?: () => void;
-}
-
-function MenuItem({
-  to,
-  icon,
-  label,
-  isOpen,
-  isActive,
-  onClick,
-}: MenuItemProps) {
-  return (
-    <li>
-      <Link
-        to={to}
-        className={`
-          flex items-center p-3 rounded-lg transition-all
-          ${
-            isActive
-              ? "bg-blue-50 text-blue-700"
-              : "text-gray-600 hover:bg-gray-100"
-          }
-          ${isOpen ? "" : "justify-center"}
-        `}
-        onClick={onClick}
-      >
-        <span className={`${isActive ? "text-blue-600" : ""}`}>{icon}</span>
-        {isOpen && <span className="ml-3 font-medium">{label}</span>}
-      </Link>
-    </li>
   );
 }
