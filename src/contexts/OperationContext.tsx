@@ -26,6 +26,7 @@ interface PaginatedResponse {
     itemsPerPage: number;
     totalPages: number;
     totalInProgress: number;
+    totalCanceled: number;
     totalPending: number;
     totalCompleted: number;
   };
@@ -42,6 +43,7 @@ interface OperationContextType {
   itemsPerPage: number;
   totalPages: number;
   totalInProgress: number;
+  totalCanceled: number;
   totalPending: number;
   totalCompleted: number;
   setPage: (page: number) => void;
@@ -84,6 +86,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
   const [totalInProgress, setTotalInProgress] = useState<number>(0);
   const [totalPending, setTotalPending] = useState<number>(0);
   const [totalCompleted, setTotalCompleted] = useState<number>(0);
+  const [totalCanceled, setTotalCanceled] = useState<number>(0);
 
   // Estado de filtros
   const [filters, setFilters] = useState<OperationFilterDto>({});
@@ -180,6 +183,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
           setCurrentPage(data.pagination.currentPage);
           setItemsPerPage(data.pagination.itemsPerPage);
           setTotalInProgress(data.pagination.totalInProgress);
+          setTotalCanceled(data.pagination.totalCanceled);
           setTotalPending(data.pagination.totalPending);
           setTotalCompleted(data.pagination.totalCompleted);
           setTotalPages(data.pagination.totalPages);
@@ -506,6 +510,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       setCurrentPage(1);
       setTotalPages(0);
       setTotalInProgress(0);
+      setTotalCanceled(0);
       setTotalPending(0);
       setTotalCompleted(0);
       setLastUpdated(null);
@@ -540,6 +545,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
     isLoading,
     error,
     totalInProgress,
+    totalCanceled,
     totalPending,
     totalCompleted,
     currentPage,
