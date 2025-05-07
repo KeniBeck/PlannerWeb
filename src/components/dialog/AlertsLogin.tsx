@@ -71,6 +71,7 @@ export const StatusSuccessAlert = (title: string, message: string) => {
 let isLoading = false;
 let loadingStartTime: number = 0;
 const MIN_LOADING_DURATION = 1000;
+let loaderRoot: ReactDOM.Root | null = null;
 
 // Función para mostrar alertas
 const showAlert = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
@@ -120,6 +121,7 @@ const ensureLoaderContainer = () => {
     container = document.createElement('div');
     container.id = 'loader-container';
     document.body.appendChild(container);
+    loaderRoot = ReactDOM.createRoot(container); // Creamos el root solo una vez
   }
   return container;
 };
@@ -134,9 +136,9 @@ export const isLoadingAlert = async (status: boolean) => {
     isLoading = true;
     loadingStartTime = Date.now();
     
-    const container = ensureLoaderContainer();
-    const root = ReactDOM.createRoot(container);
-    root.render(<LoaderPortal />);
+    ensureLoaderContainer();
+    // Usamos el root existente
+    loaderRoot?.render(<LoaderPortal />);
   } else {
     if (!isLoading) return;
 
@@ -149,11 +151,12 @@ export const isLoadingAlert = async (status: boolean) => {
 
     isLoading = false;
     
-    const container = document.getElementById('loader-container');
-    if (container) {
-      const root = ReactDOM.createRoot(container);
-      root.unmount();
-      document.body.removeChild(container);
+    // Desmontamos usando el root existente
+    if (loaderRoot) {
+      loaderRoot.unmount();
+      loaderRoot = null;
+      const container = document.getElementById('loader-container');
+      container?.remove();
     }
   }
 };

@@ -3,18 +3,14 @@ import { useOperations } from "@/contexts/OperationContext";
 import { useAreas } from "@/contexts/AreasContext";
 import { useClients } from "@/contexts/ClientsContext";
 import { WorkerStatus } from "@/core/model/worker";
-import { DashboardHeader } from "@/components/ui/dashboard/DashboardHeader"; 
-import { StatsCard } from "@/components/ui/dashboard/StatsCard"; 
-import { OperationStatusChart } from "@/components/ui/dashboard/OperationStatusChart"; 
-import { WorkerStatusChart } from "@/components/ui/dashboard/WorkerStatusChart"; 
-import { RecentOperationsTable } from "@/components/ui/dashboard/RecentOperationsTable"; 
+import { DashboardHeader } from "@/components/ui/dashboard/DashboardHeader";
+import { StatsCard } from "@/components/ui/dashboard/StatsCard";
+import { OperationStatusChart } from "@/components/ui/dashboard/OperationStatusChart";
+import { WorkerStatusChart } from "@/components/ui/dashboard/WorkerStatusChart";
+import { RecentOperationsTable } from "@/components/ui/dashboard/RecentOperationsTable";
 import { HiMiniClipboardDocumentList } from "react-icons/hi2";
 import { FiTrendingUp } from "react-icons/fi";
-
-import {
-  AiOutlineTeam,
-  AiOutlineClockCircle,
-} from "react-icons/ai";
+import { AiOutlineTeam, AiOutlineClockCircle } from "react-icons/ai";
 import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { BsBuildingsFill } from "react-icons/bs";
 
@@ -24,11 +20,20 @@ export default function DashboardHome() {
     operations,
     totalItems,
     totalInProgress,
+    totalCanceled,
     totalPending,
     totalCompleted,
   } = useOperations();
   const { areas } = useAreas();
   const { clients } = useClients();
+
+  const totalOperationsOfDay =
+    totalCanceled + totalPending + totalCompleted + totalInProgress;
+
+  const totalWorkerDeactivated = workers.filter(
+    (w) => w.status === WorkerStatus.DEACTIVATED
+  ).length;
+
 
   // Calculate key metrics
   const availableWorkers = workers.filter(
@@ -59,7 +64,7 @@ export default function DashboardHome() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Trabajadores"
-          count={workers.length}
+          count={workers.length - totalWorkerDeactivated}
           subtitle="disponibles"
           subtitleValue={availableWorkers}
           icon={<AiOutlineTeam />}
@@ -72,7 +77,7 @@ export default function DashboardHome() {
 
         <StatsCard
           title="Operaciones"
-          count={totalItems}
+          count={totalOperationsOfDay}
           subtitle="en curso"
           subtitleValue={totalInProgress}
           icon={<HiMiniClipboardDocumentList />}
@@ -102,7 +107,7 @@ export default function DashboardHome() {
           subtitle="activos"
           subtitleValue={clients.length}
           icon={<BsBuildingsFill />}
-          iconSubtitle={<FiTrendingUp/>}
+          iconSubtitle={<FiTrendingUp />}
           iconBgColor="bg-amber-100"
           iconColor="text-amber-600"
           borderColor="border-amber-500"
