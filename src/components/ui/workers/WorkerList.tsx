@@ -5,6 +5,8 @@ import { es } from "date-fns/locale";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
 import { BsPencil, BsEye } from "react-icons/bs";
 import { HiOutlineBan, HiOutlineRefresh } from "react-icons/hi";
+import { FaHeartbeat } from 'react-icons/fa';
+
 
 
 interface WorkersListProps {
@@ -15,7 +17,10 @@ interface WorkersListProps {
   onActivate?: (worker: Worker) => void;
   onView?: (worker: Worker) => void;
   onDeactivate?: (worker: Worker) => void;
+  onIncapacity?: (worker: Worker) => void; // Nuevo prop
+  onEndIncapacity?: (worker: Worker) => void; // Nuevo prop
 }
+
 
 export function WorkersList({ 
   workers, 
@@ -24,7 +29,9 @@ export function WorkersList({
   onEdit,
   onActivate,
   onView,
-  onDeactivate 
+  onDeactivate,
+  onIncapacity,
+  onEndIncapacity,
 }: WorkersListProps) {
   // Estados para manejar la paginación interna
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,6 +89,7 @@ export function WorkersList({
   const actions: TableAction<Worker>[] = useMemo(() => {
     const tableActions: TableAction<Worker>[] = [
     ];
+
      // Acción para ver detalles
      if (onView) {
       tableActions.push({
@@ -124,10 +132,35 @@ export function WorkersList({
       });
 
     }
+
+    if (onIncapacity) {
+      tableActions.push({
+        label: "Registrar incapacidad",
+        icon: <FaHeartbeat className="h-4 w-4" />,
+        onClick: onIncapacity,
+        className: "text-amber-600",
+        // Solo mostrar para trabajadores disponibles o asignados
+        hidden: (worker) => 
+          worker.status === WorkerStatus.DEACTIVATED || 
+          worker.status === WorkerStatus.INCAPACITATED,
+      });
+    }
+    
+    // Acción para finalizar incapacidad
+    if (onEndIncapacity) {
+      tableActions.push({
+        label: "Finalizar incapacidad",
+        icon: <FaHeartbeat className="h-4 w-4" />,
+        onClick: onEndIncapacity,
+        className: "text-green-600",
+        // Solo mostrar para trabajadores incapacitados
+        hidden: (worker) => worker.status !== WorkerStatus.INCAPACITATED,
+      });
+    }
     
     
     return tableActions;
-  }, [onEdit, onView, onActivate, onDeactivate]);
+  }, [onEdit, onView, onActivate, onDeactivate,  onIncapacity, onEndIncapacity]);
 
   // Definir columnas usando useMemo
   const columns: TableColumn<Worker>[] = useMemo(

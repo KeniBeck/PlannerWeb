@@ -12,6 +12,7 @@ interface Worker {
   hoursWorked?: number;
   dateDisableEnd?: Date;
   dateRetierment?: Date;
+  
   jobArea: Area;
   status: WorkerStatus;
   code: string;
