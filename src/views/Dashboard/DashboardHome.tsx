@@ -13,6 +13,8 @@ import { FiTrendingUp } from "react-icons/fi";
 import { AiOutlineTeam, AiOutlineClockCircle } from "react-icons/ai";
 import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { BsBuildingsFill } from "react-icons/bs";
+import { useFaults } from "@/contexts/FaultContext";
+import { RecentFaultsTable } from "@/components/ui/dashboard/RecentFaultTable";
 
 export default function DashboardHome() {
   const { workers } = useWorkers();
@@ -26,6 +28,7 @@ export default function DashboardHome() {
   } = useOperations();
   const { areas } = useAreas();
   const { clients } = useClients();
+  const {faults} = useFaults();
 
   const totalOperationsOfDay =
     totalCanceled + totalPending + totalCompleted + totalInProgress;
@@ -52,6 +55,16 @@ export default function DashboardHome() {
       (a, b) =>
         new Date(b.dateStart || 0).getTime() -
         new Date(a.dateStart || 0).getTime()
+    )
+    .slice(0, 5);
+
+  // Get recent faults (last 5)
+
+  const recentFaults = [...faults]
+    .sort(
+      (a, b) =>
+        new Date(b.createAt || 0).getTime() -
+        new Date(a.createAt || 0).getTime()
     )
     .slice(0, 5);
 
@@ -135,6 +148,9 @@ export default function DashboardHome() {
 
       {/* Recent Operations */}
       <RecentOperationsTable operations={recentOperations} />
+
+      {/* Recent Faults */}
+      <RecentFaultsTable fault={recentFaults} />
     </div>
   );
 }
