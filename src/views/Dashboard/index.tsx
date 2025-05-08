@@ -120,14 +120,6 @@ export default function Dashboard() {
       ]
     },
     {
-      title: 'Seguridad',
-      icon: <MdSecurity size={20} />,
-      requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
-      items: [
-        { path: '/dashboard/users', label: 'Usuarios', icon: <AiOutlineUser size={18} /> }
-      ]
-    },
-    {
       title: 'Maestra',
       icon: <BsLayoutWtf size={20} />,
       requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
@@ -135,6 +127,14 @@ export default function Dashboard() {
         { path: '/dashboard/clients', label: 'Clientes', icon: <BsBuildingsFill size={18} />, requiredRole: "SUPERADMIN" },
         { path: '/dashboard/areas', label: 'Áreas', icon: <PiMapPinSimpleAreaBold size={18} />, requiredRole: "SUPERADMIN" },
         { path: '/dashboard/services', label: 'Servicios', icon: <MdHomeRepairService size={18} />, requiredRole: "SUPERADMIN" }
+      ]
+    },
+    {
+      title: 'Seguridad',
+      icon: <MdSecurity size={20} />,
+      requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
+      items: [
+        { path: '/dashboard/users', label: 'Usuarios', icon: <AiOutlineUser size={18} /> }
       ]
     }
   ];
@@ -454,7 +454,7 @@ export default function Dashboard() {
               path="/services"
               element={
                 <ProtectedRoute
-                  requiredRole="ADMON_PLATFORM"
+                  requiredRole="SUPERADMIN"
                   element={
                     <LayeredProviders features={[Feature.SERVICES]}>
                       <Services />
@@ -486,7 +486,7 @@ export default function Dashboard() {
               path="/clients"
               element={
                 <ProtectedRoute
-                  requiredRole="ADMON_PLATFORM"
+                  requiredRole="SUPERADMIN"
                   element={
                     <LayeredProviders features={[Feature.CLIENTS]}>
                       <Clients />
@@ -507,7 +507,7 @@ export default function Dashboard() {
               path="/areas"
               element={
                 <ProtectedRoute
-                  requiredRole="ADMON_PLATFORM"
+                  requiredRole="SUPERADMIN"
                   element={
                     <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
                       <Areas />

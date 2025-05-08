@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { decodeToken } from "@/lib/utils/jwtutils";
 import { User } from "@/core/model/user";
-import { StatusSuccessAlert, StatusCodeAlert } from "@/components/dialog/AlertsLogin";
-import api from "@/services/client/axiosConfig";
-import { z } from "zod";
 import  { ViewOnlyInput } from "@/components/ui/ViewOnlyInput";
-import { FaUserCircle, FaSave, FaIdCard, FaMobileAlt, FaBriefcase } from "react-icons/fa";
+import { FaUserCircle,  FaIdCard,  FaBriefcase } from "react-icons/fa";
 
 // Definir los roles disponibles
 const AVAILABLE_ROLES = [
@@ -26,48 +23,31 @@ export default function Profile() {
   // Cargar datos del usuario desde la API
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     const decoded = decodeToken(token);
-    if (!decoded?.dni) return;
+    if (!decoded) {
+      setLoading(false);
+      return;
+    }
 
-    const fetchUser = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/user/${decoded.dni}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        const userData = {
-          ...response.data,
-          cargo: response.data.occupation || response.data.cargo || ""
-        };
-        
-        setUser(userData);
-        setOriginalData(JSON.parse(JSON.stringify(userData))); // Deep clone para restaurar
-      } catch (error) {
-        StatusCodeAlert(error);
-      } finally {
-        setLoading(false);
-      }
+    // Extraer la información del usuario del token decodificado
+    const userData: User = {
+      id: decoded.id,
+      name: decoded.name || '',
+      username: decoded.username || decoded.sub || '',
+      dni: decoded.dni || '',
+      phone: decoded.phone || '',
+      occupation: decoded.occupation || decoded.role || '',
+      // Otros campos que puedan existir en el token
     };
 
-    fetchUser();
+    setUser(userData);
+    setLoading(false);
   }, []);
-
-
-  // Detectar cambios para habilitar/deshabilitar el botón de guardar
-  useEffect(() => {
-    if (user && originalData) {
-      const changed = 
-        user.name !== originalData.name ||
-        user.dni !== originalData.dni ||
-        user.phone !== originalData.phone ||
-        user.occupation !== originalData.occupation;
-      
-      setHasChanges(changed);
-    }
-  }, [user, originalData]);
 
   // Restaurar cambios
   const handleCancel = () => {
