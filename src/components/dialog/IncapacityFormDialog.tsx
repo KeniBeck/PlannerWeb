@@ -125,7 +125,7 @@ export function IncapacityFormDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-t-lg px-6 py-4">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-t-lg px-6 py-4">
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-bold text-white flex items-center">
               <FaHeartbeat className="mr-2" />
@@ -133,7 +133,7 @@ export function IncapacityFormDialog({
             </h3>
             <button
               onClick={() => onOpenChange(false)}
-              className="text-white hover:text-amber-200"
+              className="text-white hover:text-green-200"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -145,8 +145,8 @@ export function IncapacityFormDialog({
         {/* Contenido */}
         <div className="px-6 py-5">
           {worker && (
-            <div className="flex items-center mb-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
-              <div className="flex-shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 h-12 w-12 rounded-full flex items-center justify-center mr-3">
+            <div className="flex items-center mb-4 bg-green-50 p-3 rounded-lg border border-green-200">
+              <div className="flex-shrink-0 bg-gradient-to-r from-green-400 to-green-500 h-12 w-12 rounded-full flex items-center justify-center mr-3">
                 <span className="text-white font-bold text-lg">
                   {worker.name?.charAt(0)}
                 </span>
@@ -167,7 +167,7 @@ export function IncapacityFormDialog({
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-2.5">
-                  <FaExclamationTriangle className="text-amber-600" />
+                  <FaExclamationTriangle className="text-green-600" />
                 </div>
                 <select
                   name="type"
@@ -175,7 +175,7 @@ export function IncapacityFormDialog({
                   onChange={handleSelectChange}
                   className={`w-full pl-10 pr-4 py-2 border rounded-lg ${
                     errors.type ? 'border-red-300' : 'border-gray-300'
-                  } focus:ring-2 focus:ring-amber-500 focus:border-amber-500`}
+                  } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
                 >
                   {Object.entries(incapacityTypeLabels).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -194,7 +194,7 @@ export function IncapacityFormDialog({
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-2.5">
-                  <FaHeartbeat className="text-amber-600" />
+                  <FaHeartbeat className="text-green-600" />
                 </div>
                 <select
                   name="cause"
@@ -202,7 +202,7 @@ export function IncapacityFormDialog({
                   onChange={handleSelectChange}
                   className={`w-full pl-10 pr-4 py-2 border rounded-lg ${
                     errors.cause ? 'border-red-300' : 'border-gray-300'
-                  } focus:ring-2 focus:ring-amber-500 focus:border-amber-500`}
+                  } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
                 >
                   {Object.entries(incapacityCauseLabels).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -225,7 +225,7 @@ export function IncapacityFormDialog({
                 onChange={(value) => setFormData(prev => ({ ...prev, startDate: value }))}
                 className={`w-full border rounded-lg ${
                   errors.startDate ? 'border-red-300' : 'border-gray-300'
-                } focus:ring-2 focus:ring-amber-500 focus:border-amber-500`}
+                } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
               />
               {errors.startDate && <p className="mt-1 text-sm text-red-500">{errors.startDate}</p>}
             </div>
@@ -241,7 +241,7 @@ export function IncapacityFormDialog({
                 onChange={(value) => setFormData(prev => ({ ...prev, endDate: value }))}
                 className={`w-full border rounded-lg ${
                   errors.endDate ? 'border-red-300' : 'border-gray-300'
-                } focus:ring-2 focus:ring-amber-500 focus:border-amber-500`}
+                } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
               />
               {errors.endDate && <p className="mt-1 text-sm text-red-500">{errors.endDate}</p>}
             </div>
@@ -259,7 +259,7 @@ export function IncapacityFormDialog({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 focus:outline-none"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none"
             disabled={isLoading}
           >
             {isLoading ? (

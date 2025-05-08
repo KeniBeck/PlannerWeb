@@ -138,7 +138,7 @@ export function WorkersList({
         label: "Registrar incapacidad",
         icon: <FaHeartbeat className="h-4 w-4" />,
         onClick: onIncapacity,
-        className: "text-amber-600",
+        className: "text-green-600",
         // Solo mostrar para trabajadores disponibles o asignados
         hidden: (worker) => 
           worker.status === WorkerStatus.DEACTIVATED || 
@@ -152,7 +152,7 @@ export function WorkersList({
         label: "Finalizar incapacidad",
         icon: <FaHeartbeat className="h-4 w-4" />,
         onClick: onEndIncapacity,
-        className: "text-green-600",
+        className: "text-amber-600",
         // Solo mostrar para trabajadores incapacitados
         hidden: (worker) => worker.status !== WorkerStatus.INCAPACITATED,
       });

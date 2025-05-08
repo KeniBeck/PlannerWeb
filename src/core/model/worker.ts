@@ -5,13 +5,13 @@ interface Worker {
   name: string;
   phone: string;
   dni: string;
-  createAt: Date;
+  createAt?: Date;
   endDate?: Date;
   failures?: number;
-  dateDisableStart?: Date;
+  dateDisableStart?: Date | string;
   hoursWorked?: number;
-  dateDisableEnd?: Date;
-  dateRetierment?: Date;
+  dateDisableEnd?: Date | string;
+  dateRetierment?: Date | string;
   
   jobArea: Area;
   status: WorkerStatus;

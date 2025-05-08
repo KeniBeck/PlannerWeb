@@ -118,6 +118,16 @@ export default function Workers() {
     }
   };
 
+  const handleCreateWorker = async (worker: Worker) => {
+    try {
+      await workerService.createWorker(worker);
+      refreshWorkers();
+      setIsAddWorkerOpen(false);
+    } catch (error) {
+      console.error("Error creating worker:", error);
+    }
+  };
+
   const ConfirmToDeactivated = async () => {
     if (!workerToDeactivate) return;
     if (workerToDeactivate.id) {
@@ -170,6 +180,8 @@ export default function Workers() {
         await workerService.updateWorker(workerForIncapacity.id, {
           ...workerForIncapacity,
           status: WorkerStatus.INCAPACITATED,
+          dateDisableEnd: data.endDate,
+          dateDisableStart: data.startDate,
         });
         await inabilityService.create({
           id_worker: workerForIncapacity.id,
@@ -418,12 +430,6 @@ export default function Workers() {
           onSave={saveIncapacityData}
           isLoading={isIncapacityLoading}
         />
-        {/* Diálogos */}
-        <AddWorkerDialog
-          open={isAddWorkerOpen}
-          onOpenChange={setIsAddWorkerOpen}
-          areas={areas}
-        />
       </div>
       <DeactivateItemAlert
         open={!!workerToDeactivate}
@@ -448,10 +454,17 @@ export default function Workers() {
       />
 
       <AddWorkerDialog
-        open={isEditWorkerOpen}
-        onOpenChange={setIsEditWorkerOpen}
+        open={isAddWorkerOpen || isEditWorkerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddWorkerOpen(false);
+            setIsEditWorkerOpen(false);
+            setSelectedWorker(null);
+          }
+        }}
         worker={selectedWorker || undefined}
         areas={areas}
+        onAddWorker={handleCreateWorker}
         onUpdateWorker={handleUpdateWorker}
       />
     </>

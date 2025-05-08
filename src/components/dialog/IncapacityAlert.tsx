@@ -29,8 +29,8 @@ export const EndIncapacityAlert: React.FC<IncacacityAlertProps> = ({
     onOpenChange={onOpenChange}
     title={`Finalizar incapacidad`}
     description={`¿Estás seguro de que deseas finalizar la incapacidad de ${workerName}? Esto lo marcará como disponible nuevamente.`}
-    type="success"
-    icon={<FaHeartbeat className="h-10 w-10 text-green-500" />}
+    type="warning"
+    icon={<FaHeartbeat className="h-10 w-10 text-amber-600" />}
     confirmText="Finalizar incapacidad"
     cancelText="Cancelar"
     onConfirm={onConfirm}
