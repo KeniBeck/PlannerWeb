@@ -3,29 +3,18 @@ import { endOfDay, format } from 'date-fns';
 import { FaHeartbeat, FaCalendarAlt, FaPen, FaExclamationTriangle } from 'react-icons/fa';
 import { Worker } from '@/core/model/worker';
 import { DateFilter } from '../custom/filter/DateFilterProps';
-
-// Enumeraciones para los valores de select
-enum IncapacityTypeEnum {
-  INITIAL = 'INITIAL',
-  EXTENSION = 'EXTENSION'
-}
-
-enum IncapacityCauseEnum {
-  WORK_ACCIDENT = 'WORK_ACCIDENT',
-  TRAFFIC_ACCIDENT = 'TRAFFIC_ACCIDENT',
-  GENERAL_ILLNESS = 'GENERAL_ILLNESS'
-}
+import { CauseDisability, TypeDisability } from '@/core/model/inability';
 
 // Labels para mostrar en la interfaz
 const incapacityTypeLabels = {
-  [IncapacityTypeEnum.INITIAL]: 'Inicial',
-  [IncapacityTypeEnum.EXTENSION]: 'Prórroga'
+  [TypeDisability.INITIAL]: 'Inicial',
+  [TypeDisability.EXTENSION]: 'Prórroga'
 };
 
 const incapacityCauseLabels = {
-  [IncapacityCauseEnum.WORK_ACCIDENT]: 'Accidente Laboral',
-  [IncapacityCauseEnum.TRAFFIC_ACCIDENT]: 'Accidente de Tránsito',
-  [IncapacityCauseEnum.GENERAL_ILLNESS]: 'Enfermedad General'
+  [CauseDisability.LABOR]: 'Accidente Laboral',
+  [CauseDisability.TRANSIT]: 'Accidente de Tránsito',
+  [CauseDisability.DISEASE]: 'Enfermedad General'
 };
 
 interface IncapacityFormDialogProps {
@@ -33,10 +22,10 @@ interface IncapacityFormDialogProps {
   onOpenChange: (open: boolean) => void;
   worker: Worker | null;
   onSave: (data: { 
-    startDate: Date; 
-    endDate: Date; 
-    cause: IncapacityCauseEnum; 
-    type: IncapacityTypeEnum 
+    startDate: string; 
+    endDate: string; 
+    cause: CauseDisability; 
+    type: TypeDisability; 
   }) => void;
   isLoading?: boolean;
 }
@@ -52,8 +41,8 @@ export function IncapacityFormDialog({
   const [formData, setFormData] = useState({
     startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
-    cause: IncapacityCauseEnum.GENERAL_ILLNESS,
-    type: IncapacityTypeEnum.INITIAL
+    cause: CauseDisability.DISEASE,
+    type: TypeDisability.INITIAL
   });
 
   // Estado para errores de validación
@@ -70,8 +59,8 @@ export function IncapacityFormDialog({
       setFormData({
         startDate: format(new Date(), "yyyy-MM-dd"),
         endDate: format(new Date(), "yyyy-MM-dd"),
-        cause: IncapacityCauseEnum.GENERAL_ILLNESS,
-        type: IncapacityTypeEnum.INITIAL
+        cause: CauseDisability.DISEASE,
+        type: TypeDisability.INITIAL
       });
       setErrors({ startDate: "", endDate: "", cause: "", type: "" });
     }
@@ -117,15 +106,16 @@ export function IncapacityFormDialog({
     return !Object.values(newErrors).some(error => error);
   };
 
+
+
   // Manejar envío del formulario
   const handleSubmit = () => {
     if (!validateForm() || !worker) return;
-    
     onSave({
-      startDate: new Date(formData.startDate),
-      endDate: new Date(formData.endDate),
-      cause: formData.cause as IncapacityCauseEnum,
-      type: formData.type as IncapacityTypeEnum
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      cause: formData.cause as CauseDisability,
+      type: formData.type as TypeDisability
     });
   };
 
@@ -158,7 +148,7 @@ export function IncapacityFormDialog({
             <div className="flex items-center mb-4 bg-amber-50 p-3 rounded-lg border border-amber-200">
               <div className="flex-shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 h-12 w-12 rounded-full flex items-center justify-center mr-3">
                 <span className="text-white font-bold text-lg">
-                  {worker.name.charAt(0)}
+                  {worker.name?.charAt(0)}
                 </span>
               </div>
               <div>
@@ -286,6 +276,3 @@ export function IncapacityFormDialog({
     </div>
   );
 }
-
-// Exportar las enumeraciones para uso externo
-export { IncapacityTypeEnum, IncapacityCauseEnum };

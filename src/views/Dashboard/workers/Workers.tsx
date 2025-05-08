@@ -10,7 +10,7 @@ import { useAreas } from "@/contexts/AreasContext";
 import { AddWorkerDialog } from "@/components/ui/workers/AddWorkerDialog";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, id } from "date-fns/locale";
 import { WorkersList } from "@/components/ui/workers/WorkerList";
 import {
   ActivateItemAlert,
@@ -18,8 +18,10 @@ import {
 } from "@/components/dialog/CommonAlertActive";
 import { workerService } from "@/services/workerService";
 import { ViewWorkerDialog } from "@/components/ui/workers/ViewWorkerDialog";
-import {  EndIncapacityAlert } from "@/components/dialog/IncapacityAlert";
-import { IncapacityCauseEnum, IncapacityFormDialog, IncapacityTypeEnum } from "@/components/dialog/IncapacityFormDialog";
+import { EndIncapacityAlert } from "@/components/dialog/IncapacityAlert";
+import { IncapacityFormDialog } from "@/components/dialog/IncapacityFormDialog";
+import { CauseDisability, TypeDisability } from "@/core/model/inability";
+import { inabilityService } from "@/services/inabilityService";
 
 export default function Workers() {
   const {
@@ -39,11 +41,13 @@ export default function Workers() {
   const [viewWorker, setViewWorker] = useState<Worker | null>(null);
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [isEditWorkerOpen, setIsEditWorkerOpen] = useState(false);
-  const [workerForIncapacity, setWorkerForIncapacity] = useState<Worker | null>(null);
+  const [workerForIncapacity, setWorkerForIncapacity] = useState<Worker | null>(
+    null
+  );
   const [isIncapacityFormOpen, setIsIncapacityFormOpen] = useState(false);
-  const [workerToEndIncapacity, setWorkerToEndIncapacity] = useState<Worker | null>(null);
+  const [workerToEndIncapacity, setWorkerToEndIncapacity] =
+    useState<Worker | null>(null);
   const [isIncapacityLoading, setIsIncapacityLoading] = useState(false);
-
 
   // Todas las distintas categorías de trabajadores
   const allWorkers = workers;
@@ -104,6 +108,7 @@ export default function Workers() {
 
   const handleUpdateWorker = async (worker: Worker) => {
     try {
+      if (!worker.id) return;
       await workerService.updateWorker(worker.id, worker);
       refreshWorkers();
       setIsEditWorkerOpen(false);
@@ -111,28 +116,32 @@ export default function Workers() {
     } catch (error) {
       console.error("Error updating worker:", error);
     }
-  }
+  };
 
   const ConfirmToDeactivated = async () => {
     if (!workerToDeactivate) return;
-    await workerService.updateWorker(workerToDeactivate.id, {
-      ...workerToDeactivate,
-      status: WorkerStatus.DEACTIVATED,
-    });
+    if (workerToDeactivate.id) {
+      await workerService.updateWorker(workerToDeactivate.id, {
+        ...workerToDeactivate,
+        status: WorkerStatus.DEACTIVATED,
+      });
+    }
+
     refreshWorkers();
     setWorkerToDeactivate(null);
   };
 
   const ConfirmToActivated = async () => {
     if (!workerToActivate) return;
-    await workerService.updateWorker(workerToActivate.id, {
-      ...workerToActivate,
-      status: WorkerStatus.AVAILABLE,
-    });
+    if (workerToActivate.id) {
+      await workerService.updateWorker(workerToActivate.id, {
+        ...workerToActivate,
+        status: WorkerStatus.AVAILABLE,
+      });
+    }
     refreshWorkers();
     setWorkerToActivate(null);
   };
-
 
   const handleStartIncapacity = (worker: Worker) => {
     setWorkerForIncapacity(worker);
@@ -149,21 +158,27 @@ export default function Workers() {
 
   // Guardar datos de incapacidad
   const saveIncapacityData = async (data: {
-    startDate: Date;
-    endDate: Date | null;
-    cause: IncapacityCauseEnum; 
-    type: IncapacityTypeEnum 
+    startDate: string;
+    endDate: string;
+    cause: CauseDisability;
+    type: TypeDisability;
   }) => {
     if (!workerForIncapacity) return;
-
     setIsIncapacityLoading(true);
     try {
-      await workerService.updateWorker(workerForIncapacity.id, {
-        ...workerForIncapacity,
-        status: WorkerStatus.INCAPACITATED,
-        dateDisableStart: data.startDate,
-        dateDisableEnd: data.endDate || undefined,
-      });
+      if (workerForIncapacity.id) {
+        await workerService.updateWorker(workerForIncapacity.id, {
+          ...workerForIncapacity,
+          status: WorkerStatus.INCAPACITATED,
+        });
+        await inabilityService.create({
+          id_worker: workerForIncapacity.id,
+          dateDisableStart: data.startDate,
+          dateDisableEnd: data.endDate,
+          cause: data.cause,
+          type: data.type,
+        });
+      }
 
       await refreshWorkers();
 
@@ -171,7 +186,6 @@ export default function Workers() {
       setIsIncapacityFormOpen(false);
     } catch (error) {
       console.error("Error al registrar incapacidad:", error);
-
     } finally {
       setIsIncapacityLoading(false);
     }
@@ -183,12 +197,12 @@ export default function Workers() {
 
     setIsIncapacityLoading(true);
     try {
-      await workerService.updateWorker(workerToEndIncapacity.id, {
-        ...workerToEndIncapacity,
-        status: WorkerStatus.AVAILABLE,
-        dateDisableEnd: new Date()
-      });
-
+      if (workerToEndIncapacity.id) {
+        await workerService.updateWorker(workerToEndIncapacity.id, {
+          ...workerToEndIncapacity,
+          status: WorkerStatus.AVAILABLE,
+        });
+      }
       await refreshWorkers();
       setWorkerToEndIncapacity(null);
     } catch (error) {
@@ -197,7 +211,6 @@ export default function Workers() {
       setIsIncapacityLoading(false);
     }
   };
-
 
   // Definir columnas para exportar trabajadores
   const workerExportColumns: ExcelColumn[] = useMemo(
@@ -294,8 +307,9 @@ export default function Workers() {
             refreshData={() => Promise.resolve(refreshWorkers())}
             loading={false}
             exportData={currentView.items}
-            exportFileName={`${currentView.type === "workers" ? "trabajadores" : "faltas"
-              }_${activeTab}`}
+            exportFileName={`${
+              currentView.type === "workers" ? "trabajadores" : "faltas"
+            }_${activeTab}`}
             exportColumns={currentExportColumns}
             currentView={currentView.type}
           />
@@ -382,8 +396,6 @@ export default function Workers() {
           itemName="trabajador"
           isLoading={isLoading}
         />
-
-     
 
         <EndIncapacityAlert
           open={!!workerToEndIncapacity}
