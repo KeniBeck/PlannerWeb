@@ -315,7 +315,7 @@ export default function Operation() {
     try {
       // Obtener todas las operaciones con los filtros actuales
       const response = await operationService.getPaginatedOperations(
-        1, 10000, filters
+        1, 10000, {...filters, activatePaginated: false} // Asegurarse de que se obtienen todas las operaciones
       );
       let operations = response.items;
       
