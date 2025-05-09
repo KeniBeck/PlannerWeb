@@ -112,7 +112,7 @@ export default function Dashboard() {
       title: 'Operaciones',
       icon: <MdAssignment size={20} />,
       items: [
-        { path: '/dashboard/operations', label: 'Gestión de operaciones', icon: <MdAssignment size={18} /> },
+        { path: '/dashboard/operations', label: 'Registro de Operaciones', icon: <MdAssignment size={18} /> },
         { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
         { path: '/dashboard/reports', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
         { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
