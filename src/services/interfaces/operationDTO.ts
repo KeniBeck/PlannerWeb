@@ -6,6 +6,7 @@ export interface OperationFilterDto {
   userId?: number;
   search?: string;
   inChargedId?: number;
+  activatePaginated?:boolean;
 }
 
 enum StatusOperation {
