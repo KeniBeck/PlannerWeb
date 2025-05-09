@@ -7,7 +7,7 @@ interface AddWorkerDialogProps {
     onOpenChange: (open: boolean) => void;
     areas?: Area[];
     worker?: Worker; // Si se proporciona, estamos en modo edición
-    onAddWorker?: (worker: Omit<Worker, 'id'>) => void;
+    onAddWorker?: (worker: Worker) => void;
     onUpdateWorker?: (worker: Worker) => void; // Nueva prop para actualizar trabajador
 }
 
@@ -223,14 +223,14 @@ export function AddWorkerDialog({
             onUpdateWorker?.(updatedWorker);
         } else {
             // Modo creación: nuevo trabajador
-            const newWorker = {
+            const newWorker: Worker ={
+                id: 0,
                 name: formData.name,
                 dni: formData.dni,
                 code: formData.code,
                 phone: formData.phone,
                 jobArea: selectedArea,
                 status: WorkerStatus.AVAILABLE,
-                createAt: new Date(),
             };
             
             onAddWorker?.(newWorker);
