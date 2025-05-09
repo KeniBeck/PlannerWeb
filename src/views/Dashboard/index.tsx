@@ -25,6 +25,7 @@ import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
 import Faults from "./faults/Faults";
 import { jwtDecode } from "jwt-decode";
+import Feeding from "./feedings/Feeding";
 
 
 const COLORS = {
@@ -116,7 +117,7 @@ export default function Dashboard() {
         { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
         { path: '/dashboard/reports', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
         { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
-        { path: '/dashboard/food', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
+        { path: '/dashboard/feedings', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
       ]
     },
     {
@@ -411,6 +412,14 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
+            <Route
+  path="/feedings"
+  element={
+    <LayeredProviders features={[Feature.OPERATION, Feature.WORKERS, Feature.FEEDINGS]}>
+      <Feeding />
+    </LayeredProviders>
+  }
+/>
             <Route
               path="/workers"
               element={

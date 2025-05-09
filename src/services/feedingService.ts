@@ -1,42 +1,87 @@
 import api from "./client/axiosConfig";
 import { handleApiError } from "@/lib/utils/apiUtils";
-import { format } from "date-fns"; // Asegúrate de importar format
 
-interface FeedingResponse {
+export interface Feeding {
   id: number;
   type: string; // 'Desayuno', 'Almuerzo', 'Cena', 'Media noche'
-  id_worker: number | null;
-  id_operation: number;
+  workerId: number;
+  workerName: string;
+  operationId: number;
+  operationDetails: {
+    id: number;
+    jobArea: {
+      name: string;
+    };
+    client: {
+      name: string;
+    };
+    motorShip: string;
+    timeStart: string;
+  };
   createdAt: string;
+  status: string;
+}
+
+export interface FeedingFilterParams {
+  startDate?: string;
+  endDate?: string;
+  operationId?: number;
+  workerId?: number;
+  type?: string;
+  status?: string;
 }
 
 class FeedingService {
-  async getOperationFeedings(operationId: number): Promise<FeedingResponse[]> {
+  async getAllFeedings(params?: FeedingFilterParams): Promise<Feeding[]> {
+    try {
+      // Construir parámetros de consulta
+      const queryParams = new URLSearchParams();
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            queryParams.append(key, value.toString());
+          }
+        });
+      }
+
+      const response = await api.get(`/feeding?${queryParams.toString()}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  }
+
+  async getOperationFeedings(operationId: number): Promise<Feeding[]> {
     try {
       const response = await api.get(`/feeding/operation/${operationId}`);
       return response.data;
     } catch (error) {
       handleApiError(error);
-      return [];
+      throw error;
     }
   }
 
-  async assignFeeding(operationId: number, workerId: number, type: string): Promise<FeedingResponse | null> {
+  async assignFeeding(data: {
+    operationId: number;
+    workerId: number;
+    type: string;
+  }): Promise<Feeding> {
     try {
-      // Formatear la fecha correctamente como YYYY-MM-DD HH:MM
-      const formattedDate = format(new Date(), "yyyy-MM-dd HH:mm");
-      
-      const response = await api.post('/feeding', {
-        id_operation: operationId,
-        id_worker: workerId,
-        type,
-        dateFeeding: formattedDate, // Formato correcto
-      });
-
+      const response = await api.post('/feeding', data);
       return response.data;
     } catch (error) {
       handleApiError(error);
-      return null;
+      throw error;
+    }
+  }
+
+  async deleteFeeding(id: number): Promise<void> {
+    try {
+      await api.delete(`/feeding/${id}`);
+    } catch (error) {
+      handleApiError(error);
+      throw error;
     }
   }
 }
