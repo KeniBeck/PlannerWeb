@@ -2,24 +2,32 @@ import api from "./client/axiosConfig";
 import { handleApiError } from "@/lib/utils/apiUtils";
 
 export interface Feeding {
-  id: number;
-  type: string; // 'Desayuno', 'Almuerzo', 'Cena', 'Media noche'
-  workerId: number;
-  workerName: string;
-  operationId: number;
-  operationDetails: {
+   id: number;
+  id_worker: number;
+  id_operation: number;
+  dateFeeding: string;
+  type: string; // 'BREAKFAST', 'LUNCH', 'DINNER', 'MIDNIGHT'
+  createAt: string;
+  updateAt: string;
+  // Referencias opcionales que podrían ser cargadas por relación
+  worker?: {
     id: number;
-    jobArea: {
+    name: string;
+    // otros campos del trabajador...
+  };
+  operation?: {
+    id: number;
+    jobArea?: {
       name: string;
     };
-    client: {
+    client?: {
       name: string;
     };
-    motorShip: string;
-    timeStart: string;
+    motorShip?: string;
   };
   createdAt: string;
   status: string;
+  workerDetails: any;
 }
 
 export interface FeedingFilterParams {

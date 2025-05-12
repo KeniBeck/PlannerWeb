@@ -88,10 +88,11 @@ export function FeedingOperationDialog({
     setLoading(true);
     try {
       const result = await feedingService.assignFeeding(
-        operation.id, 
-        selectedWorkerId, 
-        eligibleFood
-      );
+       {
+        operationId: operation.id, 
+        workerId: selectedWorkerId, 
+        type: eligibleFood
+       });
       
       if (result) {
         await loadData(); // Recargar datos

@@ -106,6 +106,7 @@ export default function Dashboard() {
       setExpandedCategories([...expandedCategories, category]);
     }
   };
+
   
   // Define las categorías del menú y sus elementos
   const menuCategories: MenuCategory[] = [
@@ -481,16 +482,8 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-            <Route
-              path="/food"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Módulo de Alimentación en desarrollo
-                </div>
-              }
-            />
+           
             
-            {/* Rutas protegidas para la categoría Maestra */}
             <Route
               path="/clients"
               element={
