@@ -11,6 +11,7 @@ import { WorkerStatus } from "@/core/model/worker";
 import { OperationStatus } from "@/core/model/operation";
 import { DateFilter } from "@/components/custom/filter/DateFilterProps";
 import { StatusFilter } from "@/components/custom/filter/StatusFilterProps";
+import { FaShip } from "react-icons/fa";
 
 // Registrar componentes de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -41,14 +42,12 @@ export default function Reports() {
             const opDate = op.dateStart ? op.dateStart.split('T')[0] : null;
             const matchesDate = opDate === todaysDate;
 
-    
             // Verificar el estado
             const matchesStatus = statusFilter === "all" || op.status === statusFilter;
 
             return matchesDate && matchesStatus;
         });
     }, [operations, selectedDate, statusFilter]);
-
 
     // Preparar datos para gráficos
     const areaChartData = useMemo(() => {
@@ -88,13 +87,20 @@ export default function Reports() {
         };
     }, [todayOperations]);
 
+    // Verificar si hay buques reales en las operaciones de hoy
+    const hasRealShips = useMemo(() => {
+        return todayOperations.some(op => op.motorShip && op.motorShip.trim() !== "");
+    }, [todayOperations]);
+
     const shipChartData = useMemo(() => {
         const shipCounts: Record<string, number> = {};
 
-        // Contar operaciones por buque
+        // Contar operaciones por buque, excluyendo "Sin buque"
         todayOperations.forEach(op => {
-            const ship = op.motorShip || "Sin buque";
-            shipCounts[ship] = (shipCounts[ship] || 0) + 1;
+            // Solo incluir buques con valor
+            if (op.motorShip && op.motorShip.trim() !== "") {
+                shipCounts[op.motorShip] = (shipCounts[op.motorShip] || 0) + 1;
+            }
         });
 
         return {
@@ -123,6 +129,17 @@ export default function Reports() {
                 }
             ]
         };
+    }, [todayOperations]);
+
+    // Calcular el total real de buques (excluyendo "Sin buque")
+    const actualShipCount = useMemo(() => {
+        const uniqueShips = new Set<string>();
+        todayOperations.forEach(op => {
+            if (op.motorShip && op.motorShip.trim() !== "") {
+                uniqueShips.add(op.motorShip);
+            }
+        });
+        return uniqueShips.size;
     }, [todayOperations]);
 
     const zoneChartData = useMemo(() => {
@@ -228,7 +245,6 @@ export default function Reports() {
             const workerCount = op.workers?.length || 0;
             const workersInGroups = op.workerGroups?.reduce((acc, group) => acc + (group.workers?.length || 0), 0) || 0;
 
-    
             serviceWorkerCounts[serviceName] = (serviceWorkerCounts[serviceName] || 0) + workerCount + workersInGroups;
         });
 
@@ -256,7 +272,6 @@ export default function Reports() {
             return dateString;
         }
     };
-
 
     return (
         <div className="container mx-auto py-6 space-y-6">
@@ -315,7 +330,7 @@ export default function Reports() {
                 </div>
             </div>
 
-                       {/* Contenido según el modo de vista */}
+            {/* Contenido según el modo de vista */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Gráfica de distribución por áreas */}
                 <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
@@ -335,44 +350,53 @@ export default function Reports() {
                         </div>
                     </div>
                     <div className="h-72 relative">
-                        <Bar
-                            data={areaChartData}
-                            options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        padding: 12,
-                                        cornerRadius: 8
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            precision: 0,
-                                            color: '#6B7280'
-                                        },
-                                        grid: {
-                                            color: '#F3F4F6'
-                                        }
-                                    },
-                                    x: {
-                                        ticks: {
-                                            color: '#6B7280'
-                                        },
-                                        grid: {
+                        {todayOperations.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                <p className="text-gray-500">No hay operaciones para mostrar</p>
+                            </div>
+                        ) : (
+                            <Bar
+                                data={areaChartData}
+                                options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
                                             display: false
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: 'white',
+                                            bodyColor: 'white',
+                                            padding: 12,
+                                            cornerRadius: 8
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                precision: 0,
+                                                color: '#6B7280'
+                                            },
+                                            grid: {
+                                                color: '#F3F4F6'
+                                            }
+                                        },
+                                        x: {
+                                            ticks: {
+                                                color: '#6B7280'
+                                            },
+                                            grid: {
+                                                display: false
+                                            }
                                         }
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             
@@ -384,7 +408,7 @@ export default function Reports() {
                                 Distribución por Buque
                             </h2>
                             <p className="text-gray-500 text-sm mt-1">
-                                Total: {Object.values(shipChartData.datasets[0].data).reduce((a, b) => a + b, 0)} buques
+                                Total: {actualShipCount} buques
                             </p>
                         </div>
                         <div className="bg-teal-50 rounded-lg p-2">
@@ -394,44 +418,63 @@ export default function Reports() {
                         </div>
                     </div>
                     <div className="h-72">
-                        <Bar
-                            data={shipChartData}
-                            options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        padding: 12,
-                                        cornerRadius: 8
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            precision: 0,
-                                            color: '#6B7280'
-                                        },
-                                        grid: {
-                                            color: '#F3F4F6'
-                                        }
-                                    },
-                                    x: {
-                                        ticks: {
-                                            color: '#6B7280'
-                                        },
-                                        grid: {
+                        {todayOperations.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                <p className="text-gray-500">No hay operaciones para mostrar</p>
+                            </div>
+                        ) : !hasRealShips ? (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <FaShip className="w-16 h-16 text-gray-300 mb-4" />
+                                <p className="text-gray-500 text-center">
+                                    Operaciones sin buques asignados
+                                </p>
+                                <p className="text-gray-400 text-sm text-center mt-2">
+                                    No hay datos de buques para visualizar
+                                </p>
+                            </div>
+                        ) : (
+                            <Bar
+                                data={shipChartData}
+                                options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
                                             display: false
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: 'white',
+                                            bodyColor: 'white',
+                                            padding: 12,
+                                            cornerRadius: 8
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                precision: 0,
+                                                color: '#6B7280'
+                                            },
+                                            grid: {
+                                                color: '#F3F4F6'
+                                            }
+                                        },
+                                        x: {
+                                            ticks: {
+                                                color: '#6B7280'
+                                            },
+                                            grid: {
+                                                display: false
+                                            }
                                         }
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             
@@ -453,32 +496,41 @@ export default function Reports() {
                         </div>
                     </div>
                     <div className="h-72 flex items-center justify-center">
-                        <Pie
-                            data={zoneChartData}
-                            options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'right',
-                                        labels: {
-                                            padding: 20,
-                                            font: {
-                                                size: 12
-                                            },
-                                            usePointStyle: true,
-                                            boxWidth: 8
+                        {todayOperations.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                </svg>
+                                <p className="text-gray-500">No hay operaciones para mostrar</p>
+                            </div>
+                        ) : (
+                            <Pie
+                                data={zoneChartData}
+                                options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right',
+                                            labels: {
+                                                padding: 20,
+                                                font: {
+                                                    size: 12
+                                                },
+                                                usePointStyle: true,
+                                                boxWidth: 8
+                                            }
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: 'white',
+                                            bodyColor: 'white',
+                                            padding: 12,
+                                            cornerRadius: 8
                                         }
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        padding: 12,
-                                        cornerRadius: 8
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             
@@ -500,32 +552,41 @@ export default function Reports() {
                         </div>
                     </div>
                     <div className="h-72 flex items-center justify-center">
-                        <Pie
-                            data={workerStatusChartData}
-                            options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'right',
-                                        labels: {
-                                            padding: 20,
-                                            font: {
-                                                size: 12
-                                            },
-                                            usePointStyle: true,
-                                            boxWidth: 8
+                        {workers.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <p className="text-gray-500">No hay trabajadores para mostrar</p>
+                            </div>
+                        ) : (
+                            <Pie
+                                data={workerStatusChartData}
+                                options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right',
+                                            labels: {
+                                                padding: 20,
+                                                font: {
+                                                    size: 12
+                                                },
+                                                usePointStyle: true,
+                                                boxWidth: 8
+                                            }
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: 'white',
+                                            bodyColor: 'white',
+                                            padding: 12,
+                                            cornerRadius: 8
                                         }
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        padding: 12,
-                                        cornerRadius: 8
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             
@@ -547,44 +608,53 @@ export default function Reports() {
                         </div>
                     </div>
                     <div className="h-72">
-                        <Bar
-                            data={servicesTrendChartData}
-                            options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    },
-                                    tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        padding: 12,
-                                        cornerRadius: 8
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            precision: 0,
-                                            color: '#6B7280'
-                                        },
-                                        grid: {
-                                            color: '#F3F4F6'
-                                        }
-                                    },
-                                    x: {
-                                        ticks: {
-                                            color: '#6B7280'
-                                        },
-                                        grid: {
+                        {todayOperations.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                <p className="text-gray-500">No hay operaciones para mostrar</p>
+                            </div>
+                        ) : (
+                            <Bar
+                                data={servicesTrendChartData}
+                                options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
                                             display: false
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            titleColor: 'white',
+                                            bodyColor: 'white',
+                                            padding: 12,
+                                            cornerRadius: 8
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                precision: 0,
+                                                color: '#6B7280'
+                                            },
+                                            grid: {
+                                                color: '#F3F4F6'
+                                            }
+                                        },
+                                        x: {
+                                            ticks: {
+                                                color: '#6B7280'
+                                            },
+                                            grid: {
+                                                display: false
+                                            }
                                         }
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
