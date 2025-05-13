@@ -247,7 +247,6 @@ export function OperationList({
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}
         currentPage={1} // Forzar siempre página 1 cuando hay un filtro activo
-        filter={searchTerm} // Pasar el término de búsqueda al DataTable
         key={`datatable-${searchTerm}`} // Force re-render on search change
       />
 
