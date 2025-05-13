@@ -113,7 +113,6 @@ src/
 
 ## 📱 Características de la interfaz
 
-- **Diseño responsivo**: Adaptable a dispositivos móviles y escritorio
 - **Tema personalizable**: Colores corporativos configurables
 - **Filtros contextuales**: Búsqueda inteligente en cada sección
 - **Tablas interactivas**: Ordenamiento, paginación y filtrado avanzado

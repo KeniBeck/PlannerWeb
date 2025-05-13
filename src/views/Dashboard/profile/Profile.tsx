@@ -12,8 +12,6 @@ const AVAILABLE_ROLES = [
   { value: "GH", label: "Gestión Humana" }
 ];
 
-
-
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -71,7 +69,30 @@ export default function Profile() {
       <div className="max-w-3xl mx-auto">
         {/* Encabezado con tarjeta de perfil */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl shadow-xl mb-8 overflow-hidden">
-          <div className="relative h-32 bg-blue-900">
+          {/* Sección azul con elementos decorativos */}
+          <div className="relative h-32 bg-gradient-to-r from-blue-600 to-blue-800">
+            {/* Elementos decorativos */}
+            <svg
+              className="absolute bottom-0 left-0 w-full"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 1440 320"
+              preserveAspectRatio="none"
+              style={{ height: "40px" }}
+            >
+              <path
+                fill="rgba(255, 255, 255, 0.08)"
+                fillOpacity="1"
+                d="M0,128L48,138.7C96,149,192,171,288,165.3C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,138.7C1248,117,1344,75,1392,53.3L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+              ></path>
+            </svg>
+            
+            {/* Círculos decorativos */}
+            <div className="absolute top-2 right-10 w-12 h-12 rounded-full bg-white opacity-5"></div>
+            <div className="absolute bottom-8 right-40 w-8 h-8 rounded-full bg-white opacity-5"></div>
+            
+            {/* Barra decorativa en la parte inferior */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-50"></div>
+            
             <div className="absolute -bottom-16 left-8">
               <div className="bg-white p-1.5 rounded-full shadow-lg">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full h-28 w-28 flex items-center justify-center text-white text-4xl font-bold shadow-inner">
@@ -137,9 +158,10 @@ export default function Profile() {
                 </label>
                 <div className="flex items-center border border-gray-200 bg-gray-50 rounded-md px-3 py-2 transition-all duration-200 ease-in-out">
                   <FaBriefcase className="text-gray-400 mr-2" />
-                  <span className="text-gray-800">{user.occupation}</span>
-                  </div>
-               
+                  <span className="text-gray-800">
+                    {AVAILABLE_ROLES.find(role => role.value === user.occupation)?.label || user.occupation}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
