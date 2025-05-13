@@ -15,7 +15,6 @@ import {
   BarElement,
   Title,
 } from "chart.js";
-import { Bar, Pie } from "react-chartjs-2";
 import { WorkerStatus } from "@/core/model/worker";
 import { OperationStatus } from "@/core/model/operation";
 import { DateFilter } from "@/components/custom/filter/DateFilterProps";
