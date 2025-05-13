@@ -30,10 +30,10 @@ export function WorkerProvider({ children }: { children: ReactNode }) {
   const [dataFetched, setDataFetched] = useState<boolean>(workersState.getState().dataFetched);
 
   // Filtra los trabajadores por estado
-  const availableWorkers = workers.filter(worker => worker.status === WorkerStatus.AVAILABLE);
-  const assignedWorkers = workers.filter(worker => worker.status === WorkerStatus.ASSIGNED);
-  const deactivatedWorkers = workers.filter(worker => worker.status === WorkerStatus.DEACTIVATED);
-  const incapacitatedWorkers = workers.filter(worker => worker.status === WorkerStatus.INCAPACITATED);
+  const availableWorkers = workers?.filter(worker => worker.status === WorkerStatus.AVAILABLE) || [];
+  const assignedWorkers = workers?.filter(worker => worker.status === WorkerStatus.ASSIGNED) || [];
+  const deactivatedWorkers = workers?.filter(worker => worker.status === WorkerStatus.DEACTIVATED) || [];
+  const incapacitatedWorkers = workers?.filter(worker => worker.status === WorkerStatus.INCAPACITATED) || [];
 
   // Función para actualizar el estado local y el singleton
   const updateWorkers = (newWorkers: Worker[]) => {

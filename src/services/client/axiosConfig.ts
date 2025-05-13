@@ -1,4 +1,9 @@
 import axios from "axios";
+import { notifyServerStatus } from "@/components/dialog/ServerStatusBanner";
+
+// Contadores para rastrear errores consecutivos
+let consecutiveServerErrors = 0;
+const ERROR_THRESHOLD = 2; // Número de errores consecutivos antes de mostrar el banner
 
 // Creamos una instancia personalizada de axios
 const api = axios.create({
@@ -27,12 +32,37 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor de respuestas (opcional pero útil para manejar errores)
+// Interceptor de respuestas mejorado
 api.interceptors.response.use(
   (response) => {
+    // Si hay respuesta exitosa, resetear contador de errores y notificar que el servidor está bien
+    consecutiveServerErrors = 0;
+    notifyServerStatus(false);
     return response;
   },
   (error) => {
+    // Verificar si es un error de servidor (500+) o un error de conexión
+    if (error.response && error.response.status >= 500) {
+      consecutiveServerErrors++;
+      console.log(`Error de servidor detectado (${consecutiveServerErrors}/${ERROR_THRESHOLD}):`, error.response.status);
+      
+      // Solo notificar después de varios errores consecutivos para evitar falsos positivos
+      if (consecutiveServerErrors >= ERROR_THRESHOLD) {
+        notifyServerStatus(true);
+      }
+    } else if (!error.response) {
+      // Error de red (sin respuesta)
+      consecutiveServerErrors++;
+      console.log(`Error de conexión detectado (${consecutiveServerErrors}/${ERROR_THRESHOLD})`);
+      
+      if (consecutiveServerErrors >= ERROR_THRESHOLD) {
+        notifyServerStatus(true);
+      }
+    } else {
+      // Para otros errores (400s), no incrementar el contador
+      console.log(`Error de aplicación (${error.response.status}):`, error.response.data);
+    }
+    
     // Manejar errores comunes como 401 (no autorizado)
     if (error.response && error.response.status === 401) {
       // Token inválido o expirado
