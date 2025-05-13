@@ -59,6 +59,14 @@ interface OperationContextType {
     workerId: number,
     data: any
   ) => Promise<Operation | null>;
+  fetchOperations: (
+    page?: number,
+    limit?: number,
+    force?: boolean,
+    currentFilters?: OperationFilterDto,
+    silent?: boolean
+  ) => Promise<any>;
+  fetchAllOperations: (customFilters?: OperationFilterDto) => Promise<Operation[]>; // Nueva función
 }
 
 // Crear el contexto
@@ -233,6 +241,48 @@ export function OperationProvider({ children }: OperationProviderProps) {
     // Registrar la solicitud
     activeRequestsRef.current.set(requestKey, request);
     return request;
+  };
+
+  // Nueva función para cargar todas las operaciones sin paginación
+  const fetchAllOperations = async (customFilters?: OperationFilterDto): Promise<Operation[]> => {
+    setIsLoading(true);
+    setError(null);
+    isLoadingAlert(true);
+    console.log("[OperationContext] Cargando todas las operaciones sin paginación");
+
+    try {
+      // Combinar filtros personalizados con el filtro para desactivar paginación
+      const allOperationsFilters: OperationFilterDto = {
+        ...(customFilters || filters),
+        activatePaginated: false
+      };
+
+      // Convertir a string para debugging
+      const filterStr = JSON.stringify(allOperationsFilters);
+      console.log(`[OperationContext] Usando filtros: ${filterStr}`);
+
+      // Usar un límite alto para asegurar que obtiene todos los datos
+      const result = await operationService.getPaginatedOperations(1, 1000, allOperationsFilters);
+      
+      // Actualizar el estado local si no hay filtros personalizados (comportamiento por defecto)
+      if (!customFilters) {
+        setOperations(result.items || []);
+        setTotalItems(result.items?.length || 0);
+        setCurrentPage(1);
+        setLastUpdated(new Date());
+      }
+      
+      console.log(`[OperationContext] Obtenidas ${result.items?.length || 0} operaciones sin paginación`);
+      
+      return result.items || [];
+    } catch (error) {
+      console.error("[OperationContext] Error al cargar todas las operaciones:", error);
+      setError("Error al cargar las operaciones. Por favor, intente de nuevo.");
+      return [];
+    } finally {
+      setIsLoading(false);
+      isLoadingAlert(false);
+    }
   };
 
   // Método para precargar páginas siguientes
@@ -561,6 +611,8 @@ export function OperationProvider({ children }: OperationProviderProps) {
     lastUpdated,
     preloadNextPages,
     completeIndividualWorker,
+    fetchOperations, // Exponemos la función original
+    fetchAllOperations, // Exponemos la nueva función
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -6,7 +6,6 @@ import {
   BsPencil,
   BsTrash,
 } from "react-icons/bs";
-import { useOperations } from "@/contexts/OperationContext";
 import { Operation } from "@/core/model/operation";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
 
@@ -16,97 +15,46 @@ type SortConfig = {
 };
 
 interface OperationListProps {
-  filteredOperations?: Operation[];
+  allOperations: Operation[];
   searchTerm?: string;
   onView?: (operation: Operation) => void;
   onEdit?: (operation: Operation) => void;
   onDelete?: (operation: Operation) => void;
+  isLoading?: boolean;
 }
 
 export function OperationList({
-  filteredOperations,
+  allOperations,
   searchTerm,
   onView,
   onEdit,
   onDelete,
+  isLoading = false
 }: OperationListProps) {
-  // Hooks primero - Siempre deben ejecutarse en el mismo orden
-  const {
-    operations,
-    isLoading,
-    error,
-    refreshOperations,
-    totalItems,
-    itemsPerPage,
-    setItemsPerPage,
-    currentPage,
-    setPage,
-    lastUpdated,
-    totalPages,
-    preloadNextPages
-  } = useOperations();
+  // Estados para manejar la paginación local
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const prevSearchTermRef = useRef<string | undefined>(undefined);
 
-  // Estado para rastrear la primera carga
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
-
-  // Hook useState - Siempre debe estar aquí sin condiciones
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "",
-    direction: "asc",
-  });
-
-  // Efecto para rastrear la carga inicial y ejecutar la precarga
+  // Efecto mejorado para resetear a la primera página cuando cambia el término de búsqueda
   useEffect(() => {
-    // Si tenemos operaciones y no estamos cargando, la carga inicial ha terminado
-    if (operations.length > 0 && !isLoading && !initialLoadDone) {
-      console.log("Carga inicial completada");
-      setInitialLoadDone(true);
+    // Solo resetear si el término de búsqueda ha cambiado (no en el montaje inicial)
+    if (prevSearchTermRef.current !== searchTerm) {
+      console.log(`Término de búsqueda cambiado de "${prevSearchTermRef.current}" a "${searchTerm}"`);
+      setCurrentPage(1);
       
-      // Precargar siguiente página después de la primera carga
-      if (preloadNextPages) {
-        console.log("Ejecutando precarga inicial");
-        preloadNextPages();
-      }
+      // Retraso pequeño para asegurar que la página se establece correctamente
+      setTimeout(() => {
+        if (currentPage !== 1) {
+          console.log("Forzando reset a página 1");
+          setCurrentPage(1);
+        }
+      }, 0);
+      
+      prevSearchTermRef.current = searchTerm;
     }
-  }, [operations, isLoading, initialLoadDone, preloadNextPages]);
-
-  // Efecto para precargar cuando cambia la página
-  useEffect(() => {
-    if (initialLoadDone && !isLoading && preloadNextPages) {
-      // Esperar un poco después del cambio de página antes de precargar la siguiente
-      const timer = setTimeout(() => {
-        console.log("Precargando después de cambio de página");
-        preloadNextPages();
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [currentPage, initialLoadDone, isLoading, preloadNextPages]);
-
-  // Cálculos y funciones después de todos los hooks
-  const operationsToUse = filteredOperations || operations;
-
-  // Ordenamiento
-  const requestSort = (key: string) => {
-    let direction: "asc" | "desc" = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  // Funciones para manejar la paginación
-  const handlePageChange = (page: number) => {
-    // Asegurarse de que la página es válida
-    if (page >= 1 && page <= totalPages) {
-      console.log(`Cambiando a página ${page}`);
-      setPage(page);
-    }
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    console.log(`Cambiando a ${newItemsPerPage} elementos por página`);
-    setItemsPerPage(newItemsPerPage);
-  };
+  }, [searchTerm, currentPage]);
 
   // Configuración de estados de operación para estilos
   const getOperationStatusConfig = (status: string) => {
@@ -149,7 +97,7 @@ export function OperationList({
     }
   };
 
-  // Definir columnas usando useMemo - Siempre debe ejecutarse
+  // Definir columnas usando useMemo
   const columns: TableColumn<Operation>[] = useMemo(
     () => [
       {
@@ -256,41 +204,37 @@ export function OperationList({
     return actionsList;
   }, [onView, onEdit, onDelete]);
   
-  // Evitar returns tempranos antes de otros hooks
-  if (error) {
-    return (
-      <div className="text-center py-10 text-red-500">
-        <p>{error}</p>
-        <button
-          onClick={refreshOperations}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Reintentar
-        </button>
-      </div>
-    );
-  }
+  // Funciones para manejar la paginación local
+  const handlePageChange = (page: number) => {
+    console.log(`Cambiando a página ${page}`);
+    setCurrentPage(page);
+  };
 
-  // Render de carga - Solo después de todos los hooks
-  if (isLoading && !operations.length) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    console.log(`Cambiando a ${newItemsPerPage} elementos por página`);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Volver a la primera página
+  };
+
+  // Calcular el total de páginas
+  const totalPages = Math.ceil(allOperations.length / itemsPerPage);
+
+  // Efectuar el reseteo de página cuando se detecte un cambio en el filtro
+  useEffect(() => {
+    console.log(`Página actual: ${currentPage}, Término de búsqueda: ${searchTerm}`);
+  }, [currentPage, searchTerm]);
 
   // Render principal
   return (
     <div className="w-full">
       <DataTable
-        data={operationsToUse}
+        data={allOperations}
         columns={columns}
         actions={actions}
         itemsPerPage={itemsPerPage}
         itemsPerPageOptions={[10, 20, 30, 50]}
         itemName="operaciones"
-        isLoading={isLoading && operations.length > 0}
+        isLoading={isLoading}
         emptyMessage={
           searchTerm
             ? `No se encontraron operaciones para "${searchTerm}"`
@@ -298,13 +242,13 @@ export function OperationList({
         }
         className="mb-4"
         initialSort={{ key: "id", direction: "desc" }}
-        // Props esenciales para la paginación:
-        externalPagination={true}
+        // Configurar para paginación interna
+        externalPagination={false}
         onPageChange={handlePageChange}
         onItemsPerPageChange={handleItemsPerPageChange}
-        currentPage={currentPage}
-        totalItems={totalItems}
-        totalPages={totalPages}
+        currentPage={1} // Forzar siempre página 1 cuando hay un filtro activo
+        filter={searchTerm} // Pasar el término de búsqueda al DataTable
+        key={`datatable-${searchTerm}`} // Force re-render on search change
       />
 
       {lastUpdated && (

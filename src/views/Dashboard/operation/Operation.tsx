@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { OperationList } from "@/components/ui/operations/OperationList";
 import { useOperations } from "@/contexts/OperationContext";
@@ -17,18 +17,25 @@ import { DeactivateItemAlert } from "@/components/dialog/CommonAlertActive";
 import { useOperationManagement } from "@/lib/hooks/useOperationManagement";
 import { useOperationExport } from "@/lib/hooks/useOperationExport";
 import { ShipLoader } from "@/components/dialog/Loading";
+import { Operation as OperationType } from "@/core/model/operation";
 
 export default function Operation() {
   // Contextos
   const {
-    operations,
+    operations: contextOperations,
     isLoading,
     refreshOperations,
     filters,
     setFilters,
     setPage,
     updateOperation,
+    fetchAllOperations
   } = useOperations();
+  
+  // Estado local para almacenar todas las operaciones sin paginación
+  const [allOperations, setAllOperations] = useState<OperationType[]>([]);
+  const [loadingAll, setLoadingAll] = useState(false);
+
   const { areas, refreshData } = useAreas();
   const { services } = useServices();
   const { clients } = useClients();
@@ -53,6 +60,24 @@ export default function Operation() {
     hasActiveFilters,
   } = useOperationFilters({ setFilters, setPage, filters });
 
+  // Cargar todas las operaciones una vez al inicio
+  useEffect(() => {
+    const loadAllOperations = async () => {
+      setLoadingAll(true);
+      try {
+        // Usar los mismos filtros que se aplican en el contexto
+        const operations = await fetchAllOperations(filters);
+        setAllOperations(operations);
+      } catch (error) {
+        console.error("Error cargando todas las operaciones:", error);
+      } finally {
+        setLoadingAll(false);
+      }
+    };
+    
+    loadAllOperations();
+  }, [filters]); // Re-ejecutar cuando cambien los filtros
+
   // Crear un wrapper para updateOperation que maneje tanto string como number
   const wrappedUpdateOperation = (id: number | string, data: any) => {
     return updateOperation(Number(id), data);
@@ -74,19 +99,27 @@ export default function Operation() {
     handleSave,
     confirmDelete
   } = useOperationManagement({
-    refreshOperations,
+    refreshOperations: async () => {
+      await refreshOperations();
+      // Después de refrescar los datos en el contexto, actualizamos nuestro estado local
+      const operations = await fetchAllOperations(filters);
+      setAllOperations(operations);
+    },
     updateOperation: wrappedUpdateOperation
   });
 
   const { exportOperationsByWorker, isExporting } = useOperationExport(workers);
 
   // Refresh local data
-  const refreshDataLocal = () => {
-    refreshOperations();
+  const refreshDataLocal = async () => {
+    await refreshOperations();
+    // Actualizar también los datos completos
+    const operations = await fetchAllOperations(filters);
+    setAllOperations(operations);
     refreshData();
   };
 
-  // Opciones y filtros
+  // Opciones y filtros (sin cambios)
   const supervisorsAndCoordinators = useMemo(() => {
     if (!users) return [];
     return users
@@ -118,19 +151,81 @@ export default function Operation() {
     })) || []),
   ], [areas]);
 
-  // Filtrados
+  // Filtrados - Aplicamos los filtros localmente a todas las operaciones
   const filteredOperations = useMemo(() => {
-    return operations.filter(operation => {
-      return (
+    if (!allOperations.length) return [];
+    
+    return allOperations.filter(operation => {
+      // Primero filtrar por término de búsqueda
+      const matchesSearch = 
         !searchTerm ||
         operation.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         operation.jobArea?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         operation.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         operation.motorShip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.id?.toString().includes(searchTerm)
-      );
+        operation.id?.toString().includes(searchTerm);
+      
+      if (!matchesSearch) return false;
+      
+      // Filtrar por estado si se aplica
+      if (statusFilter !== "all" && operation.status !== statusFilter) {
+        return false;
+      }
+      
+      // Filtrar por área si se aplica
+      if (areaFilter !== "all" && operation.jobArea?.id.toString() !== areaFilter) {
+        return false;
+      }
+      
+      // Filtrar por supervisor si se aplica
+      if (supervisorFilter !== "all") {
+        // Verificar que la operación tenga supervisores
+        if (!operation.inCharge || !Array.isArray(operation.inCharge)) {
+          return false;
+        }
+        
+        // Buscar si alguno de los supervisores coincide con el filtro
+        const hasSupervisor = operation.inCharge.some(
+          supervisor => supervisor.id.toString() === supervisorFilter
+        );
+        
+        if (!hasSupervisor) {
+          return false;
+        }
+      }
+      
+      // Filtrar por fecha de inicio si se aplica
+      if (startDateFilter) {
+        const operationDate = new Date(operation.dateStart);
+        const filterDate = new Date(startDateFilter);
+        
+        // Resetear las horas para comparar solo fechas
+        operationDate.setHours(0, 0, 0, 0);
+        filterDate.setHours(0, 0, 0, 0);
+        
+        if (operationDate < filterDate) {
+          return false;
+        }
+      }
+      
+      // Filtrar por fecha de fin si se aplica
+      if (endDateFilter) {
+        const operationDate = new Date(operation.dateStart);
+        const filterDate = new Date(endDateFilter);
+        
+        // Resetear las horas para comparar solo fechas
+        operationDate.setHours(0, 0, 0, 0);
+        filterDate.setHours(0, 0, 0, 0);
+        
+        if (operationDate > filterDate) {
+          return false;
+        }
+      }
+      
+      // Si pasó todos los filtros, incluir esta operación
+      return true;
     });
-  }, [operations, searchTerm]);
+  }, [allOperations, searchTerm, statusFilter, areaFilter, supervisorFilter, startDateFilter, endDateFilter]);
 
   // Funciones auxiliares
   const getAreaName = (areaId: string): string => {
@@ -155,7 +250,7 @@ export default function Operation() {
 
   return (
     <>
-    {isExporting && <ShipLoader/>}
+    {(isExporting || loadingAll) && <ShipLoader/>}
       <div className="container mx-auto py-6 space-y-6">
         <div className="rounded-xl shadow-md">
           <SectionHeader
@@ -164,7 +259,7 @@ export default function Operation() {
             btnAddText="Agregar Operación"
             handleAddArea={() => setIsAddOpen(true)}
             refreshData={() => Promise.resolve(refreshDataLocal())}
-            loading={isLoading}
+            loading={isLoading || loadingAll}
             exportData={filteredOperations}
             exportFileName="operaciones"
             exportColumns={exportColumns}
@@ -198,11 +293,12 @@ export default function Operation() {
         <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
           <div className="bg-white">
             <OperationList
-              filteredOperations={filteredOperations}
+              allOperations={filteredOperations}
               searchTerm={searchTerm}
               onView={handleViewOperation}
               onEdit={handleEditOperation}
               onDelete={handleDeleteOperation}
+              isLoading={isLoading || loadingAll}
             />
           </div>
         </div>
