@@ -4,6 +4,10 @@ import { getTokenRole, isTokenExpired } from "@/lib/utils/jwtutils";
 import { UserRole } from "@/lib/utils/interfaces/role";
 import api from "./client/axiosConfig";
 
+export interface AuthServiceInterface {
+  axios: AxiosError;
+}
+
 class AuthService {
   private baseUrl = import.meta.env.VITE_API_URL;
 
@@ -21,7 +25,10 @@ class AuthService {
     } catch (error) {
       const status = (error as AxiosError).response?.data;
       if (axios.isAxiosError(error)) {
-        console.error("Error durante el login:", error.response?.data);
+        if(error.code === "ERR_NETWORK") {
+         return Promise.reject({code:"ERR_NETWORK"});
+        }
+        console.error("Error durante el login:", error);
       }
       throw status;
     }

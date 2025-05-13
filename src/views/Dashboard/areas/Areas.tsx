@@ -1,23 +1,54 @@
-import { useState } from "react";
-import { useAreas } from "@/lib/hooks/useAreas";
+import { useState, useMemo } from "react";
 import { Area } from "@/core/model/area";
-import { AreasList } from "@/components/ui/AreaList";
-import { AddAreaDialog } from "@/components/ui/AddAreaDialog";
-import { AiOutlineSearch, AiOutlinePlusCircle, AiOutlineDownload, AiOutlineReload } from "react-icons/ai";
+import { AiOutlineSearch } from "react-icons/ai";
+import { BsPencil, BsTrash } from "react-icons/bs";
+import { HiOutlineBan, HiOutlineRefresh } from "react-icons/hi";
+import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
+import { AddAreaDialog } from "@/components/ui/areas/AddAreaDialog";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
+import { useAreas } from "@/contexts/AreasContext";
+import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { useWorkers } from "@/contexts/WorkerContext";
+import { ActivateItemAlert, DeactivateItemAlert, DeleteItemAlert,  } from "@/components/dialog/CommonAlertActive"; 
 
 export default function Areas() {
   const { areas, loading, addArea, updateArea, deleteArea, refreshData } = useAreas();
+  const { workers, isLoading: workersLoading } = useWorkers();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddAreaOpen, setIsAddAreaOpen] = useState(false);
   const [areaToEdit, setAreaToEdit] = useState<Area | undefined>(undefined);
+  
+  // Estados para los diálogos de confirmación
+  const [areaToActivate, setAreaToActivate] = useState<Area | null>(null);
+  const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
 
   // Filtrar áreas según el término de búsqueda
-  const filteredAreas = areas.filter(area => 
-    area.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAreas = useMemo(() => 
+    areas.filter(area => 
+      area.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ), [areas, searchTerm]
   );
+
+  // Calcular el conteo de trabajadores por área
+  const workerCountByArea = useMemo(() => {
+    const counts: Record<number, number> = {};
+    
+    // Inicializar contadores en 0 para todas las áreas
+    areas.forEach(area => {
+      counts[area.id] = 0;
+    });
+    
+    // Contar trabajadores por área
+    workers.forEach(worker => {
+      if (worker.jobArea && worker.jobArea.id) {
+        counts[worker.jobArea.id] = (counts[worker.jobArea.id] || 0) + 1;
+      }
+    });
+    
+    return counts;
+  }, [areas, workers]);
 
   // Manejar la edición de un área
   const handleEditArea = (area: Area) => {
@@ -27,29 +58,41 @@ export default function Areas() {
 
   // Manejar guardar un área (nueva o editada)
   const handleSaveArea = (area: Omit<Area, "id"> & { id?: number }) => {
-    if (area.id) {
-      // Actualizar área existente
-      updateArea(area as Area);
-      StatusSuccessAlert("Éxito", "Área actualizada correctamente");
-    } else {
-      // Agregar nueva área
-      addArea(area);
-      StatusSuccessAlert("Éxito", "Área agregada correctamente");
-    }
+    // Agregar nueva área
+    addArea(area);
+    StatusSuccessAlert("Éxito", "Área agregada correctamente");
   };
 
-  // Manejar la eliminación de un área
-  const handleDeleteArea = (areaId: number) => {
-    // Aquí podrías mostrar una confirmación antes de eliminar
-    if (window.confirm("¿Estás seguro de que quieres eliminar esta área?")) {
-      deleteArea(areaId);
-      StatusSuccessAlert("Éxito", "Área eliminada correctamente");
-    }
+  // Manejar el click en la acción de eliminar área (abre diálogo)
+  const handleDeleteClick = (area: Area) => {
+    setAreaToDelete(area);
   };
 
-  // Manejador de búsqueda
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  // Confirmar la eliminación de un área
+  const confirmDeleteArea = () => {
+    if (!areaToDelete) return;
+    
+    updateArea({
+      ...areaToDelete,
+      status: "INACTIVE"
+    });
+    StatusSuccessAlert("Éxito", "Área eliminada correctamente");
+  };
+
+  // Manejar el click en la acción de activar área (abre diálogo)
+  const handleActivateClick = (area: Area) => {
+    setAreaToActivate(area);
+  };
+
+  // Confirmar la activación de un área
+  const confirmActivateArea = () => {
+    if (!areaToActivate) return;
+    
+    updateArea({
+      ...areaToActivate,
+      status: "ACTIVE"
+    });
+    StatusSuccessAlert("Éxito", "Área activada correctamente");
   };
 
   // Manejador para abrir diálogo de nueva área
@@ -58,90 +101,163 @@ export default function Areas() {
     setIsAddAreaOpen(true);
   };
 
+  // Definir las columnas para la tabla
+  const columns: TableColumn<Area>[] = useMemo(() => [
+    { 
+      header: "ID", 
+      accessor: "id", 
+      className: "font-medium"
+    },
+    { 
+      header: "Nombre", 
+      accessor: "name" 
+    },
+    {
+      header: "Estado",
+      accessor: "status",
+      cell: (area) => {
+        const isActive = area.status === "ACTIVE";
+        return (
+          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+            ${isActive 
+              ? "bg-green-100 text-green-800 border border-green-300" 
+              : "bg-orange-100 text-orange-600 border border-orange-300"}`}
+          >
+            <span className="flex items-center">
+              <span className={`h-2 w-2 mr-1.5 rounded-full ${isActive ? "bg-green-500" : "bg-orange-500"}`}></span>
+              {isActive ? "Activo" : "Inactivo"}
+            </span>
+          </span>
+        );
+      }
+    },
+    {
+      header: "Total Trabajadores",
+      accessor: "id",
+      sortable: false,
+      cell: (area) => {
+        const count = workerCountByArea[area.id] || 0;
+        const badgeColor = count > 0 ? "bg-blue-500" : "bg-gray-300";
+        
+        return (
+          <div className="flex items-center">
+            <div className={`h-2 w-2 rounded-full ${badgeColor} mr-2`}></div>
+            <span className="text-gray-600">
+              {count} {count === 1 ? "trabajador" : "trabajadores"}
+            </span>
+          </div>
+        );
+      }
+    }
+  ], [workerCountByArea]);
+
+  // Definir acciones de la tabla
+  const actions: TableAction<Area>[] = useMemo(() => [
+    {
+      label: "Editar",
+      icon: <BsPencil className="h-4 w-4" />,
+      onClick: handleEditArea,
+      className: "text-blue-600 hover:bg-blue-50"
+    },
+    {
+      label: (area) => area.status === "ACTIVE" ? "Eliminar" : "Activar",
+      icon: (area) => area.status === "ACTIVE" 
+        ? <HiOutlineBan className="h-4 w-4" /> 
+        : <HiOutlineRefresh className="h-4 w-4" />,
+      onClick: (area) => area.status === "ACTIVE" 
+        ? handleDeleteClick(area) 
+        : handleActivateClick(area),
+      className: (area) => area.status === "ACTIVE" 
+        ? "text-orange-600 hover:bg-red-50" 
+        : "text-green-600 hover:bg-green-50"
+    }
+  ], []);
+
+  // Definir las columnas para exportar áreas
+  const areaExportColumns: ExcelColumn[] = useMemo(() => [
+    { header: 'ID', field: 'id' },
+    { header: 'Nombre', field: 'name' },
+    { header: 'Estado', field: 'status' }
+  ], []);
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="rounded-xl shadow-md">
-        {/* Header */}
-        <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md">
-          <div>
-            <h1 className="text-3xl font-bold">Áreas</h1>
-            <p className="text-blue-100 mt-1 font-light">
-              Administración de áreas de trabajo
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              title="Exportar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-            >
-              <AiOutlineDownload className="h-5 w-5" />
-            </button>
-
-            <button
-              title="Actualizar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-              onClick={() => refreshData()}
-              disabled={loading}
-            >
-              <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-            </button>
-
-            <button
-              className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
-              onClick={handleAddArea}
-            >
-              <AiOutlinePlusCircle className="mr-2" /> Agregar Área
-            </button>
-          </div>
-        </header>
-
-        {/* Búsqueda */}
-        <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
-          <div className="flex gap-4 items-center p-2">
-            <div>
-              <div className="relative">
-                <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre de área"
-                  className="p-2 pl-10 w-80 border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
+    <>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="rounded-xl shadow-md">
+          {/* Header */}
+          <SectionHeader
+            title="Áreas"
+            subtitle="Gestión de áreas"
+            btnAddText="Agregar Área"
+            handleAddArea={handleAddArea}
+            refreshData={refreshData}
+            loading={loading}
+            exportData={filteredAreas}
+            exportFileName="areas"
+            exportColumns={areaExportColumns}
+            currentView="areas"
+          />
+          
+          {/* Filtros */}
+          <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
+            <div className="flex gap-4 items-center p-2">
+              <div>
+                <div className="relative">
+                  <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre"
+                    className="p-2 pl-10 w-80 border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Vista principal */}
-      <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div className="bg-white">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando áreas...</p>
-              </div>
-            </div>
-          ) : (
-            <AreasList 
-              areas={filteredAreas} 
-              onEdit={handleEditArea} 
-              onDelete={handleDeleteArea} 
+        {/* Tabla principal */}
+        <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
+          <div className="bg-white p-4">
+            <DataTable
+              data={filteredAreas}
+              columns={columns}
+              actions={actions}
+              isLoading={loading}
+              itemsPerPage={10}
+              itemName="áreas"
+              initialSort={{ key: 'id', direction: 'asc' }}
+              emptyMessage="No se encontraron áreas"
             />
-          )}
+          </div>
         </div>
+
+        {/* Diálogo para agregar/editar área */}
+        <AddAreaDialog
+          open={isAddAreaOpen}
+          onOpenChange={setIsAddAreaOpen}
+          area={areaToEdit}
+          onSave={handleSaveArea}
+        />
       </div>
 
-      {/* Diálogo para agregar/editar área */}
-      <AddAreaDialog
-        open={isAddAreaOpen}
-        onOpenChange={setIsAddAreaOpen}
-        area={areaToEdit}
-        onSave={handleSaveArea}
+      {/* Diálogos de confirmación */}
+      <ActivateItemAlert
+        open={!!areaToActivate}
+        onOpenChange={(open: any) => !open && setAreaToActivate(null)}
+        onConfirm={confirmActivateArea}
+        itemName="área"
+        isLoading={loading}
       />
-    </div>
+
+      <DeactivateItemAlert
+        open={!!areaToDelete}
+        onOpenChange={(open : any) => !open && setAreaToDelete(null)}
+        onConfirm={confirmDeleteArea}
+        itemName="área"
+        isLoading={loading}
+      />
+    </>
   );
 }

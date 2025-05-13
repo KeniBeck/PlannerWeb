@@ -7,6 +7,22 @@ import { TbPasswordFingerprint } from "react-icons/tb";
 import { authService } from "@/services/authService";
 import { isLoadingAlert, StatusCodeAlert, StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { useNavigate } from "react-router";
+import  {  useState, useEffect, } from 'react';
+import { TbShip } from "react-icons/tb";
+
+
+function LogoFallback() {
+  return (
+    <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
+      <div className="relative">
+        <TbShip className="text-white text-5xl" />
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-800 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white">
+          CP
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -19,6 +35,22 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Solo renderizamos el Canvas después de que el componente esté montado
+  useEffect(() => {
+    setMounted(true);
+    // Intentamos cargar el modelo, si falla después de 2 segundos, mostramos el respaldo
+    const timeout = setTimeout(() => {
+      if (!modelLoaded) {
+        setHasError(true);
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timeout);
+  }, [modelLoaded]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -32,7 +64,6 @@ export function LoginForm() {
     try {
       isLoadingAlert(true);
       const response = await authService.login(values);
-      console.log("Login successful:", response);
       isLoadingAlert(false);
       StatusSuccessAlert("Login successful", "Welcome to CargoPlanner!");
       setTimeout(() => {
@@ -43,11 +74,10 @@ export function LoginForm() {
       setTimeout(() => {
         StatusCodeAlert(error as any);
       }, 1000);
-    }finally{
+    } finally {
       isLoadingAlert(false);
     }
   }
-
 
   return (
     <div className="w-full h-full flex justify-center items-center rounded-r-2xl bg-gray-200">
@@ -55,12 +85,21 @@ export function LoginForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-6 w-[80%]"
       >
-        <div className="flex flex-col gap-4 justify-center items-center">
+        <div className="flex flex-col justify-center items-center">
+
+          <div className="h-24 w-24 mb-4">
+        
+              <LogoFallback />
+     
+        
+          </div>
+          
           <div className="text-2xl font-semibold font-sans text-[#4463e9]">
             Bienvenido a CargoPlanner
           </div>
-          <div className="text-lg  text-gray-900">Iniciar Sesion</div>
+          <div className="text-lg text-gray-900">Iniciar Sesion</div>
         </div>
+        
         <FloatingInput
           id="username"
           label="Username"
@@ -79,6 +118,7 @@ export function LoginForm() {
           icon={<TbPasswordFingerprint size={18} />}
           required={true}
         />
+        
         <button
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"

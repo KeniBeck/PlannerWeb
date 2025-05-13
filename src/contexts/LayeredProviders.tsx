@@ -1,9 +1,24 @@
-import  { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { WorkerProvider } from './WorkerContext';
-// import { FaultProvider } from './FaultContext';
-// Importar otros providers según necesites
+import { AreasProvider } from './AreasContext';
+import { FaultProvider } from './FaultContext';
+import { OperationProvider } from './OperationContext';
+import { ClientsProvider } from './ClientsContext';
+import { ServicesProvider } from './ServicesContext';
+import { UsersProvider } from './UsersContext';
 
-type FeatureType = 'workers' | 'faults' | 'projects'; // Añade más según necesites
+export enum Feature {
+  WORKERS = 'workers',
+  FAULTS = 'faults',
+  AREAS = 'areas',
+  SERVICES = 'services',
+  USERS = 'users',
+  SUPERVISORS = 'supervisors',
+  CLIENTS = 'clients',
+  OPERATION = 'operation',
+}
+
+type FeatureType = Feature;
 
 interface LayeredProvidersProps {
   children: ReactNode;
@@ -11,26 +26,45 @@ interface LayeredProvidersProps {
 }
 
 export function LayeredProviders({ children, features }: LayeredProvidersProps) {
+  // Start with the children
   let content = children;
   
   // Envuelve el contenido en los providers necesarios (en orden inverso)
-  // para que el primer proveedor en la lista sea el más externo
   for (let i = features.length - 1; i >= 0; i--) {
     const feature = features[i];
     
     switch (feature) {
-      case 'workers':
+      case Feature.WORKERS:
         content = <WorkerProvider>{content}</WorkerProvider>;
         break;
-      case 'faults':
-        // content = <FaultProvider>{content}</FaultProvider>;
+      case Feature.FAULTS:
+        content = <FaultProvider>{content}</FaultProvider>;
         break;
-      case 'projects':
-        // content = <ProjectProvider>{content}</ProjectProvider>;
+      case Feature.OPERATION:
+       content = <OperationProvider>{content}</OperationProvider>
         break;
-      // Añade más casos según necesites
+      case Feature.AREAS:
+        content = <AreasProvider>{content}</AreasProvider>;
+        break;
+      case Feature.CLIENTS:
+        content = <ClientsProvider>{content}</ClientsProvider>;
+        break;
+      case Feature.SERVICES:
+        content = <ServicesProvider>{content}</ServicesProvider>;
+        break;
+      case Feature.USERS:
+        content = <UsersProvider>{content}</UsersProvider>;
+        break;
+      case Feature.SUPERVISORS:
+        console.warn(`Provider para ${feature} no está implementado`);
+        break;
+      default:
+        // TypeScript debería prevenir este caso gracias al enum
+        console.error(`¡Feature desconocida: ${feature}!`);
+        break;
     }
   }
   
   return <>{content}</>;
 }
+

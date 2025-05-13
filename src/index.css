@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+@font-face {
+    font-family: "amertha";
+    src: url("/public/fonts/Amertha.ttf") format("truetype");
+}

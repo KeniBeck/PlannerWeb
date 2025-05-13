@@ -1,11 +1,14 @@
-import { Worker} from "./worker";
-export interface WorkersGroup {
-    id: number;
-    name: string;
-    workers: Worker[];
-    startDate: Date;
-    endDate?: Date;
-    startTime: string;
-    endTime?: string;
+import { Worker } from "./worker";
+
+export interface Schedule {
+  dateStart: string;
+  dateEnd?: string | null;
+  timeStart: string;
+  timeEnd?: string | null;
 }
 
+export interface WorkersGroup {
+  groupId: string;
+  schedule: Schedule;
+  workers: Pick<Worker, "id">[];
+}

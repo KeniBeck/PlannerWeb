@@ -1,22 +1,46 @@
-import { useState } from "react";
-import { useServices } from "@/lib/hooks/useServices";
+import { useState, useMemo } from "react";
 import { Service } from "@/core/model/service";
-import { ServicesList } from "@/components/ui/ServicesList";
-import { AiOutlineSearch, AiOutlinePlus, AiOutlineDownload, AiOutlineReload } from "react-icons/ai";
+import { AiOutlineSearch } from "react-icons/ai";
+import { BsPencil, BsTrash } from "react-icons/bs";
+import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
-import { AddServiceDialog } from "@/components/ui/AddServiceDialog";
+import { AddServiceDialog } from "@/components/ui/services/AddServiceDialog";
+import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
+import { useServices } from "@/contexts/ServicesContext";
+import { HiOutlineBan, HiOutlineRefresh } from "react-icons/hi";
+import {
+  ActivateItemAlert,
+  DeactivateItemAlert,
+} from "@/components/dialog/CommonAlertActive";
 
 export default function Services() {
-  const { services, loading, addService, updateService, deleteService, refreshData } = useServices();
-  
+  const {
+    services,
+    loading,
+    addService,
+    updateService,
+    deleteService,
+    refreshData,
+  } = useServices();
+
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
-  const [serviceToEdit, setServiceToEdit] = useState<Service | undefined>(undefined);
+  const [serviceToEdit, setServiceToEdit] = useState<Service | undefined>(
+    undefined
+  );
+  const [serviceToActivate, setServiceToActivate] = useState<Service | null>(
+    null
+  );
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   // Filtrar servicios según el término de búsqueda
-  const filteredServices = services.filter(service => 
-    service.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredServices = useMemo(
+    () =>
+      services.filter((service) =>
+        (service.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [services, searchTerm]
   );
 
   // Manejar la edición de un servicio
@@ -26,7 +50,9 @@ export default function Services() {
   };
 
   // Manejar guardar un servicio (nuevo o editado)
-  const handleSaveService = (service: Omit<Service, "id"> & { id?: number }) => {
+  const handleSaveService = (
+    service: Omit<Service, "id"> & { id?: number }
+  ) => {
     if (service.id) {
       // Actualizar servicio existente
       updateService(service as Service);
@@ -40,8 +66,9 @@ export default function Services() {
 
   // Manejar la eliminación de un servicio
   const handleDeleteService = (serviceId: number) => {
-    // Aquí podrías mostrar una confirmación antes de eliminar
-    if (window.confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
+    if (
+      window.confirm("¿Estás seguro de que quieres eliminar este servicio?")
+    ) {
       deleteService(serviceId);
       StatusSuccessAlert("Éxito", "Servicio eliminado correctamente");
     }
@@ -58,90 +85,192 @@ export default function Services() {
     setIsAddServiceOpen(true);
   };
 
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="rounded-xl shadow-md">
-        {/* Header */}
-        <header className="flex justify-between items-center p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md">
-          <div>
-            <h1 className="text-3xl font-bold">Servicios</h1>
-            <p className="text-blue-100 mt-1 font-light">
-              Administración de servicios operativos
-            </p>
-          </div>
+  const handleActivateClick = (service: Service) => {
+    setServiceToActivate(service);
+  };
 
-          <div className="flex items-center gap-2">
-            <button
-              title="Exportar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
+  const handleDeleteClick = (service: Service) => {
+    setServiceToDelete(service);
+  };
+
+  const confirmDeleteArea = () => {
+    if (!serviceToDelete) return;
+
+    updateService({
+      id: serviceToDelete.id,
+      status: "INACTIVE",
+    });
+    StatusSuccessAlert("Éxito", "Área eliminada correctamente");
+  };
+
+  const confirmActivateArea = () => {
+    if (!serviceToActivate) return;
+
+    updateService({
+      id: serviceToActivate.id,
+      status: "ACTIVE",
+    });
+    StatusSuccessAlert("Éxito", "Área activada correctamente");
+  };
+
+  // Definir las columnas para la tabla
+  const columns: TableColumn<Service>[] = useMemo(
+    () => [
+      {
+        header: "ID",
+        accessor: "id",
+        className: "font-medium",
+      },
+      {
+        header: "Nombre",
+        accessor: "name",
+      },
+      {
+        header: "Estado",
+        accessor: "status",
+        cell: (service) => {
+          const isActive = service.status === "ACTIVE";
+          return (
+            <span
+              className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+            ${
+              isActive
+                ? "bg-green-100 text-green-800 border border-green-300"
+                : "bg-orange-100 text-orange-600 border border-orange-300"
+            }`}
             >
-              <AiOutlineDownload className="h-5 w-5" />
-            </button>
+              <span className="flex items-center">
+                <span
+                  className={`h-2 w-2 mr-1.5 rounded-full ${
+                    isActive ? "bg-green-500" : "bg-orange-500"
+                  }`}
+                ></span>
+                {isActive ? "Activo" : "Inactivo"}
+              </span>
+            </span>
+          );
+        },
+      },
+    ],
+    []
+  );
 
-            <button
-              title="Actualizar datos"
-              className="p-2 rounded-lg bg-blue-500 bg-opacity-30 hover:bg-opacity-50 text-white transition-all shadow-sm"
-              onClick={() => refreshData()}
-              disabled={loading}
-            >
-              <AiOutlineReload className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-            </button>
-
-            <button
-              className="bg-white text-blue-700 border-none hover:bg-blue-50 shadow-sm ml-2 rounded-md flex gap-1 items-center p-2 transition-all"
-              onClick={handleAddService}
-            >
-              <AiOutlinePlus className="mr-2" /> Agregar Servicio
-            </button>
-          </div>
-        </header>
-
-        {/* Filtros */}
-        <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
-          <div className="flex gap-4 items-center p-2">
-            <div>
-              <div className="relative">
-                <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre"
-                  className="p-2 pl-10 w-80 border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Vista principal */}
-      <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div className="bg-white">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando servicios...</p>
-              </div>
-            </div>
+  // Definir acciones de la tabla
+  const actions: TableAction<Service>[] = useMemo(
+    () => [
+      {
+        label: "Editar",
+        icon: <BsPencil className="h-4 w-4" />,
+        onClick: handleEditService,
+        className: "text-gray-700",
+      },
+      {
+        label: (area) => (area.status === "ACTIVE" ? "Eliminar" : "Activar"),
+        icon: (area) =>
+          area.status === "ACTIVE" ? (
+            <HiOutlineBan className="h-4 w-4" />
           ) : (
-            <ServicesList 
-              services={filteredServices} 
-              onEdit={handleEditService} 
-              onDelete={handleDeleteService} 
-            />
-          )}
+            <HiOutlineRefresh className="h-4 w-4" />
+          ),
+        onClick: (area) =>
+          area.status === "ACTIVE"
+            ? handleDeleteClick(area)
+            : handleActivateClick(area),
+        className: (area) =>
+          area.status === "ACTIVE"
+            ? "text-orange-600 hover:bg-red-50"
+            : "text-green-600 hover:bg-green-50",
+      }
+    ],
+    []
+  );
+
+  // Definir las columnas para exportar servicios a Excel
+  const serviceExportColumns: ExcelColumn[] = useMemo(
+    () => [
+      { header: "ID", field: "id" },
+      { header: "Nombre", field: "name" },
+    ],
+    []
+  );
+
+  return (
+    <>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="rounded-xl shadow-md">
+          {/* Header con exportación */}
+          <SectionHeader
+            title="Servicios"
+            subtitle="Gestión de servicios, agrega, edita o elimina servicios"
+            btnAddText="Agregar Servicio"
+            handleAddArea={handleAddService}
+            refreshData={() => Promise.resolve(refreshData())}
+            loading={loading}
+            exportData={filteredServices}
+            exportFileName="servicios"
+            exportColumns={serviceExportColumns}
+            currentView="services"
+          />
+
+          {/* Filtros */}
+          <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
+            <div className="flex gap-4 items-center p-2">
+              <div>
+                <div className="relative">
+                  <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre"
+                    className="p-2 pl-10 w-80 border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Vista principal con DataTable */}
+        <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
+          <div className="bg-white p-4">
+            <DataTable
+              data={filteredServices}
+              columns={columns}
+              actions={actions}
+              isLoading={loading}
+              itemsPerPage={10}
+              itemName="servicios"
+              initialSort={{ key: "id", direction: "asc" }}
+              emptyMessage="No se encontraron servicios"
+            />
+          </div>
+        </div>
+
+        {/* Diálogo para agregar/editar servicio */}
+        <AddServiceDialog
+          open={isAddServiceOpen}
+          onOpenChange={setIsAddServiceOpen}
+          service={serviceToEdit}
+          onSave={handleSaveService}
+        />
       </div>
 
-      {/* Diálogo para agregar/editar servicio */}
-      <AddServiceDialog
-        open={isAddServiceOpen}
-        onOpenChange={setIsAddServiceOpen}
-        service={serviceToEdit}
-        onSave={handleSaveService}
+      <ActivateItemAlert
+        open={!!serviceToActivate}
+        onOpenChange={() => setServiceToActivate(null)}
+        onConfirm={confirmActivateArea}
+        itemName="servicio"
+        isLoading={loading}
       />
-    </div>
+
+      <DeactivateItemAlert
+        open={!!serviceToDelete}
+        onOpenChange={() => setServiceToDelete(null)}
+        onConfirm={confirmDeleteArea}
+        itemName="servicio"
+        isLoading={loading}
+      />
+    </>
   );
 }
