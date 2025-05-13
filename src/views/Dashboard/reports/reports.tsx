@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { useOperations } from "@/contexts/OperationContext";
 import { useWorkers } from "@/contexts/WorkerContext";
@@ -21,6 +21,7 @@ import { DateFilter } from "@/components/custom/filter/DateFilterProps";
 import { StatusFilter } from "@/components/custom/filter/StatusFilterProps";
 import { FaShip } from "react-icons/fa";
 import ChartCard from "@/components/custom/charts/ChartCard";
+import { operationService } from "@/services/operationService";
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -48,37 +49,50 @@ export default function Reports() {
     format(new Date(), "yyyy-MM-dd")
   );
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [filteredOperations, setFilteredOperations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Obtener datos del contexto
-  const {
-    operations,
-    refreshOperations,
-    isLoading: operationsLoading,
-  } = useOperations();
+  const { refreshOperations } = useOperations();
   const { workers, isLoading: workersLoading } = useWorkers();
 
-  // Obtener las operaciones para la fecha seleccionada
-  const todayOperations = useMemo(() => {
-    const todaysDate = selectedDate;
-    return operations.filter((op) => {
-      // Usar directamente la fecha sin crear un nuevo Date
-      const opDate = op.dateStart ? op.dateStart.split("T")[0] : null;
-      const matchesDate = opDate === todaysDate;
+  // Función para cargar operaciones filtradas
+  const loadFilteredOperations = async () => {
+    try {
+      setIsLoading(true);
+      const filters: any = {
+        dateStart: selectedDate,
+      };
+      
+      // Solo agregar status si no es "all"
+      if (statusFilter !== "all") {
+        filters.status = statusFilter;
+      }
+      
+      // Llamada a la API con paginación y filtros
+      console.log("Cargando operaciones filtradas con filtros:", filters);
+      const result = await operationService.getPaginatedOperations(1, 10,{ ...filters, activatePaginated: false });
+      console.log("Operaciones filtradas:", result);
+      setFilteredOperations(result.items || []);
+    } catch (error) {
+      console.error("Error al cargar operaciones filtradas:", error);
+      setFilteredOperations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // Verificar el estado
-      const matchesStatus =
-        statusFilter === "all" || op.status === statusFilter;
-
-      return matchesDate && matchesStatus;
-    });
-  }, [operations, selectedDate, statusFilter]);
+  // Cargar operaciones cuando cambian los filtros
+  useEffect(() => {
+    loadFilteredOperations();
+  }, [selectedDate, statusFilter]);
 
   // Preparar datos para gráficos
   const areaChartData = useMemo(() => {
     const areaCounts: Record<string, number> = {};
 
     // Contar operaciones por área
-    todayOperations.forEach((op) => {
+    filteredOperations.forEach((op) => {
       const areaName = op.jobArea?.name || "Sin área";
       areaCounts[areaName] = (areaCounts[areaName] || 0) + 1;
     });
@@ -109,20 +123,20 @@ export default function Reports() {
         },
       ],
     };
-  }, [todayOperations]);
+  }, [filteredOperations]);
 
-  // Verificar si hay buques reales en las operaciones de hoy
+  // Verificar si hay buques reales en las operaciones filtradas
   const hasRealShips = useMemo(() => {
-    return todayOperations.some(
+    return filteredOperations.some(
       (op) => op.motorShip && op.motorShip.trim() !== ""
     );
-  }, [todayOperations]);
+  }, [filteredOperations]);
 
   const shipChartData = useMemo(() => {
     const shipCounts: Record<string, number> = {};
 
     // Contar operaciones por buque, excluyendo "Sin buque"
-    todayOperations.forEach((op) => {
+    filteredOperations.forEach((op) => {
       // Solo incluir buques con valor
       if (op.motorShip && op.motorShip.trim() !== "") {
         shipCounts[op.motorShip] = (shipCounts[op.motorShip] || 0) + 1;
@@ -155,24 +169,24 @@ export default function Reports() {
         },
       ],
     };
-  }, [todayOperations]);
+  }, [filteredOperations]);
 
   // Calcular el total real de buques (excluyendo "Sin buque")
   const actualShipCount = useMemo(() => {
     const uniqueShips = new Set<string>();
-    todayOperations.forEach((op) => {
+    filteredOperations.forEach((op) => {
       if (op.motorShip && op.motorShip.trim() !== "") {
         uniqueShips.add(op.motorShip);
       }
     });
     return uniqueShips.size;
-  }, [todayOperations]);
+  }, [filteredOperations]);
 
   const zoneChartData = useMemo(() => {
     const zoneCounts: Record<string, number> = {};
 
     // Contar operaciones por zona
-    todayOperations.forEach((op) => {
+    filteredOperations.forEach((op) => {
       const zone = op.zone || "Sin zona";
       zoneCounts[zone] = (zoneCounts[zone] || 0) + 1;
     });
@@ -203,87 +217,20 @@ export default function Reports() {
         },
       ],
     };
-  }, [todayOperations]);
+  }, [filteredOperations]);
 
-  const workerStatusChartData = useMemo(() => {
-    const counts = {
-      disponibles: 0,
-      asignados: 0,
-      incapacitados: 0,
-      retirados: 0,
-      deshabilitados: 0,
-    };
-
-    // Contar trabajadores por estado
-    workers.forEach((worker) => {
-      switch (worker.status) {
-        case WorkerStatus.AVAILABLE:
-          counts.disponibles += 1;
-          break;
-        case WorkerStatus.ASSIGNED:
-          counts.asignados += 1;
-          break;
-        case WorkerStatus.INCAPACITATED:
-          counts.incapacitados += 1;
-          break;
-        case WorkerStatus.DEACTIVATED:
-          counts.retirados += 1;
-          break;
-        case WorkerStatus.UNAVAILABLE:
-          counts.deshabilitados += 1;
-          break;
-      }
-    });
-
-    return {
-      labels: [
-        "Disponibles",
-        "Asignados",
-        "Incapacitados",
-        "Retirados",
-        "Deshabilitados",
-      ],
-      datasets: [
-        {
-          label: "Estado de Trabajadores",
-          data: [
-            counts.disponibles,
-            counts.asignados,
-            counts.incapacitados,
-            counts.retirados,
-            counts.deshabilitados,
-          ],
-          backgroundColor: [
-            "rgba(75, 192, 192, 0.7)",
-            "rgba(54, 162, 235, 0.7)",
-            "rgba(255, 206, 86, 0.7)",
-            "rgba(153, 102, 255, 0.7)",
-            "rgba(255, 99, 132, 0.7)",
-          ],
-          borderColor: [
-            "rgba(75, 192, 192, 1)",
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(153, 102, 255, 1)",
-            "rgba(255, 99, 132, 1)",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [workers]);
-
+  // El resto del código de los charts se mantiene igual pero usando filteredOperations
+  
   const servicesTrendChartData = useMemo(() => {
     const serviceWorkerCounts: Record<string, number> = {};
 
     // Contar trabajadores por servicio en operaciones de hoy
-    todayOperations.forEach((op) => {
+    filteredOperations.forEach((op) => {
       const serviceName = op.task?.name || "Sin servicio";
-      // Asumimos que hay un campo para contar o listar trabajadores en la operación
       const workerCount = op.workers?.length || 0;
       const workersInGroups =
         op.workerGroups?.reduce(
-          (acc, group) => acc + (group.workers?.length || 0),
+          (acc: any, group: any) => acc + (group.workers?.length || 0),
           0
         ) || 0;
 
@@ -303,7 +250,50 @@ export default function Reports() {
         },
       ],
     };
-  }, [todayOperations]);
+  }, [filteredOperations]);
+
+  // Datos para el gráfico de estado de trabajadores
+  const workerStatusChartData = useMemo(() => {
+    const statusCounts: Record<string, number> = {
+      [WorkerStatus.AVAILABLE]: 0,
+      [WorkerStatus.ASSIGNED]: 0,
+      [WorkerStatus.UNAVAILABLE]: 0,
+    };
+
+    // Contar trabajadores por estado
+    workers.forEach((worker) => {
+      const status = worker.status || WorkerStatus.AVAILABLE;
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    return {
+      labels: Object.keys(statusCounts).map(status => {
+        switch(status) {
+          case WorkerStatus.AVAILABLE: return "Disponibles";
+          case WorkerStatus.ASSIGNED: return "Asignados";
+          case WorkerStatus.UNAVAILABLE: return "No disponibles";
+          default: return status;
+        }
+      }),
+      datasets: [
+        {
+          label: "Estado de Trabajadores",
+          data: Object.values(statusCounts),
+          backgroundColor: [
+            "rgba(54, 162, 235, 0.7)",
+            "rgba(75, 192, 192, 0.7)",
+            "rgba(255, 99, 132, 0.7)",
+          ],
+          borderColor: [
+            "rgba(54, 162, 235, 1)",
+            "rgba(75, 192, 192, 1)",
+            "rgba(255, 99, 132, 1)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [workers]);
 
   // Formatear fechas para mostrar
   const formatDisplayDate = (dateString: string) => {
@@ -324,8 +314,8 @@ export default function Reports() {
           subtitle="Visualización de estadísticas y reportes de operaciones"
           btnAddText=""
           handleAddArea={() => {}}
-          refreshData={() => Promise.resolve(refreshOperations())}
-          loading={operationsLoading || workersLoading}
+          refreshData={loadFilteredOperations}
+          loading={isLoading || workersLoading}
           exportData={[]}
           exportFileName="reporte"
           exportColumns={[]}
@@ -418,11 +408,12 @@ export default function Reports() {
           titleGradient={{ from: "#2563eb", to: "#1e40af" }}
           chartType="bar"
           chartData={areaChartData}
-          isEmpty={todayOperations.length === 0}
+          isEmpty={filteredOperations.length === 0}
           emptyMessage="No hay operaciones para mostrar"
+          height={300}
         />
 
-        {/* Gráfica de distribución por buque */}
+        {/* Actualizar todas las demás gráficas de manera similar */}
         <ChartCard
           title="Distribución por Buque"
           {...(actualShipCount > 0
@@ -448,9 +439,9 @@ export default function Reports() {
           titleGradient={{ from: "rgb(13, 148, 136)", to: "rgb(6, 95, 70)" }}
           chartType="bar"
           chartData={shipChartData}
-          isEmpty={todayOperations.length === 0 || !hasRealShips}
+          isEmpty={filteredOperations.length === 0 || !hasRealShips}
           emptyIcon={
-            todayOperations.length === 0 ? (
+            filteredOperations.length === 0 ? (
               <svg
                 className="w-12 h-12 text-gray-300 mb-3"
                 fill="none"
@@ -469,18 +460,19 @@ export default function Reports() {
             )
           }
           emptyMessage={
-            todayOperations.length === 0
+            filteredOperations.length === 0
               ? "No hay operaciones para mostrar"
               : "Operaciones sin buques asignados"
           }
           emptySubMessage={
-            todayOperations.length === 0
+            filteredOperations.length === 0
               ? ""
               : "No hay datos de buques para visualizar"
           }
+          height={300}
         />
 
-        {/* Gráfica de distribución por zonas */}
+        {/* Continuar con las demás gráficas */}
         <ChartCard
           title="Distribución por Zonas"
           total={{
@@ -510,9 +502,11 @@ export default function Reports() {
           titleGradient={{ from: "#9333ea", to: "#7e22ce" }}
           chartType="pie"
           chartData={zoneChartData}
-          isEmpty={todayOperations.length === 0}
+          isEmpty={filteredOperations.length === 0}
           emptyMessage="No hay operaciones para mostrar"
+          height={300}
         />
+
         {/* Gráfica de estado de trabajadores */}
         <ChartCard
           title="Estado de Trabajadores"
@@ -545,7 +539,9 @@ export default function Reports() {
           chartData={workerStatusChartData}
           isEmpty={workers.length === 0}
           emptyMessage="No hay trabajadores para mostrar"
+          height={300}
         />
+
         {/* Gráfica de tendencias de servicios */}
         <ChartCard
           title="Tendencias de Servicios"
@@ -575,9 +571,10 @@ export default function Reports() {
           titleGradient={{ from: "#e11d48", to: "#be123c" }}
           chartType="bar"
           chartData={servicesTrendChartData}
-          isEmpty={todayOperations.length === 0}
+          isEmpty={filteredOperations.length === 0}
           emptyMessage="No hay operaciones para mostrar"
           className="md:col-span-2"
+          height={300}
         />
       </div>
     </div>
