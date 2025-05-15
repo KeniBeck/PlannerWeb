@@ -35,27 +35,23 @@ export const FeedingProvider: React.FC<{ children: ReactNode }> = ({ children })
     fetchFeedings();
   }, [filters]);
 
-  // Función para cargar alimentaciones
-  const fetchFeedings = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await feedingService.getAllFeedings(filters);
-      setFeedings(data);
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error al cargar alimentaciones:', err);
-      setError('No se pudieron cargar las alimentaciones. Intente nuevamente.');
-      Swal.fire({
-        title: 'Error',
-        text: 'No se pudieron cargar las alimentaciones. Intente nuevamente.',
-        icon: 'error',
-        confirmButtonText: 'Aceptar'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ // Función para cargar alimentaciones
+const fetchFeedings = async () => {
+  setIsLoading(true);
+  setError(null);
+  try {
+    console.log("Buscando alimentaciones con filtros:", JSON.stringify(filters));
+    const data = await feedingService.getAllFeedings(filters);
+    console.log(`Recibidas ${data.length} alimentaciones del API`);
+    setFeedings(data);
+    setLastUpdated(new Date());
+  } catch (err) {
+    console.error('Error al cargar alimentaciones:', err);
+    setError('No se pudieron cargar las alimentaciones.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Eliminar alimentación
   const handleDeleteFeeding = async (id: number): Promise<boolean> => {

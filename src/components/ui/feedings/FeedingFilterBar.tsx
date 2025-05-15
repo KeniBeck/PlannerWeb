@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { AiOutlineSearch } from "react-icons/ai";
-import { FiFilter } from "react-icons/fi";
 import { MdRestaurantMenu } from "react-icons/md";
-import { BsCalendar } from "react-icons/bs";
-import { DateFilter } from "@/components/custom/filter/DateFilterProps";
+
 import { FeedingFilterParams } from "@/services/feedingService";
+import { DateRangeFilter } from "@/components/custom/filter/DateFilterRanger";
 
 interface FeedingFilterBarProps {
   searchTerm: string;
@@ -29,24 +28,54 @@ export function FeedingFilterBar({
     setSearchTerm(e.target.value);
   };
 
-  // Manejar cambio en el tipo de comida
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newType = e.target.value;
-    setType(newType);
-    setFilters({ ...filters, type: newType === "all" ? undefined : newType });
-  };
+ 
+// Función reemplazada para manejar el cambio de tipo de alimentación
+const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const newValue = e.target.value;
+  setType(newValue);
+  
+  // El valor "all" debe enviarse como undefined para remover el filtro
+  let apiValue;
+  if (newValue === "all") {
+    apiValue = undefined;
+  } else if (newValue === "Desayuno") {
+    apiValue = "BREAKFAST";
+  } else if (newValue === "Almuerzo") {
+    apiValue = "LUNCH";
+  } else if (newValue === "Cena") {
+    apiValue = "DINNER";
+  } else if (newValue === "Media noche") {
+    apiValue = "MIDNIGHT"; // No SNACK
+  } else {
+    apiValue = newValue;
+  }
+  
+  // Importante: Crear un nuevo objeto para garantizar que React detecte el cambio
+  console.log(`Aplicando filtro tipo: ${apiValue}`);
+  setFilters({...filters, type: apiValue});
+};
 
-  // Manejar cambio en la fecha de inicio
-  const handleStartDateChange = (value: string) => {
-    setStartDate(value);
-    setFilters({ ...filters, startDate: value });
-  };
+// Funciones reemplazadas para manejar fechas
+const handleStartDateChange = (value: string) => {
+  setStartDate(value);
+  console.log(`Aplicando filtro startDate: ${value || undefined}`);
+  setFilters({...filters, startDate: value || undefined});
+};
 
-  // Manejar cambio en la fecha de fin
-  const handleEndDateChange = (value: string) => {
-    setEndDate(value);
-    setFilters({ ...filters, endDate: value });
-  };
+const handleEndDateChange = (value: string) => {
+  setEndDate(value);
+  console.log(`Aplicando filtro endDate: ${value || undefined}`);
+  setFilters({...filters, endDate: value || undefined});
+};
+
+// Función para limpiar todos los filtros
+const handleClearFilters = () => {
+  setStartDate("");
+  setEndDate("");
+  setType("all");
+  console.log("Limpiando todos los filtros");
+  setFilters({}); // Importante: objeto vacío, no undefined
+};
 
   // Limpiar todos los filtros
   const clearFilters = () => {
@@ -118,24 +147,13 @@ export function FeedingFilterBar({
 
           {/* Filtro por fechas */}
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative flex items-center w-full sm:w-auto">
-              <BsCalendar className="absolute left-3 text-gray-400" />
-              <DateFilter
-                className="pl-8"
-                value={startDate}
-                onChange={handleStartDateChange}
-                label="Fecha inicio"
-              />
-            </div>
-            <div className="relative flex items-center w-full sm:w-auto">
-              <BsCalendar className="absolute left-3 text-gray-400" />
-              <DateFilter
-                className="pl-8"
-                value={endDate}
-                onChange={handleEndDateChange}
-                label="Fecha fin"
-              />
-            </div>
+          <DateRangeFilter 
+          label="Rango de fechas"
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={handleStartDateChange}
+          onEndDateChange={handleEndDateChange}
+          />
           </div>
         </div>
       </div>

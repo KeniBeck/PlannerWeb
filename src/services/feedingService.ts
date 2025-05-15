@@ -37,6 +37,7 @@ export interface FeedingFilterParams {
   workerId?: number;
   type?: string;
   status?: string;
+  search?: string;
 }
 
 class FeedingService {
