@@ -6,9 +6,12 @@ import {
   BsPencil,
   BsTrash,
 } from "react-icons/bs";
+import { tieneDerechoAComidaAhora, todosTrabajadaresRecibieronComida } from "@/lib/utils/feedingutils";
 import { useOperations } from "@/contexts/OperationContext";
 import { Operation } from "@/core/model/operation";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
+import { FaUtensils } from "react-icons/fa";
+import { FeedingOperationDialog } from "@/components/dialog/FeedingOperationDialog";
 
 type SortConfig = {
   key: string;
@@ -48,6 +51,12 @@ export function OperationList({
 
   // Estado para rastrear la primera carga
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [showFeedingDialog, setShowFeedingDialog] = useState(false);
+  const [selectedOperationForFeeding, setSelectedOperationForFeeding] = useState<Operation | null>(null);
+  const [operacionesConAlimentacionPendiente, setOperacionesConAlimentacionPendiente] = useState<number[]>([]);
+  
+
+
 
   // Hook useState - Siempre debe estar aquí sin condiciones
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -55,13 +64,35 @@ export function OperationList({
     direction: "asc",
   });
 
+  // Efecto para verificar qué operaciones tienen alimentación pendiente
+useEffect(() => {
+  const verificarAlimentacionPendiente = async () => {
+    const operacionesConDerecho = [];
+    
+    for (const op of operations) {
+      if (op.status === "INPROGRESS" && 
+          tieneDerechoAComidaAhora(op.timeStrat || op.timeStart, op.timeEnd)) {
+        // Verificar si todos los trabajadores ya recibieron comida
+        const todosFueron = await todosTrabajadaresRecibieronComida(op);
+        if (!todosFueron) {
+          operacionesConDerecho.push(op.id);
+        }
+      }
+    }
+    
+    setOperacionesConAlimentacionPendiente(operacionesConDerecho);
+  };
+  
+  verificarAlimentacionPendiente();
+}, [filteredOperations]);
+
   // Efecto para rastrear la carga inicial y ejecutar la precarga
   useEffect(() => {
     // Si tenemos operaciones y no estamos cargando, la carga inicial ha terminado
     if (operations.length > 0 && !isLoading && !initialLoadDone) {
       console.log("Carga inicial completada");
       setInitialLoadDone(true);
-      
+
       // Precargar siguiente página después de la primera carga
       if (preloadNextPages) {
         console.log("Ejecutando precarga inicial");
@@ -193,9 +224,9 @@ export function OperationList({
       {
         header: "Encargado",
         accessor: "inCharge.name",
-        cell: (operation) => 
-          operation.inCharge && Array.isArray(operation.inCharge) 
-            ? operation.inCharge.map((user) => user.name).join(", ") 
+        cell: (operation) =>
+          operation.inCharge && Array.isArray(operation.inCharge)
+            ? operation.inCharge.map((user) => user.name).join(", ")
             : "N/A",
       },
       {
@@ -218,7 +249,7 @@ export function OperationList({
 
   const actions: TableAction<Operation>[] = useMemo(() => {
     const actionsList: TableAction<Operation>[] = [];
-  
+
     // Acción de Ver - siempre disponible para todas las operaciones
     if (onView) {
       actionsList.push({
@@ -228,7 +259,7 @@ export function OperationList({
         className: "text-blue-600",
       });
     }
-  
+
     // Acción de Editar - solo disponible si la operación NO está finalizada
     if (onEdit) {
       actionsList.push({
@@ -240,7 +271,7 @@ export function OperationList({
         hidden: (operation) => operation.status === "COMPLETED",
       });
     }
-  
+
     // Acción de Eliminar - solo disponible si la operación NO está finalizada
     if (onDelete) {
       actionsList.push({
@@ -252,10 +283,23 @@ export function OperationList({
         hidden: (operation) => operation.status === "COMPLETED",
       });
     }
-  
+
+    // Nueva acción para alimentación - solo para operaciones en curso y con alimentación elegible
+    actionsList.push({
+      label: "Alimentación",
+      icon: <FaUtensils className="h-4 w-4" />,
+      onClick: (operation) => {
+        setSelectedOperationForFeeding(operation);
+        setShowFeedingDialog(true);
+      },
+      className: "text-amber-600",
+      // Mostrar solo para operaciones en curso y con derecho a comida
+      hidden: (operation) => !operacionesConAlimentacionPendiente.includes(operation.id),
+    });
+
     return actionsList;
   }, [onView, onEdit, onDelete]);
-  
+
   // Evitar returns tempranos antes de otros hooks
   if (error) {
     return (
@@ -317,6 +361,13 @@ export function OperationList({
           </span>
         </div>
       )}
+      {/* Diálogo de alimentación */}
+      <FeedingOperationDialog
+        open={showFeedingDialog}
+        onOpenChange={setShowFeedingDialog}
+        operation={selectedOperationForFeeding}
+      />
+
     </div>
   );
 }
