@@ -1,12 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { BsEye, BsPencil, BsTrash } from "react-icons/bs";
 import {
-  BsEye,
-  BsPencil,
-  BsTrash,
-} from "react-icons/bs";
-import { tieneDerechoAComidaAhora, todosTrabajadaresRecibieronComida } from "@/lib/utils/feedingutils";
+  tieneDerechoAComidaAhora,
+  todosTrabajadaresRecibieronComida,
+} from "@/lib/utils/feedingutils";
 import { useOperations } from "@/contexts/OperationContext";
 import { Operation } from "@/core/model/operation";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
@@ -46,17 +45,18 @@ export function OperationList({
     setPage,
     lastUpdated,
     totalPages,
-    preloadNextPages
+    preloadNextPages,
   } = useOperations();
 
   // Estado para rastrear la primera carga
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [showFeedingDialog, setShowFeedingDialog] = useState(false);
-  const [selectedOperationForFeeding, setSelectedOperationForFeeding] = useState<Operation | null>(null);
-  const [operacionesConAlimentacionPendiente, setOperacionesConAlimentacionPendiente] = useState<number[]>([]);
-  
-
-
+  const [selectedOperationForFeeding, setSelectedOperationForFeeding] =
+    useState<Operation | null>(null);
+  const [
+    operacionesConAlimentacionPendiente,
+    setOperacionesConAlimentacionPendiente,
+  ] = useState<number[]>([]);
 
   // Hook useState - Siempre debe estar aquí sin condiciones
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -65,26 +65,28 @@ export function OperationList({
   });
 
   // Efecto para verificar qué operaciones tienen alimentación pendiente
-useEffect(() => {
-  const verificarAlimentacionPendiente = async () => {
-    const operacionesConDerecho = [];
-    
-    for (const op of operations) {
-      if (op.status === "INPROGRESS" && 
-          tieneDerechoAComidaAhora(op.timeStrat || op.timeStart, op.timeEnd)) {
-        // Verificar si todos los trabajadores ya recibieron comida
-        const todosFueron = await todosTrabajadaresRecibieronComida(op);
-        if (!todosFueron) {
-          operacionesConDerecho.push(op.id);
+  useEffect(() => {
+    const verificarAlimentacionPendiente = async () => {
+      const operacionesConDerecho = [];
+
+      for (const op of operations) {
+        if (
+          op.status === "INPROGRESS" &&
+          tieneDerechoAComidaAhora(op.timeStrat || op.timeStart, op.timeEnd)
+        ) {
+          // Verificar si todos los trabajadores ya recibieron comida
+          const todosFueron = await todosTrabajadaresRecibieronComida(op);
+          if (!todosFueron) {
+            operacionesConDerecho.push(op.id);
+          }
         }
       }
-    }
-    
-    setOperacionesConAlimentacionPendiente(operacionesConDerecho);
-  };
-  
-  verificarAlimentacionPendiente();
-}, [filteredOperations]);
+
+      setOperacionesConAlimentacionPendiente(operacionesConDerecho);
+    };
+
+    verificarAlimentacionPendiente();
+  }, [filteredOperations]);
 
   // Efecto para rastrear la carga inicial y ejecutar la precarga
   useEffect(() => {
@@ -294,7 +296,8 @@ useEffect(() => {
       },
       className: "text-amber-600",
       // Mostrar solo para operaciones en curso y con derecho a comida
-      hidden: (operation) => !operacionesConAlimentacionPendiente.includes(operation.id),
+      hidden: (operation) =>
+        !operacionesConAlimentacionPendiente.includes(operation.id),
     });
 
     return actionsList;
@@ -367,7 +370,6 @@ useEffect(() => {
         onOpenChange={setShowFeedingDialog}
         operation={selectedOperationForFeeding}
       />
-
     </div>
   );
 }

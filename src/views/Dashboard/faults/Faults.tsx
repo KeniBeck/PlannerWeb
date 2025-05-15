@@ -1,7 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Fault, FaultType } from "@/core/model/fault";
-import { AiOutlineSearch } from "react-icons/ai";
-import { FiFilter } from "react-icons/fi";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -11,57 +9,101 @@ import { useWorkers } from "@/contexts/WorkerContext";
 import Swal from "sweetalert2";
 import { faultService } from "@/services/faultService";
 import { AddFaultDialog } from "@/components/ui/faults/AddFaultDialog";
+import { FaultFilterBar } from "@/components/custom/filter/FaultFilterBar";
+import { useFaultFilters } from "@/lib/hooks/useFaultsFilters";
+import { ActiveFaultFilters } from "@/components/custom/filter/ActivatedFaultFiltes";
+import { useState } from "react";
 
 export default function Faults() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [isAddFaultOpen, setIsAddFaultOpen] = useState(false);
-  
-  const { faults, refreshFaults, isLoading } = useFaults();
+  // Obtener funciones y datos del contexto
+  const {
+    faults,
+    refreshFaults,
+    isLoading,
+    filters,
+    setFilters: originalSetFilters,
+    setPage,
+  } = useFaults();
+
   const { workers } = useWorkers();
 
-  // Filtrar faltas basadas en la búsqueda y el filtro de tipo
-  const filteredFaults = useMemo(() => {
-    return faults.filter((fault) => {
-      // Filtrar por término de búsqueda
-      const matchesSearch =
-        !searchTerm ||
-        (fault.worker?.name && 
-          fault.worker.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (fault.worker?.dni && 
-          fault.worker.dni.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (fault.description &&
-          fault.description.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      // Filtrar por tipo
-      const matchesType = 
-        typeFilter === "all" || 
-        fault.type === typeFilter;
-      
-      return matchesSearch && matchesType;
-    });
-  }, [faults, searchTerm, typeFilter]);
+  // Adapter function to handle type conversion
+  const setFiltersAdapter = (faultFilterDTO: any) => {
+    // Convert the type from array to string if needed
+    const adaptedFilters = {
+      ...faultFilterDTO,
+      type: Array.isArray(faultFilterDTO.type)
+        ? faultFilterDTO.type[0] // Take the first element if it's an array
+        : faultFilterDTO.type,
+    };
+    originalSetFilters(adaptedFilters);
+  };
 
-  // Manejadores para las acciones
+  // Adaptar los filtros antes de pasarlos al hook
+  const adaptFilters = (filtersToAdapt: any) => {
+    if (!filtersToAdapt) return filtersToAdapt;
+
+    return {
+      ...filtersToAdapt,
+      type: Array.isArray(filtersToAdapt.type)
+        ? filtersToAdapt.type[0] // Tomar el primer elemento si es un array
+        : filtersToAdapt.type,
+    };
+  };
+
+  // Usar el custom hook para gestionar los filtros
+  const {
+    searchTerm,
+    setSearchTerm,
+    typeFilter,
+    startDate,
+    endDate,
+    setEndDate,
+    setStartDate,
+    setTypeFilter,
+    isSearching,
+    hasActiveFilters,
+    applyFilters,
+    clearAllFilters,
+  } = useFaultFilters({
+    setFilters: setFiltersAdapter,
+    setPage,
+    filters: adaptFilters(filters),
+  });
+
+  // Estado para el diálogo de añadir falta
+  const [isAddFaultOpen, setIsAddFaultOpen] = useState(false);
+
+  // Manejador para ver detalles de una falta
   const handleViewFault = (fault: Fault) => {
     Swal.fire({
-      title: 'Detalle de la Falta',
+      title: "Detalle de la Falta",
       html: `
         <div class="text-left">
-          <p class="mb-2"><strong>Trabajador:</strong> ${fault.worker?.name || 'No disponible'}</p>
-          <p class="mb-2"><strong>DNI:</strong> ${fault.worker?.dni || 'No disponible'}</p>
-          <p class="mb-2"><strong>Tipo:</strong> ${getFaultTypeLabel(fault.type)}</p>
-          <p class="mb-2"><strong>Fecha:</strong> ${format(new Date(fault.createAt), 'dd/MM/yyyy', { locale: es })}</p>
+          <p class="mb-2"><strong>Trabajador:</strong> ${
+            fault.worker?.name || "No disponible"
+          }</p>
+          <p class="mb-2"><strong>DNI:</strong> ${
+            fault.worker?.dni || "No disponible"
+          }</p>
+          <p class="mb-2"><strong>Tipo:</strong> ${getFaultTypeLabel(
+            fault.type
+          )}</p>
+          <p class="mb-2"><strong>Fecha:</strong> ${format(
+            new Date(fault.createAt),
+            "dd/MM/yyyy",
+            { locale: es }
+          )}</p>
           <p class="mb-2"><strong>Descripción:</strong></p>
-          <p class="p-2 bg-gray-100 rounded">${fault.description || 'Sin descripción'}</p>
+          <p class="p-2 bg-gray-100 rounded">${
+            fault.description || "Sin descripción"
+          }</p>
         </div>
       `,
-      confirmButtonText: 'Cerrar',
-      confirmButtonColor: '#3085d6'
+      confirmButtonText: "Cerrar",
+      confirmButtonColor: "#3085d6",
     });
   };
-  
-  
 
   // Función para obtener etiqueta de tipo de falta
   const getFaultTypeLabel = (type: string): string => {
@@ -84,16 +126,16 @@ export default function Faults() {
       await refreshFaults();
       setIsAddFaultOpen(false);
       Swal.fire({
-        icon: 'success',
-        title: 'Falta registrada',
-        text: 'Se ha registrado la falta correctamente'
+        icon: "success",
+        title: "Falta registrada",
+        text: "Se ha registrado la falta correctamente",
       });
     } catch (error) {
-      console.error('Error al registrar la falta:', error);
+      console.error("Error al registrar la falta:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo registrar la falta. Intente nuevamente.'
+        icon: "error",
+        title: "Error",
+        text: "No se pudo registrar la falta. Intente nuevamente.",
       });
     }
   };
@@ -130,94 +172,55 @@ export default function Faults() {
           handleAddArea={() => setIsAddFaultOpen(true)}
           refreshData={() => Promise.resolve(refreshFaults())}
           loading={isLoading}
-          exportData={filteredFaults}
+          exportData={faults} // Usar los datos del contexto para exportación
           exportFileName="registro_faltas"
           exportColumns={faultExportColumns}
           currentView="faults"
         />
 
         {/* Barra de filtros */}
-        <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
-          <div className="flex flex-wrap gap-4 items-center p-2 w-full">
-            <div className="flex-grow max-w-md">
-              <div className="relative">
-                <AiOutlineSearch className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre de trabajador o DNI"
-                  className="p-2 pl-10 w-full border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <div className="relative">
-                <div className="absolute left-3 top-3">
-                  <FiFilter className="h-5 w-5 text-blue-500" />
-                </div>
-                <select
-                  className="pl-10 pr-10 py-2.5 w-60 appearance-none border border-blue-200 rounded-lg bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm text-gray-700 font-medium"
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  style={{
-                    backgroundImage: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
-                  }}
-                >
-                  <option value="all">Todos los tipos</option>
-                  <option value={FaultType.INASSISTANCE}>Inasistencias</option>
-                  <option value={FaultType.IRRESPECTFUL}>Irrespeto</option>
-                  <option value={FaultType.ABANDONMENT}>Abandono</option>
-                </select>
-                <div className="absolute right-3 top-3 pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            {(searchTerm || typeFilter !== 'all') && (
-              <button 
-                onClick={() => {
-                  setSearchTerm('');
-                  setTypeFilter('all');
-                }}
-                className="text-sm flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
-              >
-                Limpiar filtros
-              </button>
-            )}
-          </div>
-        </div>
+        <FaultFilterBar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          startDate={startDate} // Añadir estas propiedades
+          endDate={endDate} // para las fechas
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+          isSearching={isSearching}
+          applyFilters={applyFilters}
+          clearAllFilters={clearAllFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
       </div>
 
       {/* Tabla de faltas */}
       <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
         <div className="bg-white">
           <FaultsList
-            filteredFaults={filteredFaults}
+            filteredFaults={faults} // Pasar los datos del contexto (ya filtrados por el backend)
             searchTerm={searchTerm}
           />
         </div>
       </div>
-      
+
+      {/* Indicador de filtros activos */}
+      <ActiveFaultFilters
+        hasActiveFilters={hasActiveFilters}
+        searchTerm={searchTerm}
+        typeFilter={typeFilter}
+        clearAllFilters={clearAllFilters}
+        setSearchTerm={setSearchTerm}
+        setTypeFilter={setTypeFilter}
+        startDateFilter={startDate} // Mapear propiedades del hook a los
+        endDateFilter={endDate} // nombres esperados por ActiveFaultFilters
+        setStartDateFilter={setStartDate}
+        setEndDateFilter={setEndDate}
+      />
+
       {/* Diálogo para añadir nueva falta */}
-      <AddFaultDialog 
+      <AddFaultDialog
         open={isAddFaultOpen}
         onOpenChange={setIsAddFaultOpen}
         onSave={handleSaveFault}

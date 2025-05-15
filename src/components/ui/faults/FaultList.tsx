@@ -71,6 +71,13 @@ export function FaultsList({ filteredFaults, searchTerm }: FaultsListProps) {
           textColor: "text-orange-800",
           borderColor: "border-orange-200",
         };
+      case "ABANDONMENT":
+        return {
+          label: "Abandono",
+          bgColor: "bg-blue-100",
+          textColor: "text-blue-800",
+          borderColor: "border-blue-200",
+        };
       default:
         return {
           label: type || "Desconocido",
