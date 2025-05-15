@@ -313,7 +313,7 @@ export default function Workers() {
           {/* Header mejorado con exportación personalizada */}
           <SectionHeader
             title="Trabajadores"
-            subtitle="Gestión de trabajadores y registro de faltas"
+            subtitle="Gestión de trabajadores"
             btnAddText="Agregar Trabajador"
             handleAddArea={() => setIsAddWorkerOpen(true)}
             refreshData={() => Promise.resolve(refreshWorkers())}

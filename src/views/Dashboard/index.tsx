@@ -72,6 +72,7 @@ export default function Dashboard() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['dashboard']);
   const [userRole, setUserRole] = useState<string>("");
   const location = useLocation();
+  const [nameUser, setNameUser] = useState<string>("");
 
   // Obtener el rol del usuario del token
   useEffect(() => {
@@ -80,6 +81,15 @@ export default function Dashboard() {
       if (token) {
         const decodedToken: any = jwtDecode(token);
         setUserRole(decodedToken?.role || "");
+        // Obtener el nombre del usuario del token la primera letra
+        const nameParts = decodedToken?.name?.split(" ");
+        if (nameParts && nameParts.length > 0) {
+          const firstLetter = nameParts[0].charAt(0).toUpperCase();
+          const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+          setNameUser(`${firstLetter}${lastName}`);
+        } else {
+          setNameUser(decodedToken?.username || "");
+        }
       }
     } catch (error) {
       console.error("Error al decodificar el token:", error);
@@ -214,7 +224,7 @@ export default function Dashboard() {
             >
               {!isMenuOpen && (
                 <div className="flex justify-center items-center w-10 h-10 bg-white bg-opacity-10 rounded-full shadow-lg">
-                  <span className="text-lg font-bold text-white">CP</span>
+                  <span className="text-lg font-bold text-blue-500">{nameUser}</span>
                 </div>
               )}
 

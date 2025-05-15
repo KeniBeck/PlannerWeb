@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Worker, WorkerStatus } from "@/core/model/worker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -6,8 +6,6 @@ import { DataTable, TableColumn, TableAction } from "../DataTable";
 import { BsPencil, BsEye } from "react-icons/bs";
 import { HiOutlineBan, HiOutlineRefresh } from "react-icons/hi";
 import { FaHeartbeat } from 'react-icons/fa';
-
-
 
 interface WorkersListProps {
   workers: Worker[];
@@ -17,10 +15,9 @@ interface WorkersListProps {
   onActivate?: (worker: Worker) => void;
   onView?: (worker: Worker) => void;
   onDeactivate?: (worker: Worker) => void;
-  onIncapacity?: (worker: Worker) => void; // Nuevo prop
-  onEndIncapacity?: (worker: Worker) => void; // Nuevo prop
+  onIncapacity?: (worker: Worker) => void;
+  onEndIncapacity?: (worker: Worker) => void;
 }
-
 
 export function WorkersList({ 
   workers, 
@@ -33,9 +30,42 @@ export function WorkersList({
   onIncapacity,
   onEndIncapacity,
 }: WorkersListProps) {
-  // Estados para manejar la paginación interna
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  // Estados para manejar la búsqueda y la recreación del componente
+  const [searchTermState, setSearchTermState] = useState(searchTerm);
+  const [uniqueId] = useState(() => `worker-list-${Math.random().toString(36).substring(2, 9)}`);
+  const prevSearchTermRef = useRef(searchTerm);
+  
+  // Actualizar el estado interno del término de búsqueda cuando cambia el prop
+  useEffect(() => {   
+    // Detectar si podría ser un pegado (cambio grande)
+    const isPotentialPaste = 
+      searchTerm.length > 3 && 
+      prevSearchTermRef.current.length < searchTerm.length - 1;
+    
+    // Si parece un pegado, simular un cambio pequeño para forzar el re-filtrado
+    if (isPotentialPaste) {
+      console.log("Detectado posible pegado, optimizando búsqueda...");
+      
+      // Primero establecemos el valor actual
+      setSearchTermState(searchTerm);
+      
+      // Luego programamos un cambio mínimo y vuelta al valor original para forzar actualización
+      setTimeout(() => {
+        setSearchTermState(searchTerm + ' '); // Añadir espacio
+        
+        // Volver al valor original en el siguiente ciclo
+        setTimeout(() => {
+          setSearchTermState(searchTerm);
+        }, 10);
+      }, 10);
+    } else {
+      // Comportamiento normal para cambios pequeños
+      setSearchTermState(searchTerm);
+    }
+    
+    // Actualizar referencia para la próxima comparación
+    prevSearchTermRef.current = searchTerm;
+  }, [searchTerm]);
 
   // Configuración de estados de trabajador para estilos
   const getStatusConfig = (status: string) => {
@@ -87,11 +117,10 @@ export function WorkersList({
 
   // Definir acciones de la tabla
   const actions: TableAction<Worker>[] = useMemo(() => {
-    const tableActions: TableAction<Worker>[] = [
-    ];
+    const tableActions: TableAction<Worker>[] = [];
 
-     // Acción para ver detalles
-     if (onView) {
+    // Acción para ver detalles
+    if (onView) {
       tableActions.push({
         label: "Ver detalles",
         icon: <BsEye className="h-4 w-4" />,
@@ -110,8 +139,6 @@ export function WorkersList({
       });
     }
     
-   
-
     if(onActivate && onDeactivate) {
       tableActions.push({
         label: (worker) => (worker.status === WorkerStatus.DEACTIVATED ? "Activar" : "Desactivar"),
@@ -130,7 +157,6 @@ export function WorkersList({
             ? "text-green-600 hover:bg-green-50"
             : "text-orange-600 hover:bg-red-50",
       });
-
     }
 
     if (onIncapacity) {
@@ -139,28 +165,24 @@ export function WorkersList({
         icon: <FaHeartbeat className="h-4 w-4" />,
         onClick: onIncapacity,
         className: "text-green-600",
-        // Solo mostrar para trabajadores disponibles o asignados
         hidden: (worker) => 
           worker.status === WorkerStatus.DEACTIVATED || 
           worker.status === WorkerStatus.INCAPACITATED,
       });
     }
     
-    // Acción para finalizar incapacidad
     if (onEndIncapacity) {
       tableActions.push({
         label: "Finalizar incapacidad",
         icon: <FaHeartbeat className="h-4 w-4" />,
         onClick: onEndIncapacity,
         className: "text-amber-600",
-        // Solo mostrar para trabajadores incapacitados
         hidden: (worker) => worker.status !== WorkerStatus.INCAPACITATED,
       });
     }
     
-    
     return tableActions;
-  }, [onEdit, onView, onActivate, onDeactivate,  onIncapacity, onEndIncapacity]);
+  }, [onEdit, onView, onActivate, onDeactivate, onIncapacity, onEndIncapacity]);
 
   // Definir columnas usando useMemo
   const columns: TableColumn<Worker>[] = useMemo(
@@ -218,38 +240,50 @@ export function WorkersList({
     []
   );
 
-  // Manejadores para la paginación interna
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  // Filtrar trabajadores según término de búsqueda
+  const filteredWorkers = useMemo(() => {
+    if (!searchTermState) return workers;
+    
+    const term = searchTermState.toLowerCase().trim();
+    return workers.filter(worker => {
+      return (
+        worker.name?.toLowerCase().includes(term) ||
+        worker.code?.toLowerCase().includes(term) ||
+        worker.dni?.toLowerCase().includes(term) ||
+        worker.phone?.includes(term) ||
+        worker.jobArea?.name?.toLowerCase().includes(term)
+      );
+    });
+  }, [workers, searchTermState]);
 
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset a la primera página al cambiar items por página
-  };
+  // Creamos un nuevo componente cada vez que cambia el término de búsqueda
+  // Con este enfoque, es imposible que la tabla mantenga su estado de paginación
+  const tableKey = `${uniqueId}-${searchTermState || 'all'}-${new Date().getTime()}`;
 
   return (
     <div className="w-full">
+      {/* Aquí re-creamos completamente el DataTable con cada cambio */}
       <DataTable
-        data={workers || []}
+        key={tableKey}
+        data={filteredWorkers || []}
         columns={columns}
         actions={actions}
-        itemsPerPage={itemsPerPage}
+        itemsPerPage={10} // Valor fijo
         itemsPerPageOptions={[10, 20, 30, 50]}
         itemName="trabajadores"
         isLoading={isLoading}
         emptyMessage={
-          searchTerm
-            ? `No se encontraron trabajadores para "${searchTerm}"`
+          searchTermState
+            ? `No se encontraron trabajadores para "${searchTermState.trim()}"`
             : "No hay trabajadores registrados"
         }
         className="mb-4"
         initialSort={{ key: "code", direction: "asc" }}
         externalPagination={false}
-        onPageChange={handlePageChange}
-        onItemsPerPageChange={handleItemsPerPageChange}
-        currentPage={currentPage}
-        totalItems={workers?.length || 0}
+        onPageChange={() => {}} // No-op
+        onItemsPerPageChange={() => {}} // No-op
+        currentPage={1} // Siempre página 1
+        totalItems={filteredWorkers?.length || 0}
         emptyIcon={
           <svg
             className="h-12 w-12 text-gray-300 mb-3"
