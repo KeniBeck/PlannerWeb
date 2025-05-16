@@ -1,45 +1,17 @@
 import api from "./client/axiosConfig";
 import { handleApiError } from "@/lib/utils/apiUtils";
+import { Feeding, FeedingFilterParams } from "./interfaces/feedingDTO";
 
-export interface Feeding {
-   id: number;
-  id_worker: number;
-  id_operation: number;
-  dateFeeding: string;
-  type: string; // 'BREAKFAST', 'LUNCH', 'DINNER', 'MIDNIGHT'
-  createAt: string;
-  updateAt: string;
-  // Referencias opcionales que podrían ser cargadas por relación
-  worker?: {
-    id: number;
-    name: string;
-    // otros campos del trabajador...
+export interface PaginatedFeedingResponse {
+  items: Feeding[];
+  pagination: {
+    totalItems: number;
+    currentPage: number;
+    itemsPerPage: number;
+    totalPages: number;
   };
-  operation?: {
-    id: number;
-    jobArea?: {
-      name: string;
-    };
-    client?: {
-      name: string;
-    };
-    motorShip?: string;
-  };
-  createdAt: string;
-  status: string;
-  workerDetails: any;
+  nextPages?: Array<{ pageNumber: number; items: Feeding[] }>;
 }
-
-export interface FeedingFilterParams {
-  startDate?: string;
-  endDate?: string;
-  operationId?: number;
-  workerId?: number;
-  type?: string;
-  status?: string;
-  search?: string;
-}
-
 class FeedingService {
   async getAllFeedings(params?: FeedingFilterParams): Promise<Feeding[]> {
     try {
@@ -47,7 +19,7 @@ class FeedingService {
       const queryParams = new URLSearchParams();
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
+          if (value !== undefined && value !== null && value !== "") {
             queryParams.append(key, value.toString());
           }
         });
@@ -57,6 +29,35 @@ class FeedingService {
       return response.data;
     } catch (error) {
       handleApiError(error);
+      throw error;
+    }
+  }
+
+  async getPaginatedFeeding(
+    page = 1,
+    limit = 10,
+    filters?: FeedingFilterParams
+  ): Promise<PaginatedFeedingResponse> {
+    try {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (filters) {
+        // Añadir solo los filtros que existen
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            queryParams.append(key, value.toString());
+          }
+        });
+      }
+
+      const url = `/feeding/paginated?${queryParams.toString()}`;
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error("Error obteniendo alimentaciones:", error);
       throw error;
     }
   }
@@ -77,7 +78,7 @@ class FeedingService {
     type: string;
   }): Promise<Feeding> {
     try {
-      const response = await api.post('/feeding', data);
+      const response = await api.post("/feeding", data);
       return response.data;
     } catch (error) {
       handleApiError(error);
