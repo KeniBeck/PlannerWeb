@@ -21,7 +21,7 @@ import Operation from "./operation/Operation";
 import Users from "./users/Users";
 import { GiExitDoor } from "react-icons/gi";
 import Profile from "./profile/Profile";
-import Reports from "./reports/reports";
+import Graphics from "./graphics/Graphics";
 import DashboardHome from "./DashboardHome";
 import Faults from "./faults/Faults";
 import { jwtDecode } from "jwt-decode";
@@ -126,7 +126,7 @@ export default function Dashboard() {
       items: [
         { path: '/dashboard/operations', label: 'Registro de Operaciones', icon: <MdAssignment size={18} /> },
         { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
-        { path: '/dashboard/reports', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
+        { path: '/dashboard/graphics', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
         { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
         { path: '/dashboard/feedings', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
       ]
@@ -459,12 +459,12 @@ export default function Dashboard() {
               }
             />
             <Route
-              path="/reports"
+              path="/graphics"
               element={
                 <LayeredProviders
                   features={[Feature.OPERATION, Feature.AREAS, Feature.WORKERS]}
                 >
-                  <Reports />
+                  <Graphics />
                 </LayeredProviders>
               }
             />
