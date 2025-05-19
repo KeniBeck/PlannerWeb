@@ -1,3 +1,4 @@
+import { globalServiceCache } from "@/lib/utils/requestUtils";
 import api from "./client/axiosConfig";
 import { User } from "@/core/model/user";
 
@@ -8,13 +9,12 @@ class UserService {
   // Obtener todos los usuarios
   async getUsers(): Promise<User[]> {
     try {
-
-      // En producción, usar la API
+      return await globalServiceCache.getOrFetch("user:all", async () => {
       const response = await api.get(`${this.baseUrl}/user`);
       return response.data.map((user: any) => ({
         ...user,
         cargo: user.occupation
-      }));
+      }));});
     } catch (error) {
       console.error("Error fetching users:", error);
       throw error;

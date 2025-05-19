@@ -25,6 +25,7 @@ import Reports from "./reports/reports";
 import DashboardHome from "./DashboardHome";
 import Faults from "./faults/Faults";
 import { jwtDecode } from "jwt-decode";
+import Feeding from "./feedings/Feeding";
 
 
 const COLORS = {
@@ -71,6 +72,7 @@ export default function Dashboard() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['dashboard']);
   const [userRole, setUserRole] = useState<string>("");
   const location = useLocation();
+  const [nameUser, setNameUser] = useState<string>("");
 
   // Obtener el rol del usuario del token
   useEffect(() => {
@@ -79,6 +81,15 @@ export default function Dashboard() {
       if (token) {
         const decodedToken: any = jwtDecode(token);
         setUserRole(decodedToken?.role || "");
+        // Obtener el nombre del usuario del token la primera letra
+        const nameParts = decodedToken?.name?.split(" ");
+        if (nameParts && nameParts.length > 0) {
+          const firstLetter = nameParts[0].charAt(0).toUpperCase();
+          const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+          setNameUser(`${firstLetter}${lastName}`);
+        } else {
+          setNameUser(decodedToken?.username || "");
+        }
       }
     } catch (error) {
       console.error("Error al decodificar el token:", error);
@@ -105,6 +116,7 @@ export default function Dashboard() {
       setExpandedCategories([...expandedCategories, category]);
     }
   };
+
   
   // Define las categorías del menú y sus elementos
   const menuCategories: MenuCategory[] = [
@@ -112,19 +124,11 @@ export default function Dashboard() {
       title: 'Operaciones',
       icon: <MdAssignment size={20} />,
       items: [
-        { path: '/dashboard/operations', label: 'Gestión de operaciones', icon: <MdAssignment size={18} /> },
+        { path: '/dashboard/operations', label: 'Registro de Operaciones', icon: <MdAssignment size={18} /> },
         { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
         { path: '/dashboard/reports', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
         { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
-        { path: '/dashboard/food', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
-      ]
-    },
-    {
-      title: 'Seguridad',
-      icon: <MdSecurity size={20} />,
-      requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
-      items: [
-        { path: '/dashboard/users', label: 'Usuarios', icon: <AiOutlineUser size={18} /> }
+        { path: '/dashboard/feedings', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
       ]
     },
     {
@@ -135,6 +139,14 @@ export default function Dashboard() {
         { path: '/dashboard/clients', label: 'Clientes', icon: <BsBuildingsFill size={18} />, requiredRole: "SUPERADMIN" },
         { path: '/dashboard/areas', label: 'Áreas', icon: <PiMapPinSimpleAreaBold size={18} />, requiredRole: "SUPERADMIN" },
         { path: '/dashboard/services', label: 'Servicios', icon: <MdHomeRepairService size={18} />, requiredRole: "SUPERADMIN" }
+      ]
+    },
+    {
+      title: 'Seguridad',
+      icon: <MdSecurity size={20} />,
+      requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
+      items: [
+        { path: '/dashboard/users', label: 'Usuarios', icon: <AiOutlineUser size={18} /> }
       ]
     }
   ];
@@ -212,7 +224,7 @@ export default function Dashboard() {
             >
               {!isMenuOpen && (
                 <div className="flex justify-center items-center w-10 h-10 bg-white bg-opacity-10 rounded-full shadow-lg">
-                  <span className="text-lg font-bold text-white">CP</span>
+                  <span className="text-lg font-bold text-blue-500">{nameUser}</span>
                 </div>
               )}
 
@@ -284,7 +296,7 @@ export default function Dashboard() {
                     {/* Cabecera de la categoría */}
                     <button
                       onClick={() => toggleCategory(category.title.toLowerCase())}
-                      className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all
+                      className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all cursor-pointer
                         ${isMenuOpen ? "justify-between" : "justify-center"} 
                         ${hasActiveChild ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-100"}`}
                     >
@@ -412,6 +424,14 @@ export default function Dashboard() {
               }
             />
             <Route
+  path="/feedings"
+  element={
+    <LayeredProviders features={[Feature.OPERATION, Feature.WORKERS, Feature.FEEDINGS]}>
+      <Feeding />
+    </LayeredProviders>
+  }
+/>
+            <Route
               path="/workers"
               element={
                 <LayeredProviders
@@ -454,7 +474,7 @@ export default function Dashboard() {
               path="/services"
               element={
                 <ProtectedRoute
-                  requiredRole="ADMON_PLATFORM"
+                  requiredRole="SUPERADMIN"
                   element={
                     <LayeredProviders features={[Feature.SERVICES]}>
                       <Services />
@@ -472,21 +492,13 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-            <Route
-              path="/food"
-              element={
-                <div className="text-center p-10 text-gray-600">
-                  Módulo de Alimentación en desarrollo
-                </div>
-              }
-            />
+           
             
-            {/* Rutas protegidas para la categoría Maestra */}
             <Route
               path="/clients"
               element={
                 <ProtectedRoute
-                  requiredRole="ADMON_PLATFORM"
+                  requiredRole="SUPERADMIN"
                   element={
                     <LayeredProviders features={[Feature.CLIENTS]}>
                       <Clients />
@@ -507,7 +519,7 @@ export default function Dashboard() {
               path="/areas"
               element={
                 <ProtectedRoute
-                  requiredRole="ADMON_PLATFORM"
+                  requiredRole="SUPERADMIN"
                   element={
                     <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
                       <Areas />
