@@ -13,6 +13,8 @@ import { FaultFilterBar } from "@/components/custom/filter/FaultFilterBar";
 import { useFaultFilters } from "@/lib/hooks/useFaultsFilters";
 import { ActiveFaultFilters } from "@/components/custom/filter/ActivatedFaultFiltes";
 import { useState } from "react";
+import { useFaultsExport } from "@/lib/hooks/useFaultsExport";
+import { ShipLoader } from "@/components/dialog/Loading";
 
 export default function Faults() {
   // Obtener funciones y datos del contexto
@@ -26,6 +28,9 @@ export default function Faults() {
   } = useFaults();
 
   const { workers } = useWorkers();
+  
+  // Usar el nuevo hook de exportación
+  const { exportFaults, isExporting } = useFaultsExport();
 
   // Adapter function to handle type conversion
   const setFiltersAdapter = (faultFilterDTO: any) => {
@@ -73,6 +78,11 @@ export default function Faults() {
 
   // Estado para el diálogo de añadir falta
   const [isAddFaultOpen, setIsAddFaultOpen] = useState(false);
+
+  // Manejador para la exportación personalizada
+  const handleExport = () => {
+    exportFaults(filters, searchTerm);
+  };
 
   // Manejador para ver detalles de una falta
   const handleViewFault = (fault: Fault) => {
@@ -162,70 +172,76 @@ export default function Faults() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="rounded-xl shadow-md">
-        {/* Encabezado */}
-        <SectionHeader
-          title="Registro de Faltas"
-          subtitle="Gestión de faltas y amonestaciones de trabajadores"
-          btnAddText="Registrar Nueva Falta"
-          handleAddArea={() => setIsAddFaultOpen(true)}
-          refreshData={() => Promise.resolve(refreshFaults())}
-          loading={isLoading}
-          exportData={faults} // Usar los datos del contexto para exportación
-          exportFileName="registro_faltas"
-          exportColumns={faultExportColumns}
-          currentView="faults"
-        />
+    <>
+      {/* Mostrar loader durante la exportación */}
+      {isExporting && <ShipLoader/>}
 
-        {/* Barra de filtros */}
-        <FaultFilterBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          startDate={startDate} // Añadir estas propiedades
-          endDate={endDate} // para las fechas
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
-          isSearching={isSearching}
-          applyFilters={applyFilters}
-          clearAllFilters={clearAllFilters}
-          hasActiveFilters={hasActiveFilters}
-        />
-      </div>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="rounded-xl shadow-md">
+          {/* Encabezado */}
+          <SectionHeader
+            title="Registro de Faltas"
+            subtitle="Gestión de faltas y amonestaciones de trabajadores"
+            btnAddText="Registrar Nueva Falta"
+            handleAddArea={() => setIsAddFaultOpen(true)}
+            refreshData={() => Promise.resolve(refreshFaults())}
+            loading={isLoading}
+            exportData={faults} // Estos datos realmente no se utilizarán por el customExportFunction
+            exportFileName="registro_faltas"
+            exportColumns={faultExportColumns}
+            currentView="faults"
+            customExportFunction={handleExport}
+          />
 
-      {/* Tabla de faltas */}
-      <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div className="bg-white">
-          <FaultsList
-            filteredFaults={faults} // Pasar los datos del contexto (ya filtrados por el backend)
+          {/* Barra de filtros */}
+          <FaultFilterBar
             searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            typeFilter={typeFilter}
+            setTypeFilter={setTypeFilter}
+            startDate={startDate}
+            endDate={endDate}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+            isSearching={isSearching}
+            applyFilters={applyFilters}
+            clearAllFilters={clearAllFilters}
+            hasActiveFilters={hasActiveFilters}
           />
         </div>
+
+        {/* Tabla de faltas */}
+        <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
+          <div className="bg-white">
+            <FaultsList
+              filteredFaults={faults}
+              searchTerm={searchTerm}
+            />
+          </div>
+        </div>
+
+        {/* Indicador de filtros activos */}
+        <ActiveFaultFilters
+          hasActiveFilters={hasActiveFilters}
+          searchTerm={searchTerm}
+          typeFilter={typeFilter}
+          clearAllFilters={clearAllFilters}
+          setSearchTerm={setSearchTerm}
+          setTypeFilter={setTypeFilter}
+          startDateFilter={startDate}
+          endDateFilter={endDate}
+          setStartDateFilter={setStartDate}
+          setEndDateFilter={setEndDate}
+        />
+
+        {/* Diálogo para añadir nueva falta */}
+        <AddFaultDialog
+          open={isAddFaultOpen}
+          onOpenChange={setIsAddFaultOpen}
+          onSave={handleSaveFault}
+          workers={workers}
+        />
       </div>
-
-      {/* Indicador de filtros activos */}
-      <ActiveFaultFilters
-        hasActiveFilters={hasActiveFilters}
-        searchTerm={searchTerm}
-        typeFilter={typeFilter}
-        clearAllFilters={clearAllFilters}
-        setSearchTerm={setSearchTerm}
-        setTypeFilter={setTypeFilter}
-        startDateFilter={startDate} // Mapear propiedades del hook a los
-        endDateFilter={endDate} // nombres esperados por ActiveFaultFilters
-        setStartDateFilter={setStartDate}
-        setEndDateFilter={setEndDate}
-      />
-
-      {/* Diálogo para añadir nueva falta */}
-      <AddFaultDialog
-        open={isAddFaultOpen}
-        onOpenChange={setIsAddFaultOpen}
-        onSave={handleSaveFault}
-        workers={workers}
-      />
-    </div>
+    </>
   );
 }

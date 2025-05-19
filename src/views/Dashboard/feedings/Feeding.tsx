@@ -8,6 +8,8 @@ import { BsEye } from "react-icons/bs";
 import type { Feeding } from "@/services/interfaces/feedingDTO"; 
 import { ViewFeedingDialog } from "@/components/ui/feedings/ViewFeedingDialog";
 import { useFeeding } from "@/lib/hooks/useFeeding";
+import { useFeedingExport } from "@/lib/hooks/useFeedingExport";
+import { ShipLoader } from "@/components/dialog/Loading";
 
 export default function Feeding() {
   const {
@@ -37,6 +39,15 @@ export default function Feeding() {
     applyDateFilters,
     clearAllFilters
   } = useFeeding();
+
+  // Usar el hook de exportación
+  const { exportFeedings, isExporting } = useFeedingExport(getWorkerNameById);
+
+  // Función para manejar la exportación
+  const handleExport = () => {
+    console.log('[Feeding] Iniciando exportación con filtros:', filters);
+    exportFeedings(filters);
+  };
 
   // Definir las columnas para la tabla
   const columns: TableColumn<any>[] = useMemo(
@@ -163,7 +174,7 @@ export default function Feeding() {
       { header: "ID", field: "id" },
       {
         header: "Trabajador",
-        field: "id_worker",
+        field: "worker.name",
         value: (feeding) => getWorkerNameById(feeding.worker.name)
       },
       { header: "Operación ID", field: "id_operation" },
@@ -212,6 +223,9 @@ export default function Feeding() {
 
   return (
     <>
+      {/* Mostrar indicador de carga durante la exportación */}
+      {isExporting && <ShipLoader />}
+    
       <div className="container mx-auto py-6 space-y-6">
         <div className="rounded-xl shadow-md">
           <SectionHeader
@@ -220,12 +234,13 @@ export default function Feeding() {
             btnAddText=""
             handleAddArea={() => { }}
             refreshData={() => Promise.resolve(refreshFeedings())}
-            loading={isLoading}
-            exportData={filteredFeedings}
+            loading={isLoading || isExporting}
+            exportData={filteredFeedings} // Estos datos no se usarán con customExportFunction
             exportFileName="registros_alimentacion"
             exportColumns={exportColumns}
             currentView="food"
             showAddButton={false}
+            customExportFunction={handleExport} // Usamos nuestra función personalizada
           />
 
           {/* Filtros */}
