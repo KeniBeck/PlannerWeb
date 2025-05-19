@@ -45,6 +45,7 @@ export default function Graphics() {
 
      const hourlyChartOptions = {
         responsive: true,
+         maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false
@@ -86,12 +87,21 @@ export default function Graphics() {
                     display: true,
                     text: 'Cantidad de trabajadores'
                 },
-                ticks: {
-                    stepSize: 1,
-                    callback: function(value: number) {
-                        return value === 0 ? '0' : value.toString();
-                    }
+                max: (() => {
+                // Calcular el valor máximo del eje y añadirle 1
+                const maxValue = hourlyDistributionChartData.datasets?.[0]?.data?.reduce(
+                    (max: number, current: number) => Math.max(max, current),
+                    0
+                ) || 0;
+                return maxValue + 1;  // Añadir 1 al máximo
+            })(),
+            ticks: {
+                stepSize: 1,
+                precision: 0,  // Solo mostrar números enteros
+                callback: function(value: number) {
+                    return value === 0 ? '0' : value.toString();
                 }
+            }
 
             },
             x: {
@@ -100,10 +110,12 @@ export default function Graphics() {
             },
             ticks: {
                 maxRotation: 0, 
-                autoSkip: true 
+                autoSkip: true,
+                autoSkipPadding: 10 
             }
         },
-        }
+        },
+        
     };
 
 
@@ -390,13 +402,13 @@ export default function Graphics() {
           {/* Nueva gráfica de distribución de trabajadores por hora */}
           <ChartCard
             title="Distribución de Trabajadores por Hora"
-            total={{
-              value: hourlyDistributionChartData.datasets?.[0]?.data?.reduce(
-                (a: number, b: number) => a + b,
-                0
-              ) || 0,
-              label: "asignaciones",
-            }}
+            // total={{
+            //   value: hourlyDistributionChartData.datasets?.[0]?.data?.reduce(
+            //     (a: number, b: number) => a + b,
+            //     0
+            //   ) || 0,
+            //   label: "asignaciones",
+            // }}
             icon={<FaClock className="w-full h-full" />}
             iconBgColor="bg-indigo-50"
             iconColor="text-indigo-500"

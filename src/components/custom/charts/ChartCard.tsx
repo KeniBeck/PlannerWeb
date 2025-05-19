@@ -238,7 +238,6 @@ const ChartCard: React.FC<ChartCardProps> = ({
                 data={chartData as ChartData<"line">}
                 options={options as ChartOptions<"line">}
                 key={generateChartId()}
-
               />
             )}
             {chartType === "pie" && (
