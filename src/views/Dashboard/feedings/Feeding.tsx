@@ -1,17 +1,19 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { FeedingFilterBar } from "@/components/ui/feedings/FeedingFilterBar";
 import { BsEye } from "react-icons/bs";
-import type { Feeding } from "@/services/feedingService";
+import type { Feeding } from "@/services/interfaces/feedingDTO"; 
 import { ViewFeedingDialog } from "@/components/ui/feedings/ViewFeedingDialog";
-import {useFeeding} from "@/lib/hooks/useFeeding";
-
+import { useFeeding } from "@/lib/hooks/useFeeding";
+import { useFeedingExport } from "@/lib/hooks/useFeedingExport";
+import { ShipLoader } from "@/components/dialog/Loading";
 
 export default function Feeding() {
   const {
+    feedings,
     filteredFeedings,
     isLoading,
     loadingOperations,
@@ -25,8 +27,27 @@ export default function Feeding() {
     refreshFeedings,
     handleViewFeeding,
     getWorkerNameById,
-    workers,
+    // Propiedades de paginación
+    totalItems,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    setPage,
+    setItemsPerPage,
+    // Funciones para filtros
+    applyFeedingTypeFilter,
+    applyDateFilters,
+    clearAllFilters
   } = useFeeding();
+
+  // Usar el hook de exportación
+  const { exportFeedings, isExporting } = useFeedingExport(getWorkerNameById);
+
+  // Función para manejar la exportación
+  const handleExport = () => {
+    console.log('[Feeding] Iniciando exportación con filtros:', filters);
+    exportFeedings(filters);
+  };
 
   // Definir las columnas para la tabla
   const columns: TableColumn<any>[] = useMemo(
@@ -50,10 +71,7 @@ export default function Feeding() {
         accessor: "id_operation",
         cell: (feeding) => (
           <div className="flex items-center">
-            <button
-            >
-              #{feeding.id_operation}
-            </button>
+            <span>#{feeding.id_operation}</span>
           </div>
         ),
       },
@@ -134,8 +152,9 @@ export default function Feeding() {
             : "N/A",
       },
     ],
-    [workers]
+    []
   );
+  
   // Definir acciones para cada registro
   const actions: TableAction<Feeding>[] = useMemo(
     () => [
@@ -155,8 +174,8 @@ export default function Feeding() {
       { header: "ID", field: "id" },
       {
         header: "Trabajador",
-        field: "id_worker",
-        value: (feeding) => getWorkerNameById(feeding.id_worker)
+        field: "worker.name",
+        value: (feeding) => getWorkerNameById(feeding.worker.name)
       },
       { header: "Operación ID", field: "id_operation" },
       {
@@ -199,11 +218,14 @@ export default function Feeding() {
             : "N/A",
       },
     ],
-    [workers]
+    []
   );
 
   return (
     <>
+      {/* Mostrar indicador de carga durante la exportación */}
+      {isExporting && <ShipLoader />}
+    
       <div className="container mx-auto py-6 space-y-6">
         <div className="rounded-xl shadow-md">
           <SectionHeader
@@ -212,12 +234,13 @@ export default function Feeding() {
             btnAddText=""
             handleAddArea={() => { }}
             refreshData={() => Promise.resolve(refreshFeedings())}
-            loading={isLoading}
-            exportData={filteredFeedings}
+            loading={isLoading || isExporting}
+            exportData={filteredFeedings} // Estos datos no se usarán con customExportFunction
             exportFileName="registros_alimentacion"
             exportColumns={exportColumns}
             currentView="food"
             showAddButton={false}
+            customExportFunction={handleExport} // Usamos nuestra función personalizada
           />
 
           {/* Filtros */}
@@ -226,6 +249,9 @@ export default function Feeding() {
             setSearchTerm={setSearchTerm}
             filters={filters}
             setFilters={setFilters}
+            applyTypeFilter={applyFeedingTypeFilter}
+            applyDateFilters={applyDateFilters}
+            clearAllFilters={clearAllFilters}
           />
         </div>
 
@@ -236,19 +262,24 @@ export default function Feeding() {
               data={filteredFeedings}
               columns={columns}
               actions={actions}
-              isLoading={isLoading || loadingOperations} // Incluir loadingOperations para reflejar ambos estados de carga
-              itemsPerPage={10}
+              isLoading={isLoading || loadingOperations}
+              itemsPerPage={itemsPerPage}
               itemName="registros de alimentación"
-              initialSort={{ key: "createAt", direction: "desc" }} // Cambiar de createdAt a createAt para que coincida con tu modelo
+              initialSort={{ key: "createAt", direction: "desc" }}
               emptyMessage={
-                searchTerm
-                  ? `No se encontraron registros para "${searchTerm}"`
+                filters.search
+                  ? `No se encontraron registros para "${filters.search}"`
                   : "No hay registros de alimentación"
               }
+              // Estas propiedades son para la paginación
+              totalItems={totalItems}
+              currentPage={currentPage}
+              onPageChange={setPage}
             />
           </div>
         </div>
       </div>
+      
       {/* Dialog para ver detalles */}
       <ViewFeedingDialog
         open={isViewDialogOpen}

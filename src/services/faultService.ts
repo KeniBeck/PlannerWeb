@@ -1,13 +1,31 @@
 import { Fault, PaginatedResponse } from "@/core/model/fault";
 import api from "./client/axiosConfig";
 import { Incidence } from "@/components/ui/workers/WorkerIncidencesList";
+import { FaultFilterDTO } from "./interfaces/faultDTo";
 
 class FaultService {
-  async getPaginatedFaults(page = 1, limit = 10): Promise<PaginatedResponse> {
+  async getPaginatedFaults(
+    page = 1,
+    limit = 10,
+    filters?: FaultFilterDTO
+  ): Promise<PaginatedResponse> {
     try {
-      const response = await api.get(
-        `/called-attention/paginated?page=${page}&limit=${limit}`
-      );
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (filters) {
+        // Añadir solo los filtros que existen
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            queryParams.append(key, value.toString());
+          }
+        });
+      }
+
+      const url = `/called-attention/paginated?${queryParams.toString()}`;
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       console.error("Error obteniendo faltas:", error);
