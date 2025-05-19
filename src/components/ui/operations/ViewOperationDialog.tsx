@@ -370,7 +370,15 @@ export function ViewOperationDialog({
       // Construir el body para la API
       const body = {
         workers: {
-          disconnect: workerIds.map((id: any) => ({ id })),
+          update: [
+            {
+              workerIds: workerIds,
+              dateStart: isIndividualWorkers ? operationStartDate : formValues.startDate,
+              timeStart: isIndividualWorkers ? operationStartTime : formValues.startTime,
+              dateEnd: formValues.endDate,
+              timeEnd: formValues.endTime,
+            }
+          ]
         }
       };
   
