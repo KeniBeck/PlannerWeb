@@ -1,24 +1,32 @@
-import { useState } from 'react';
-import { Operation as OperationModel } from '@/core/model/operation';
-import { operationService } from '@/services/operationService';
-import { OperationCreateData } from '@/services/interfaces/operationDTO';
-import Swal from 'sweetalert2';
+import { useState } from "react";
+import { Operation as OperationModel } from "@/core/model/operation";
+import { operationService } from "@/services/operationService";
+import { OperationCreateData } from "@/services/interfaces/operationDTO";
+import Swal from "sweetalert2";
 import { formatOperationForEdit } from "@/lib/utils/operationHelpers";
 
 interface UseOperationManagementProps {
   refreshOperations: () => Promise<void>;
-  updateOperation?: (id: number | string, data: OperationCreateData) => Promise<any>;
+  updateOperation?: (
+    id: number | string,
+    data: OperationCreateData
+  ) => Promise<any>;
 }
 
-export const useOperationManagement = ({ 
-  refreshOperations, 
-  updateOperation 
+export const useOperationManagement = ({
+  refreshOperations,
+  updateOperation,
 }: UseOperationManagementProps) => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedOperation, setSelectedOperation] = useState<OperationModel | undefined>(undefined);
-  const [operationToActivate, setOperationToActivate] = useState<OperationModel | null>(null);
-  const [viewOperation, setViewOperation] = useState<OperationModel | null>(null);
+  const [selectedOperation, setSelectedOperation] = useState<
+    OperationModel | undefined
+  >(undefined);
+  const [operationToActivate, setOperationToActivate] =
+    useState<OperationModel | null>(null);
+  const [viewOperation, setViewOperation] = useState<OperationModel | null>(
+    null
+  );
 
   // Manejadores para acciones de operaciones
   const handleEditOperation = (operation: any) => {
@@ -38,30 +46,57 @@ export const useOperationManagement = ({
 
   const handleSave = async (data: any, isEdit: boolean) => {
     try {
-      // Formatear los datos antes de enviar
-      const formattedData = {
-        ...data,
-        id: isEdit ? data.id : undefined,
+      // Crear un objeto que solo contenga los campos necesarios para el backend
+      const formattedData: OperationCreateData = {
+        status: data.status || "PENDING",
         zone: parseInt(data.zone),
-        id_client: parseInt(data.id_client),
-        id_area: parseInt(data.id_area),
-        id_task: parseInt(data.id_task),
+        motorShip: data.motorShip || "",
         dateStart: data.dateStart,
-        timeStart: data.timeStart || data.timeStrat,
+        timeStrat: data.timeStrat || data.timeStart, // Priorizar timeStrat
         dateEnd: data.dateEnd || null,
         timeEnd: data.timeEnd || null,
-        status: data.status || "PENDING",
-        workerGroups: data.workerGroups || [],
+        id_area: parseInt(data.id_area),
+        id_task: parseInt(data.id_task),
+        id_client: parseInt(data.id_client),
         inChargedIds: data.inChargedIds || [],
-        removedWorkerIds: data.removedWorkerIds || [],
-        removedWorkerGroupIds: data.removedWorkerGroupIds || [],
+        workerIds: [], // Será rellenado a partir de los grupos
       };
+
+      // Normalizar grupos para evitar duplicación y usar el formato correcto
+      if (data.groups && data.groups.length > 0) {
+        formattedData.groups = data.groups.map((group: any) => ({
+          workerIds: group.workerIds || group.workers || [],
+          dateStart: group.dateStart || null,
+          dateEnd: group.dateEnd || null,
+          timeStart: group.timeStart || null,
+          timeEnd: group.timeEnd || null,
+        }));
+      }
+
+      // Añadir campos solo para actualización
+      if (isEdit) {
+        formattedData.id = data.id;
+
+        if (data.removedWorkerIds && data.removedWorkerIds.length > 0) {
+          (formattedData as any).removedWorkerIds = data.removedWorkerIds;
+        }
+      }
+
+      // Eliminar campos no utilizados o con valores null/undefined
+      Object.keys(formattedData).forEach((key) => {
+        if (
+          formattedData[key as keyof OperationCreateData] === null ||
+          formattedData[key as keyof OperationCreateData] === undefined
+        ) {
+          delete formattedData[key as keyof OperationCreateData];
+        }
+      });
 
       if (isEdit) {
         if (updateOperation) {
-          await updateOperation(data.id, formattedData as OperationCreateData);
+          await updateOperation(data.id, formattedData);
         } else {
-          await operationService.updateOperation(data.id, formattedData as OperationCreateData);
+          await operationService.updateOperation(data.id, formattedData);
         }
       } else {
         await operationService.createOperation(formattedData);
@@ -124,6 +159,6 @@ export const useOperationManagement = ({
     handleViewOperation,
     handleDeleteOperation,
     handleSave,
-    confirmDelete
+    confirmDelete,
   };
 };

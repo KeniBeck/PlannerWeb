@@ -139,8 +139,7 @@ export function useFeedingExport(getWorkerNameById: (id: number) => string) {
     feedings.forEach((feeding: Feeding) => {
       rowIsEven = !rowIsEven;
       
-      // Obtener el nombre del trabajador
-      const workerName = getWorkerNameById(feeding.id_worker);
+    
       
       // Mapear tipo de alimentación a texto legible
       let feedingType = 'Desconocido';
@@ -160,10 +159,12 @@ export function useFeedingExport(getWorkerNameById: (id: number) => string) {
         default:
           feedingType = feeding.type || 'Desconocido';
       }
+
+      console.log(feeding)
       
       const rowData = [
         feeding.id,
-        workerName,
+        feeding.worker?.name || 'N/A',
         feeding.id_operation,
         feeding.operation?.task?.name || 'Sin servicio',
         feeding.operation?.client?.name || 'Sin cliente',
