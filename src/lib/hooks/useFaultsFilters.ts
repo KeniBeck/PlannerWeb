@@ -15,105 +15,41 @@ interface FaultFiltersProps {
 }
 
 export function useFaultFilters({ setFilters, setPage, filters = {} }: FaultFiltersProps) {
-  // Estados para UI
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [startDateFilter, setStartDateFilter] = useState<string>("");
-  const [endDateFilter, setEndDateFilter] = useState<string>("");
+  // Estados para UI - Simplificado
+  const [searchTerm, setSearchTerm] = useState(filters?.search || "");
+  const [typeFilter, setTypeFilter] = useState<string>(filters?.type || "all");
+  const [startDateFilter, setStartDateFilter] = useState<string>(filters?.startDate || "");
+  const [endDateFilter, setEndDateFilter] = useState<string>(filters?.endDate || "");
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Flag para evitar aplicar filtros automáticamente en el primer render
+  const initialLoadRef = useRef(false);
+  
+  // Referencia para almacenar el valor actual del input de búsqueda
+  const inputSearchRef = useRef(searchTerm);
 
-  // Referencias para almacenar valores anteriores
-  const prevTypeFilterRef = useRef<string>("all");
-  const prevStartDateRef = useRef<string>("");
-  const prevEndDateRef = useRef<string>("");
-  const initializedRef = useRef<boolean>(false);
+  // Manejar cambios en el input de búsqueda - Solo actualiza la referencia
+  const handleSearchInputChange = (value: string) => {
+    inputSearchRef.current = value;
+    setSearchTerm(value); // Actualizamos el estado visual pero NO aplicamos filtros
+  };
 
-  // Inicializar estados desde filtros existentes (solo una vez)
-  useEffect(() => {
-    if (!initializedRef.current && filters) {
-      if (filters.search) setSearchTerm(filters.search);
-      if (filters.type) setTypeFilter(filters.type);
-      if (filters.startDate) setStartDateFilter(filters.startDate);
-      if (filters.endDate) setEndDateFilter(filters.endDate);
-      
-      prevTypeFilterRef.current = filters.type || "all";
-      prevStartDateRef.current = filters.startDate || "";
-      prevEndDateRef.current = filters.endDate || "";
-      
-      initializedRef.current = true;
-    }
-  }, [filters]);
-
-  // Efecto para aplicar filtros cuando cambian (similar a useOperationFilters)
-  useEffect(() => {
-    if (!initializedRef.current) return; // No aplicar en la inicialización
-
-    // Verificar si algún filtro cambió para evitar bucles
-    const typeChanged = typeFilter !== prevTypeFilterRef.current;
-    const startDateChanged = startDateFilter !== prevStartDateRef.current;
-    const endDateChanged = endDateFilter !== prevEndDateRef.current;
-
-    if (typeChanged || startDateChanged || endDateChanged) {
-      console.log("[FaultFilters] Cambios en filtros detectados");
-      setIsSearching(true);
-
-      // Actualizar referencias a valores anteriores
-      prevTypeFilterRef.current = typeFilter;
-      prevStartDateRef.current = startDateFilter;
-      prevEndDateRef.current = endDateFilter;
-
-      // Crear objeto de filtros limpio
-      const newFilters: Filters = {};
-
-      // Mantener el término de búsqueda actual
-      if (searchTerm && searchTerm.trim()) {
-        newFilters.search = searchTerm.trim();
-      }
-
-      // Aplicar filtro de tipo
-      if (typeFilter && typeFilter !== "all") {
-        console.log(`[FaultFilters] Aplicando filtro de tipo: ${typeFilter}`);
-        newFilters.type = typeFilter;
-      }
-
-      // Aplicar filtro de fecha de inicio
-      if (startDateFilter) {
-        console.log(`[FaultFilters] Aplicando filtro de fecha inicio: ${startDateFilter}`);
-        newFilters.startDate = startDateFilter;
-      }
-
-      // Aplicar filtro de fecha de fin
-      if (endDateFilter) {
-        console.log(`[FaultFilters] Aplicando filtro de fecha fin: ${endDateFilter}`);
-        newFilters.endDate = endDateFilter;
-      }
-
-      // Aplicar los filtros y volver a página 1
-      console.log("[FaultFilters] Aplicando filtros:", newFilters);
-      setFilters(newFilters);
-      setPage(1);
-
-      // Ocultar spinner después de un momento
-      setTimeout(() => {
-        setIsSearching(false);
-      }, 500);
-    }
-  }, [typeFilter, startDateFilter, endDateFilter, setFilters, setPage]);
-
-  // Función específica para aplicar búsqueda por texto
-  const applySearch = () => {
+  // Función unificada para aplicar todos los filtros
+  const applyFilters = (applyingFromSearch = false) => {
     setIsSearching(true);
     
-    // Crear objeto de filtros integrando los actuales
+    // Crear nuevo objeto de filtros
     const newFilters: Filters = {};
     
-    // Aplicar búsqueda
-    if (searchTerm && searchTerm.trim()) {
-      newFilters.search = searchTerm.trim();
+    // Si estamos aplicando desde la búsqueda, usar el valor de la referencia
+    // Si no, usar el estado actual
+    const currentSearchTerm = applyingFromSearch ? inputSearchRef.current : searchTerm;
+    
+    if (currentSearchTerm && currentSearchTerm.trim()) {
+      newFilters.search = currentSearchTerm.trim();
     }
     
-    // Mantener otros filtros actuales
-    if (typeFilter && typeFilter !== "all") {
+    if (typeFilter !== "all") {
       newFilters.type = typeFilter;
     }
     
@@ -125,38 +61,48 @@ export function useFaultFilters({ setFilters, setPage, filters = {} }: FaultFilt
       newFilters.endDate = endDateFilter;
     }
     
-    console.log("[FaultFilters] Aplicando búsqueda:", newFilters);
-    
-    // Actualizar filtros y volver a página 1
+    console.log("[FaultFilters] Aplicando filtros:", newFilters);
     setFilters(newFilters);
     setPage(1);
     
-    // Ocultar spinner después de un momento
     setTimeout(() => {
       setIsSearching(false);
-    }, 500);
+    }, 300);
+  };
+
+  // Cuando cambian los filtros de tipo o fechas, aplicamos automáticamente
+  useEffect(() => {
+    if (!initialLoadRef.current) {
+      initialLoadRef.current = true;
+      return;
+    }
+    
+    // Solo aplicar para cambios en tipo o fechas
+    applyFilters(false);
+  }, [typeFilter, startDateFilter, endDateFilter]);
+
+  // Función específica para la búsqueda (cuando presiona Enter)
+  const applySearch = () => {
+    // Actual y explícitamente aplicamos los filtros desde el valor actual del input
+    applyFilters(true);
   };
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
     setSearchTerm("");
+    inputSearchRef.current = "";
     setTypeFilter("all");
     setStartDateFilter("");
     setEndDateFilter("");
     setIsSearching(true);
     
-    // Actualizar referencias
-    prevTypeFilterRef.current = "all";
-    prevStartDateRef.current = "";
-    prevEndDateRef.current = "";
-    
-    // Limpiar filtros y volver a página 1
+    // Limpiar filtros
     setFilters({});
     setPage(1);
     
     setTimeout(() => {
       setIsSearching(false);
-    }, 500);
+    }, 300);
   };
 
   // Verificar si hay filtros activos
@@ -168,16 +114,17 @@ export function useFaultFilters({ setFilters, setPage, filters = {} }: FaultFilt
 
   return {
     searchTerm,
-    setSearchTerm,
+    setSearchTerm: handleSearchInputChange,
     typeFilter,
     setTypeFilter,
-    startDate: startDateFilter,
+    startDate: startDateFilter, 
     setStartDate: setStartDateFilter,
     endDate: endDateFilter,
     setEndDate: setEndDateFilter,
     isSearching,
     hasActiveFilters,
-    applyFilters: applySearch, // Mantener para compatibilidad
+    applySearch,
+    applyFilters: applySearch,
     clearAllFilters
   };
 }

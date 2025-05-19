@@ -125,16 +125,31 @@ export function useOperationFilters(OperationFiltersProps: OperationFiltersProps
       setFilters(newFilters);
       setPage(1);
     }
-  }, [searchTerm, statusFilter, startDateFilter, endDateFilter, areaFilter, supervisorFilter, setFilters, setPage, filters]);
+  }, [statusFilter, startDateFilter, endDateFilter, areaFilter, supervisorFilter, setFilters, setPage, filters]);
 
   // Función para limpiar todos los filtros
   const clearAllFilters = () => {
-    setSearchTermState(""); // Limpiar también el término de búsqueda
+    console.log("[Operation] Ejecutando clearAllFilters - Limpiando todos los filtros");
+    
+    // Primero limpiar los estados locales
+    setSearchTermState(""); 
     setStatusFilter("all");
     setStartDateFilter("");
     setEndDateFilter("");
     setAreaFilter("all");
     setSupervisorFilter("all");
+    
+    // Actualizar referencias
+    prevSearchTermRef.current = "";
+    prevStatusFilterRef.current = "all";
+    prevStartDateRef.current = "";
+    prevEndDateRef.current = "";
+    prevAreaFilterRef.current = "all";
+    prevSupervisorFilterRef.current = "all";
+    
+    // IMPORTANTE: Limpiar los filtros en el contexto
+    setFilters({});
+    setPage(1);
   };
 
   // Verificar si hay filtros activos (incluir searchTerm)
