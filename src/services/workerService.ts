@@ -1,5 +1,6 @@
 import { Worker } from "@/core/model/worker";
 import api from "./client/axiosConfig";
+import { globalServiceCache } from "@/lib/utils/requestUtils";
 class WorkerService {
 
   async createWorker(workerData: Worker): Promise<any> {
@@ -36,8 +37,10 @@ class WorkerService {
 
   async getWorkers(): Promise<any> {
     try {
+      return await globalServiceCache.getOrFetch("worker:all", async () => {
       const response = await api.get(`/worker`);
       return response.data;
+    });
     } catch (error) {}
   }
 

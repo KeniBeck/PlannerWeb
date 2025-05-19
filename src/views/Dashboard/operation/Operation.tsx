@@ -118,20 +118,6 @@ export default function Operation() {
     })) || []),
   ], [areas]);
 
-  // Filtrados
-  const filteredOperations = useMemo(() => {
-    return operations.filter(operation => {
-      return (
-        !searchTerm ||
-        operation.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.jobArea?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.motorShip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        operation.id?.toString().includes(searchTerm)
-      );
-    });
-  }, [operations, searchTerm]);
-
   // Funciones auxiliares
   const getAreaName = (areaId: string): string => {
     const area = areas?.find(a => a.id.toString() === areaId);
@@ -165,7 +151,7 @@ export default function Operation() {
             handleAddArea={() => setIsAddOpen(true)}
             refreshData={() => Promise.resolve(refreshDataLocal())}
             loading={isLoading}
-            exportData={filteredOperations}
+            exportData={operations}
             exportFileName="operaciones"
             exportColumns={exportColumns}
             currentView="operations"
@@ -198,7 +184,7 @@ export default function Operation() {
         <div className="shadow-lg rounded-xl overflow-hidden border border-gray-100">
           <div className="bg-white">
             <OperationList
-              filteredOperations={filteredOperations}
+              filteredOperations={operations}
               searchTerm={searchTerm}
               onView={handleViewOperation}
               onEdit={handleEditOperation}
