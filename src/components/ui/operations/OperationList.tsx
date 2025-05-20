@@ -90,7 +90,7 @@ export function OperationList({
       for (const op of operationsToUse) {
         if (
           op.status === "INPROGRESS" &&
-          tieneDerechoAComidaAhora(op.timeStrat || op.timeStart, op.timeEnd)
+          tieneDerechoAComidaAhora(op.timeStrat , op.timeEnd)
         ) {
           // Verificar si todos los trabajadores ya recibieron comida
           const todosFueron = await todosTrabajadaresRecibieronComida(op);
@@ -153,7 +153,7 @@ export function OperationList({
           for (const op of operationsToUse) {
             if (
               op.status === "INPROGRESS" &&
-              tieneDerechoAComidaAhora(op.timeStrat || op.timeStart, op.timeEnd)
+              tieneDerechoAComidaAhora(op.timeStrat || op.timeStrat , op.timeEnd)
             ) {
               // Verificar si todos los trabajadores ya recibieron comida
               const todosFueron = await todosTrabajadaresRecibieronComida(op);

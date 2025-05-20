@@ -184,7 +184,7 @@ export const useFaultsExport = () => {
         fault.createAt
           ? format(new Date(fault.createAt), "dd/MM/yyyy", { locale: es })
           : "N/A",
-        fault.user?.username || "N/A",
+        fault.user?.name || "N/A",
       ];
 
       const row = worksheet.addRow(rowData);

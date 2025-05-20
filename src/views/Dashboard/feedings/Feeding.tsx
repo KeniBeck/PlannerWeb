@@ -59,10 +59,10 @@ export default function Feeding() {
       },
       {
         header: "Trabajador",
-        accessor: "id_worker",
+        accessor: "worker.name",
         cell: (feeding) => (
           <div className="flex items-center">
-            {getWorkerNameById(feeding.id_worker)}
+            {feeding.worker?.name }
           </div>
         ),
       },
@@ -167,6 +167,7 @@ export default function Feeding() {
     ],
     []
   );
+  console.log('[Feeding] Acciones:', feedings);
 
   // Definir las columnas para exportar a Excel
   const exportColumns: ExcelColumn[] = useMemo(

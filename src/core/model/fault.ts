@@ -10,7 +10,7 @@ interface Fault {
 }
 
 interface user{
-  username:string;
+  name:string;
 }
 
 

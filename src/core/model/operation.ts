@@ -5,7 +5,6 @@ export interface Operation {
   status: "PENDING" | "INPROGRESS" | "COMPLETED" | "CANCELED" | "DEACTIVATED";
   dateStart: string;
   dateEnd: string | null;
-  timeStart: string;
   timeStrat: string;
   timeEnd: string | null;
   motorShip: string;

@@ -127,7 +127,7 @@ export function ViewOperationDialog({
         dateEnd: formValues.endDate,
         timeEnd: formValues.endTime,
         dateStart: operation.dateStart.toString().split("T")[0],
-        timeStart: operation.timeStrat || operation.timeStart,
+        timeStart: operation.timeStrat || operation.timeStrat ,
         zone: operation.zone,
       };
 
@@ -166,7 +166,7 @@ export function ViewOperationDialog({
       (typeof operation.dateStart === 'string' ? operation.dateStart.split('T')[0] : format(new Date(operation.dateStart), 'yyyy-MM-dd')) : 
       formattedDate;
     
-    const operationStartTime = operation.timeStrat || operation.timeStart || formattedTime;
+    const operationStartTime = operation.timeStrat || operation.timeStrat  || formattedTime;
   
     const { value: formValues } = await Swal.fire({
       title: 'Completar trabajador',
@@ -290,7 +290,7 @@ export function ViewOperationDialog({
       (typeof operation.dateStart === 'string' ? operation.dateStart.split('T')[0] : format(new Date(operation.dateStart), 'yyyy-MM-dd')) : 
       formattedDate;
     
-    const operationStartTime = operation.timeStrat || operation.timeStart || formattedTime;
+    const operationStartTime = operation.timeStrat || operation.timeStrat  || formattedTime;
   
     // Determinar valores iniciales para el formulario
     const startDate = isIndividualWorkers ? operationStartDate : (group.schedule?.dateStart || formattedDate);
@@ -485,7 +485,7 @@ export function ViewOperationDialog({
               id={operation.id}
               dateStart={operation.dateStart}
               dateEnd={operation.dateEnd}
-              timeStart={operation.timeStrat || operation.timeStart}
+              timeStart={operation.timeStrat || operation.timeStrat }
               timeEnd={operation.timeEnd}
               motorShip={operation.motorShip}
               zone={operation.zone}

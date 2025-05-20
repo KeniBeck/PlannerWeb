@@ -350,7 +350,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
         status: data.status,
         zone: parseInt(data.zone),
         dateStart: data.dateStart,
-        timeStrat: data.timeStart,
+        timeStrat: data.timeStrat,
         id_task: data.id_task,
         id_area: data.id_area,
         id_client: data.id_client,
@@ -372,6 +372,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       if (data.timeEnd) {
         dataFmt.timeEnd = data.timeEnd;
       }
+
 
       const newOperation = await operationService.createOperation(
         dataFmt as OperationCreateData
@@ -401,6 +402,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       const formattedUpdateData = {
         ...data,
         // Asegurarnos de que removedWorkerIds existe
+        timeStrat: data.timeStrat || data.timeStart,
         removedWorkerIds: data.removedWorkerIds || [],
       };
 
