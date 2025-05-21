@@ -115,4 +115,4 @@ export const formatDateTime = (dateTimeStr: string | null | undefined): string =
     return String(dateTimeStr || "Fecha y hora inválidas");
   }
 };
-
+}
