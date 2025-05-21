@@ -58,6 +58,7 @@ export interface OperationUpdateData {
   dateEnd: string;
   timeStart: string;
   timeEnd: string;
+  id_task?: string;
 }
 
 export interface OperationCreateData {

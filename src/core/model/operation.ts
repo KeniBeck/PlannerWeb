@@ -37,6 +37,8 @@ export interface Operation {
       dateEnd: string | null;
       timeStart: string | null;
       timeEnd: string | null;
+      id_task: string | null;
+      task: string | null;
     };
     workers: Array<{
       id: number;

@@ -14,7 +14,6 @@ import { OperationInfo } from "./OperationInfo";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
 import { useOperations } from "@/contexts/OperationContext";
-import { operationService } from "@/services/operationService";
 
 interface ViewOperationDialogProps {
   open: boolean;

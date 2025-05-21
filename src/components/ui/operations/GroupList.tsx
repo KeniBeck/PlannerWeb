@@ -1,6 +1,8 @@
 import { HiOutlineUserGroup, HiPlus, HiX, HiTrash } from "react-icons/hi";
 import { BsCalendarEvent } from "react-icons/bs";
 import { FaRegClock } from "react-icons/fa";
+import { FaTools } from "react-icons/fa"; // Importar ícono para el servicio
+import { useServices } from "@/contexts/ServicesContext"; // Importar el contexto de servicios
 
 interface GroupsListProps {
   groups: any[];
@@ -21,6 +23,16 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   removeWorkerFromGroup,
   onCreateGroup
 }) => {
+  // Obtener los servicios del contexto
+  const { services } = useServices();
+  
+  // Función para obtener el nombre del servicio por su ID
+  const getServiceNameById = (id_task: number | null) => {
+    if (!id_task) return "Sin servicio asignado";
+    const service = services.find(s => s.id === id_task);
+    return service ? service.name : "Servicio no encontrado";
+  };
+  
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       <div className="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10">
@@ -59,6 +71,15 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                   </h5>
                   
                   <div className="flex flex-wrap gap-2 text-xs text-gray-600 mt-2">
+                    {/* Añadir el servicio aquí */}
+                    {group.id_task && (
+                      <span className="flex items-center px-2 py-1 bg-white rounded-md border border-gray-200">
+                        <FaTools className="mr-1.5 text-blue-600" />
+                        <span className="font-medium mr-1">Servicio:</span>
+                        <span className="text-blue-700">{getServiceNameById(group.id_task)}</span>
+                      </span>
+                    )}
+                    
                     <span className="flex items-center px-2 py-1 bg-white rounded-md border border-gray-200">
                       <BsCalendarEvent className="mr-1.5 text-blue-600" />
                       <span className="font-medium mr-1">Fecha inicio:</span>

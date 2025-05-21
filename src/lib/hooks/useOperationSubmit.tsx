@@ -28,6 +28,7 @@ export function useOperationSubmit(
         timeEnd: group.timeEnd || null,
         workerIds: workerIds, // garantizar que esté disponible en ambos formatos
         // Añadir un indicador para grupos nuevos
+        id_task: group.id_task || null,
         isNewGroup: !group.groupId
       };
     });
@@ -41,6 +42,7 @@ export function useOperationSubmit(
         timeEnd: null,
         workers: formData.workerIds,
         workerIds: formData.workerIds,
+        id_task: formData.id_task || null,
         isNewGroup: true // Este siempre se considera un nuevo grupo o actualización de existente
       });
     }
