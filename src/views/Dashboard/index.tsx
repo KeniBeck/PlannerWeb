@@ -26,6 +26,8 @@ import DashboardHome from "./DashboardHome";
 import Faults from "./faults/Faults";
 import { jwtDecode } from "jwt-decode";
 import Feeding from "./feedings/Feeding";
+import { PiShippingContainerDuotone } from "react-icons/pi";
+import Containers from "./containers/Containers";
 
 
 const COLORS = {
@@ -54,7 +56,7 @@ const ProtectedRoute = ({ element, requiredRole }: { element: React.ReactNode, r
     try {
       const token = localStorage.getItem("token");
       if (!token) return false;
-      
+
       const decodedToken: any = jwtDecode(token);
       return decodedToken?.role === requiredRole;
     } catch (error) {
@@ -62,7 +64,7 @@ const ProtectedRoute = ({ element, requiredRole }: { element: React.ReactNode, r
       return false;
     }
   };
-  
+
   // Si el usuario tiene el rol, muestra el componente, si no, redirige al dashboard
   return hasRequiredRole() ? <>{element}</> : <Navigate to="/dashboard" replace />;
 };
@@ -107,7 +109,7 @@ export default function Dashboard() {
       (path !== "/dashboard" && location.pathname.startsWith(path))
     );
   };
-  
+
   // Función para expandir/contraer una categoría
   const toggleCategory = (category: string) => {
     if (expandedCategories.includes(category)) {
@@ -117,7 +119,7 @@ export default function Dashboard() {
     }
   };
 
-  
+
   // Define las categorías del menú y sus elementos
   const menuCategories: MenuCategory[] = [
     {
@@ -128,7 +130,8 @@ export default function Dashboard() {
         { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
         { path: '/dashboard/graphics', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
         { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
-        { path: '/dashboard/feedings', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> }
+        { path: '/dashboard/feedings', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> },
+        { path: '/dashboard/containers', label: 'Programación del Cliente', icon: <PiShippingContainerDuotone size={18} /> },
       ]
     },
     {
@@ -152,7 +155,7 @@ export default function Dashboard() {
   ];
 
   // Filtra las categorías según el rol del usuario
-  const filteredCategories = menuCategories.filter(category => 
+  const filteredCategories = menuCategories.filter(category =>
     !category.requiredRole || category.requiredRole === userRole
   );
 
@@ -160,9 +163,8 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-50">
       {/* Menú lateral */}
       <aside
-        className={`bg-white shadow-lg transition-all duration-300 ease-in-out z-10 ${
-          isMenuOpen ? "w-64" : "w-20"
-        } relative overflow-y-auto h-screen`}
+        className={`bg-white shadow-lg transition-all duration-300 ease-in-out z-10 ${isMenuOpen ? "w-64" : "w-20"
+          } relative overflow-y-auto h-screen`}
       >
         {/* Botón de hamburguesa */}
         <button
@@ -218,9 +220,8 @@ export default function Dashboard() {
 
             {/* Logotipo y nombre */}
             <div
-              className={`flex relative z-10 ${
-                isMenuOpen ? "items-center" : "justify-center"
-              }`}
+              className={`flex relative z-10 ${isMenuOpen ? "items-center" : "justify-center"
+                }`}
             >
               {!isMenuOpen && (
                 <div className="flex justify-center items-center w-10 h-10 bg-white bg-opacity-10 rounded-full shadow-lg">
@@ -268,29 +269,29 @@ export default function Dashboard() {
           {/* Enlaces de navegación */}
           <nav className="mt-4 flex flex-col min-h-[78vh] justify-between">
             <ul className="space-y-0.5 flex flex-col justify-between h-min">
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all
+              <Link
+                to="/dashboard"
+                className={`flex items-center px-3 py-2.5 rounded-lg transition-all
                     ${isMenuOpen ? "" : "justify-center"} 
-                    ${isActive("/dashboard") 
-                      ? "bg-blue-50 text-blue-700" 
-                      : "text-gray-600 hover:bg-gray-100"}`}
-                >
-                  <span className={`${isActive("/dashboard") ? "text-blue-600" : ""}`}>
-                    <AiOutlineDashboard size={20} />
-                  </span>
-                  {isMenuOpen && (
-                    <span className="ml-3 text-sm font-medium">Principal</span>
-                  )}
-                </Link>
-              
+                    ${isActive("/dashboard")
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"}`}
+              >
+                <span className={`${isActive("/dashboard") ? "text-blue-600" : ""}`}>
+                  <AiOutlineDashboard size={20} />
+                </span>
+                {isMenuOpen && (
+                  <span className="ml-3 text-sm font-medium">Principal</span>
+                )}
+              </Link>
+
               {/* Solo mostrar categorías filtradas por rol */}
               {filteredCategories.map((category) => {
                 const isExpanded = expandedCategories.includes(category.title.toLowerCase());
                 // Filtrar items por rol para verificar elementos activos
                 const visibleItems = category.items.filter(item => !item.requiredRole || item.requiredRole === userRole);
                 const hasActiveChild = visibleItems.some(item => isActive(item.path));
-                
+
                 return (
                   <li key={category.title} className="mb-1">
                     {/* Cabecera de la categoría */}
@@ -308,28 +309,28 @@ export default function Dashboard() {
                           <span className="ml-3 text-sm font-medium">{category.title}</span>
                         )}
                       </div>
-                      
+
                       {isMenuOpen && visibleItems.length > 0 && (
                         <span className="text-gray-500">
                           {isExpanded ? <MdKeyboardArrowDown size={18} /> : <MdKeyboardArrowRight size={18} />}
                         </span>
                       )}
                     </button>
-                    
+
                     {/* Elementos del submenú - solo mostrar items permitidos */}
                     <div className={`${isExpanded ? "max-h-96" : "max-h-0"} overflow-hidden transition-all duration-300`}>
                       <ul className={`pl-2 space-y-1 mt-1 ${isMenuOpen ? "" : "text-center"}`}>
                         {visibleItems.map((item) => {
                           const itemIsActive = isActive(item.path);
-                          
+
                           return (
                             <li key={item.path}>
                               <Link
                                 to={item.path}
                                 className={`flex items-center py-2 px-3 rounded-lg transition-all
                                   ${isMenuOpen ? "" : "justify-center"} 
-                                  ${itemIsActive 
-                                    ? "bg-blue-50 text-blue-700" 
+                                  ${itemIsActive
+                                    ? "bg-blue-50 text-blue-700"
                                     : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}
                               >
                                 <span className={`${itemIsActive ? "text-blue-600" : ""}`}>
@@ -365,8 +366,8 @@ export default function Dashboard() {
                   to="/dashboard/profile"
                   className={`flex items-center px-3 py-2.5 rounded-lg transition-all
                     ${isMenuOpen ? "" : "justify-center"} 
-                    ${isActive("/dashboard/profile") 
-                      ? "bg-blue-50 text-blue-700" 
+                    ${isActive("/dashboard/profile")
+                      ? "bg-blue-50 text-blue-700"
                       : "text-gray-600 hover:bg-gray-100"}`}
                 >
                   <span className={`${isActive("/dashboard/profile") ? "text-blue-600" : ""}`}>
@@ -424,13 +425,13 @@ export default function Dashboard() {
               }
             />
             <Route
-  path="/feedings"
-  element={
-    <LayeredProviders features={[Feature.OPERATION, Feature.WORKERS, Feature.FEEDINGS]}>
-      <Feeding />
-    </LayeredProviders>
-  }
-/>
+              path="/feedings"
+              element={
+                <LayeredProviders features={[Feature.OPERATION, Feature.WORKERS, Feature.FEEDINGS]}>
+                  <Feeding />
+                </LayeredProviders>
+              }
+            />
             <Route
               path="/workers"
               element={
@@ -468,7 +469,7 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-            
+
             {/* Rutas protegidas con ProtectedRoute */}
             <Route
               path="/services"
@@ -483,7 +484,7 @@ export default function Dashboard() {
                 />
               }
             />
-            
+
             <Route
               path="/faults"
               element={
@@ -492,8 +493,16 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-           
-            
+
+            <Route
+              path="/containers"
+              element={
+                <LayeredProviders features={[Feature.PROGRAMMING]}>
+                  <Containers />
+                </LayeredProviders>
+              }
+            />
+
             <Route
               path="/clients"
               element={

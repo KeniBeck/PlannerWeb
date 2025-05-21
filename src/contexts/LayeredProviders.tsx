@@ -7,6 +7,7 @@ import { ClientsProvider } from './ClientsContext';
 import { ServicesProvider } from './ServicesContext';
 import { UsersProvider } from './UsersContext';
 import { FeedingProvider } from './FeedingContext';
+import { ProgrammingProvider } from './ProgrammingContext';
 
 export enum Feature {
   WORKERS = 'workers',
@@ -18,6 +19,7 @@ export enum Feature {
   CLIENTS = 'clients',
   OPERATION = 'operation',
   FEEDINGS = 'feedings',
+  PROGRAMMING = "programming",
 }
 
 type FeatureType = Feature;
@@ -62,6 +64,9 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         break;
       case Feature.FEEDINGS:
         content = <FeedingProvider>{content}</FeedingProvider>;
+        break;
+      case Feature.PROGRAMMING:
+        content = <ProgrammingProvider>{content}</ProgrammingProvider>;
         break;
       default:
         // TypeScript debería prevenir este caso gracias al enum
