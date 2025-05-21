@@ -20,7 +20,6 @@ export function useStepNavigation(
         newErrors.workers = "";
         break;
       case 2:
-        newErrors.zone = "";
         newErrors.motorShip = "";
         newErrors.dateStart = "";
         newErrors.timeStart = "";
