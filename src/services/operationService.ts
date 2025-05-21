@@ -49,8 +49,18 @@ class OperationService {
     }
   }
 
+  async getOperationById(id: number): Promise<any> {
+    try {
+      const response = await api.get(`/operation/${id}`);
 
-    async updateWorkerGroups(
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  }
+
+  async updateWorkerGroups(
     operationId: number,
     groupData: {
       workers: {

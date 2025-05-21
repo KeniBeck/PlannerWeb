@@ -46,7 +46,6 @@ export interface OperationUpdateData {
   motorShip?: string;
   dateStart?: string;
   timeStrat?: string; // Nota: parece tener un typo en la API
-  timeStart?: string; // Alternativa correcta
   dateEnd?: string;
   timeEnd?: string;
   id_group?: string;
@@ -59,9 +58,11 @@ export interface OperationUpdateData {
   dateEnd: string;
   timeStart: string;
   timeEnd: string;
+  id_task?: string;
 }
 
 export interface OperationCreateData {
+  id?: number;
   status: StatusOperation;
   zone?: number;
   motorShip?: string;

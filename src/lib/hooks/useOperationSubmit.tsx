@@ -26,9 +26,9 @@ export function useOperationSubmit(
         dateEnd: group.dateEnd || null,
         timeStart: group.timeStart || null,
         timeEnd: group.timeEnd || null,
-        workers: workerIds,
         workerIds: workerIds, // garantizar que esté disponible en ambos formatos
         // Añadir un indicador para grupos nuevos
+        id_task: group.id_task || null,
         isNewGroup: !group.groupId
       };
     });
@@ -42,6 +42,7 @@ export function useOperationSubmit(
         timeEnd: null,
         workers: formData.workerIds,
         workerIds: formData.workerIds,
+        id_task: formData.id_task || null,
         isNewGroup: true // Este siempre se considera un nuevo grupo o actualización de existente
       });
     }
@@ -120,13 +121,12 @@ export function useOperationSubmit(
         motorShip: formData.motorShip || "",
         dateStart: formData.dateStart,
         timeStrat: data.timeStart || formData.timeStrat, // Enviamos ambas para compatibilidad
-        timeStart: data.timeStart || formData.timeStrat, // con el backend
         dateEnd: formData.dateEnd || null,
         timeEnd: formData.timeEnd || null,
         id_area: Number(formData.id_area),
         id_task: Number(formData.id_task),
         id_client: Number(formData.id_client),
-        workerGroups: normalizedGroups,
+        groups: normalizedGroups,
         inChargedIds: formData.inChargedIds,
         removedWorkerIds: allRemovedWorkerIds,
         originalWorkerIds: originalWorkerIds

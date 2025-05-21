@@ -6,6 +6,11 @@ interface Fault {
   type: FaultType;
   worker: Worker;
   createAt: string;
+  user?: user;
+}
+
+interface user{
+  name:string;
 }
 
 

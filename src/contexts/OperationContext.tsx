@@ -15,6 +15,7 @@ import {
   OperationFilterDto,
 } from "@/services/interfaces/operationDTO";
 import { Operation } from "@/core/model/operation";
+import { id } from "date-fns/locale";
 
 
 // Definir la interfaz para respuestas paginadas con nextPages
@@ -342,6 +343,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
           timeStart: group.timeStart,
           dateEnd: group.dateEnd,
           timeEnd: group.timeEnd,
+          id_task: group.id_task || null,
           workerIds: group.workers || group.workerIds,
         };
       });
@@ -350,7 +352,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
         status: data.status,
         zone: parseInt(data.zone),
         dateStart: data.dateStart,
-        timeStrat: data.timeStart,
+        timeStrat: data.timeStrat,
         id_task: data.id_task,
         id_area: data.id_area,
         id_client: data.id_client,
@@ -372,6 +374,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       if (data.timeEnd) {
         dataFmt.timeEnd = data.timeEnd;
       }
+
 
       const newOperation = await operationService.createOperation(
         dataFmt as OperationCreateData
@@ -401,6 +404,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
       const formattedUpdateData = {
         ...data,
         // Asegurarnos de que removedWorkerIds existe
+        timeStrat: data.timeStrat || data.timeStart,
         removedWorkerIds: data.removedWorkerIds || [],
       };
 

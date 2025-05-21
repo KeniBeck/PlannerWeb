@@ -6,6 +6,7 @@ import { OperationProvider } from './OperationContext';
 import { ClientsProvider } from './ClientsContext';
 import { ServicesProvider } from './ServicesContext';
 import { UsersProvider } from './UsersContext';
+import { FeedingProvider } from './FeedingContext';
 
 export enum Feature {
   WORKERS = 'workers',
@@ -16,6 +17,7 @@ export enum Feature {
   SUPERVISORS = 'supervisors',
   CLIENTS = 'clients',
   OPERATION = 'operation',
+  FEEDINGS = 'feedings',
 }
 
 type FeatureType = Feature;
@@ -57,6 +59,9 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         break;
       case Feature.SUPERVISORS:
         console.warn(`Provider para ${feature} no está implementado`);
+        break;
+      case Feature.FEEDINGS:
+        content = <FeedingProvider>{content}</FeedingProvider>;
         break;
       default:
         // TypeScript debería prevenir este caso gracias al enum

@@ -1,14 +1,16 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { BsEye, BsPencil, BsTrash } from "react-icons/bs";
 import {
-  BsEye,
-  BsPencil,
-  BsTrash,
-} from "react-icons/bs";
+  tieneDerechoAComidaAhora,
+  todosTrabajadaresRecibieronComida,
+} from "@/lib/utils/feedingutils";
 import { useOperations } from "@/contexts/OperationContext";
 import { Operation } from "@/core/model/operation";
 import { DataTable, TableColumn, TableAction } from "../DataTable";
+import { FaUtensils } from "react-icons/fa";
+import { FeedingOperationDialog } from "@/components/dialog/FeedingOperationDialog";
 
 type SortConfig = {
   key: string;
@@ -43,11 +45,23 @@ export function OperationList({
     setPage,
     lastUpdated,
     totalPages,
-    preloadNextPages
+    preloadNextPages,
   } = useOperations();
 
   // Estado para rastrear la primera carga
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [showFeedingDialog, setShowFeedingDialog] = useState(false);
+  const [selectedOperationForFeeding, setSelectedOperationForFeeding] =
+    useState<Operation | null>(null);
+  const [
+    operacionesConAlimentacionPendiente,
+    setOperacionesConAlimentacionPendiente,
+  ] = useState<number[]>([]);
+  const [verificacionRealizada, setVerificacionRealizada] = useState(false);
+  
+  // Referencias para evitar peticiones duplicadas
+  const isVerifyingRef = useRef(false);
+  const isPreloadingRef = useRef(false);
 
   // Hook useState - Siempre debe estar aquí sin condiciones
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -55,35 +69,137 @@ export function OperationList({
     direction: "asc",
   });
 
+  // Usar las operaciones proporcionadas o las operaciones del contexto
+  const operationsToUse = filteredOperations || operations;
+
+  // Efecto para verificar qué operaciones tienen alimentación pendiente
+  useEffect(() => {
+    const verificarAlimentacionPendiente = async () => {
+      // Evitar verificaciones simultáneas
+      if (isVerifyingRef.current || !operationsToUse || operationsToUse.length === 0 || isLoading) {
+        return;
+      }
+      
+      // Marcar como verificando
+      isVerifyingRef.current = true;
+      
+      console.log("Verificando alimentación pendiente para", operationsToUse.length, "operaciones");
+      
+      const operacionesConDerecho = [];
+
+      for (const op of operationsToUse) {
+        if (
+          op.status === "INPROGRESS" &&
+          tieneDerechoAComidaAhora(op.timeStrat , op.timeEnd)
+        ) {
+          // Verificar si todos los trabajadores ya recibieron comida
+          const todosFueron = await todosTrabajadaresRecibieronComida(op);
+          if (!todosFueron) {
+            operacionesConDerecho.push(op.id);
+          }
+        }
+      }
+
+      console.log("Operaciones con alimentación pendiente:", operacionesConDerecho);
+      setOperacionesConAlimentacionPendiente(operacionesConDerecho);
+      setVerificacionRealizada(true);
+      
+      // Liberar el bloqueo después de completar
+      setTimeout(() => {
+        isVerifyingRef.current = false;
+      }, 500);
+    };
+
+    verificarAlimentacionPendiente();
+  }, [operationsToUse, isLoading, initialLoadDone]);
+
   // Efecto para rastrear la carga inicial y ejecutar la precarga
   useEffect(() => {
     // Si tenemos operaciones y no estamos cargando, la carga inicial ha terminado
     if (operations.length > 0 && !isLoading && !initialLoadDone) {
       console.log("Carga inicial completada");
       setInitialLoadDone(true);
-      
+
       // Precargar siguiente página después de la primera carga
-      if (preloadNextPages) {
+      if (preloadNextPages && !isPreloadingRef.current) {
         console.log("Ejecutando precarga inicial");
+        isPreloadingRef.current = true;
+        
         preloadNextPages();
+        
+        // Permitir nuevas precargas después de un tiempo
+        setTimeout(() => {
+          isPreloadingRef.current = false;
+        }, 1000);
       }
+      
+      // Forzar una verificación después de la carga inicial
+      setVerificacionRealizada(false);
     }
   }, [operations, isLoading, initialLoadDone, preloadNextPages]);
 
+  // Efecto adicional para forzar una verificación después de operaciones completamente cargadas
+  useEffect(() => {
+    if (initialLoadDone && !verificacionRealizada && !isLoading && !isVerifyingRef.current) {
+      const timeout = setTimeout(() => {
+        console.log("Forzando verificación de alimentación pendiente después de carga inicial");
+        const verificarAlimentacionPendiente = async () => {
+          // Evitar verificaciones duplicadas
+          if (isVerifyingRef.current) return;
+          isVerifyingRef.current = true;
+          
+          const operacionesConDerecho = [];
+  
+          for (const op of operationsToUse) {
+            if (
+              op.status === "INPROGRESS" &&
+              tieneDerechoAComidaAhora(op.timeStrat || op.timeStrat , op.timeEnd)
+            ) {
+              // Verificar si todos los trabajadores ya recibieron comida
+              const todosFueron = await todosTrabajadaresRecibieronComida(op);
+              if (!todosFueron) {
+                operacionesConDerecho.push(op.id);
+              }
+            }
+          }
+  
+          console.log("Verificación forzada - Operaciones con alimentación pendiente:", operacionesConDerecho);
+          setOperacionesConAlimentacionPendiente(operacionesConDerecho);
+          setVerificacionRealizada(true);
+          
+          // Liberar el bloqueo
+          setTimeout(() => {
+            isVerifyingRef.current = false;
+          }, 500);
+        };
+  
+        verificarAlimentacionPendiente();
+      }, 500);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [initialLoadDone, verificacionRealizada, isLoading, operationsToUse]);
+
   // Efecto para precargar cuando cambia la página
   useEffect(() => {
-    if (initialLoadDone && !isLoading && preloadNextPages) {
+    if (initialLoadDone && !isLoading && preloadNextPages && !isPreloadingRef.current) {
+      // Evitar precargas duplicadas
+      isPreloadingRef.current = true;
+      
       // Esperar un poco después del cambio de página antes de precargar la siguiente
       const timer = setTimeout(() => {
         console.log("Precargando después de cambio de página");
         preloadNextPages();
+        
+        // Liberar bloqueo después de un tiempo
+        setTimeout(() => {
+          isPreloadingRef.current = false;
+        }, 1000);
       }, 200);
+      
       return () => clearTimeout(timer);
     }
   }, [currentPage, initialLoadDone, isLoading, preloadNextPages]);
-
-  // Cálculos y funciones después de todos los hooks
-  const operationsToUse = filteredOperations || operations;
 
   // Ordenamiento
   const requestSort = (key: string) => {
@@ -193,9 +309,9 @@ export function OperationList({
       {
         header: "Encargado",
         accessor: "inCharge.name",
-        cell: (operation) => 
-          operation.inCharge && Array.isArray(operation.inCharge) 
-            ? operation.inCharge.map((user) => user.name).join(", ") 
+        cell: (operation) =>
+          operation.inCharge && Array.isArray(operation.inCharge)
+            ? operation.inCharge.map((user) => user.name).join(", ")
             : "N/A",
       },
       {
@@ -218,7 +334,7 @@ export function OperationList({
 
   const actions: TableAction<Operation>[] = useMemo(() => {
     const actionsList: TableAction<Operation>[] = [];
-  
+
     // Acción de Ver - siempre disponible para todas las operaciones
     if (onView) {
       actionsList.push({
@@ -228,7 +344,7 @@ export function OperationList({
         className: "text-blue-600",
       });
     }
-  
+
     // Acción de Editar - solo disponible si la operación NO está finalizada
     if (onEdit) {
       actionsList.push({
@@ -240,7 +356,7 @@ export function OperationList({
         hidden: (operation) => operation.status === "COMPLETED",
       });
     }
-  
+
     // Acción de Eliminar - solo disponible si la operación NO está finalizada
     if (onDelete) {
       actionsList.push({
@@ -252,10 +368,24 @@ export function OperationList({
         hidden: (operation) => operation.status === "COMPLETED",
       });
     }
-  
+
+    // Nueva acción para alimentación - solo para operaciones en curso y con alimentación elegible
+    actionsList.push({
+      label: "Alimentación",
+      icon: <FaUtensils className="h-4 w-4" />,
+      onClick: (operation) => {
+        setSelectedOperationForFeeding(operation);
+        setShowFeedingDialog(true);
+      },
+      className: "text-amber-600",
+      // Mostrar solo para operaciones en curso y con derecho a comida
+      hidden: (operation) =>
+        !operacionesConAlimentacionPendiente.includes(operation.id),
+    });
+
     return actionsList;
-  }, [onView, onEdit, onDelete]);
-  
+  }, [onView, onEdit, onDelete, operacionesConAlimentacionPendiente]);
+
   // Evitar returns tempranos antes de otros hooks
   if (error) {
     return (
@@ -317,6 +447,12 @@ export function OperationList({
           </span>
         </div>
       )}
+      {/* Diálogo de alimentación */}
+      <FeedingOperationDialog
+        open={showFeedingDialog}
+        onOpenChange={setShowFeedingDialog}
+        operation={selectedOperationForFeeding}
+      />
     </div>
   );
 }

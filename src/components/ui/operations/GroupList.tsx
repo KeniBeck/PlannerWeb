@@ -1,6 +1,8 @@
 import { HiOutlineUserGroup, HiPlus, HiX, HiTrash } from "react-icons/hi";
 import { BsCalendarEvent } from "react-icons/bs";
 import { FaRegClock } from "react-icons/fa";
+import { FaTools } from "react-icons/fa"; // Importar ícono para el servicio
+import { useServices } from "@/contexts/ServicesContext"; // Importar el contexto de servicios
 
 interface GroupsListProps {
   groups: any[];
@@ -10,6 +12,7 @@ interface GroupsListProps {
   removeWorkerGroup: (index: number) => void;
   removeWorkerFromGroup: (groupIndex: number, workerId: number) => void;
   onCreateGroup: () => void;
+  duplicateWorkerGroup: (index: number) => void;
 }
 
 export const GroupsList: React.FC<GroupsListProps> = ({
@@ -19,8 +22,19 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   startEditingGroup,
   removeWorkerGroup,
   removeWorkerFromGroup,
-  onCreateGroup
+  onCreateGroup,
+  duplicateWorkerGroup,
 }) => {
+  // Obtener los servicios del contexto
+  const { services } = useServices();
+
+  // Función para obtener el nombre del servicio por su ID
+  const getServiceNameById = (id_task: number | null) => {
+    if (!id_task) return "Sin servicio asignado";
+    const service = services.find((s) => s.id === id_task);
+    return service ? service.name : "Servicio no encontrado";
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       <div className="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10">
@@ -41,12 +55,12 @@ export const GroupsList: React.FC<GroupsListProps> = ({
           Nuevo Grupo
         </button>
       </div>
-      
+
       {groups.length > 0 && !showGroupForm ? (
         <div className="p-3">
           {groups.map((group: any, index: number) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-gray-50 rounded-lg p-3 border border-gray-200 mb-3 last:mb-0 hover:border-blue-200 transition-colors"
             >
               <div className="flex justify-between items-start">
@@ -57,8 +71,19 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                       {group.workers.length} trabajadores
                     </span>
                   </h5>
-                  
+
                   <div className="flex flex-wrap gap-2 text-xs text-gray-600 mt-2">
+                    {/* Añadir el servicio aquí */}
+                    {group.id_task && (
+                      <span className="flex items-center px-2 py-1 bg-white rounded-md border border-gray-200">
+                        <FaTools className="mr-1.5 text-blue-600" />
+                        <span className="font-medium mr-1">Servicio:</span>
+                        <span className="text-blue-700">
+                          {getServiceNameById(group.id_task)}
+                        </span>
+                      </span>
+                    )}
+
                     <span className="flex items-center px-2 py-1 bg-white rounded-md border border-gray-200">
                       <BsCalendarEvent className="mr-1.5 text-blue-600" />
                       <span className="font-medium mr-1">Fecha inicio:</span>
@@ -69,7 +94,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                       <span className="font-medium mr-1">Hora inicio:</span>
                       {group.timeStart}
                     </span>
-                    
+
                     {group.dateEnd && (
                       <span className="flex items-center px-2 py-1 bg-white rounded-md border border-gray-200">
                         <BsCalendarEvent className="mr-1.5 text-blue-600" />
@@ -77,7 +102,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                         {group.dateEnd}
                       </span>
                     )}
-                    
+
                     {group.timeEnd && (
                       <span className="flex items-center px-2 py-1 bg-white rounded-md border border-gray-200">
                         <FaRegClock className="mr-1.5 text-blue-600" />
@@ -87,16 +112,49 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-2">
+                  {/* Botón para duplicar */}
+                  <button
+                    type="button"
+                    onClick={() => duplicateWorkerGroup(index)}
+                    className="text-green-600 hover:text-green-800 p-1.5 hover:bg-green-50 rounded-md"
+                    title="Duplicar grupo"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                      />
+                    </svg>
+                  </button>
                   <button
                     type="button"
                     onClick={() => startEditingGroup(index)}
                     className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded-md"
                     title="Editar grupo"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                      />
                     </svg>
                   </button>
                   <button
@@ -109,13 +167,15 @@ export const GroupsList: React.FC<GroupsListProps> = ({
                   </button>
                 </div>
               </div>
-              
+
               {/* Lista de trabajadores en el grupo */}
               <div className="mt-3">
-                <h6 className="text-xs font-medium text-gray-700 mb-2">Trabajadores asignados:</h6>
+                <h6 className="text-xs font-medium text-gray-700 mb-2">
+                  Trabajadores asignados:
+                </h6>
                 <div className="flex flex-wrap gap-2">
                   {group.workers.map((id: number) => (
-                    <div 
+                    <div
                       key={id}
                       className="flex items-center bg-white text-gray-800 text-xs px-2 py-1 rounded-md border border-gray-200 shadow-sm"
                     >

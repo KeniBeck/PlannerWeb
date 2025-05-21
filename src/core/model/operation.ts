@@ -5,7 +5,6 @@ export interface Operation {
   status: "PENDING" | "INPROGRESS" | "COMPLETED" | "CANCELED" | "DEACTIVATED";
   dateStart: string;
   dateEnd: string | null;
-  timeStart: string;
   timeStrat: string;
   timeEnd: string | null;
   motorShip: string;
@@ -38,6 +37,8 @@ export interface Operation {
       dateEnd: string | null;
       timeStart: string | null;
       timeEnd: string | null;
+      id_task: string | null;
+      task: string | null;
     };
     workers: Array<{
       id: number;
