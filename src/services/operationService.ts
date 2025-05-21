@@ -83,6 +83,17 @@ class OperationService {
     }
   }
 
+
+  async getWorkersDistribution(date: string): Promise<any> {
+    try {
+      const response = await api.get(`/operation/analytics/worker-distribution?date=${date}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  }
+
   async updateOperation(
     id: number,
     updateData: any

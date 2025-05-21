@@ -1,6 +1,33 @@
 import React from "react";
-import { Bar, Pie } from "react-chartjs-2";
+import { Bar, Pie, Line } from "react-chartjs-2";
 import { ChartData, ChartOptions } from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,  // Necesario para gráficos de línea
+  LineElement,   // Necesario para gráficos de línea
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+
+// Registrar los componentes necesarios para todos los tipos de gráficos
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,  // Registrar el elemento point
+  LineElement,   // Registrar el elemento line
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 
 interface ChartCardProps {
   title: string;
@@ -10,9 +37,9 @@ interface ChartCardProps {
   iconBgColor: string;
   iconColor: string;
   titleGradient: { from: string; to: string };
-  chartType: "bar" | "pie";
-  chartData: ChartData<"bar" | "pie">;
-  chartOptions?: ChartOptions<"bar" | "pie">;
+  chartType: "bar" | "pie" | "line";
+  chartData: ChartData<"bar" | "pie" | "line">;
+  chartOptions?: ChartOptions<"bar" | "pie" | "line">;
   isLoading?: boolean;
   isEmpty?: boolean;
   emptyIcon?: React.ReactNode;
@@ -82,6 +109,22 @@ const defaultPieOptions: ChartOptions<"pie"> = {
   },
 };
 
+const defaultLineOptions: ChartOptions<"line"> = {
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      titleColor: "white",
+      bodyColor: "white",
+      padding: 12,
+      cornerRadius: 8,
+    },
+  },
+};
+
 const ChartCard: React.FC<ChartCardProps> = ({
   title,
   subtitle,
@@ -103,9 +146,13 @@ const ChartCard: React.FC<ChartCardProps> = ({
 }) => {
   // Determinar qué opciones de gráfico usar
   const defaultOptions =
-    chartType === "bar" ? defaultBarOptions : defaultPieOptions;
+    chartType === "bar" ? defaultBarOptions : chartType === "pie" ? defaultPieOptions : defaultLineOptions;
   const options = chartOptions || defaultOptions;
 
+
+  const generateChartId = () => {
+  return `chart-${chartType}-${Math.random().toString(36).substring(2, 9)}`;
+};
   return (
     <div
       className={`bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100 ${className}`}
@@ -133,7 +180,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
           <div className={`w-6 h-6 ${iconColor}`}>{icon}</div>
         </div>
       </div>
-      <div
+       <div
         className={`${
           chartType === "pie" ? "flex items-center justify-center" : "relative"
         }`}
@@ -177,17 +224,33 @@ const ChartCard: React.FC<ChartCardProps> = ({
               </p>
             )}
           </div>
-        ) : chartType === "bar" ? (
-          <Bar
-            data={chartData as ChartData<"bar">}
-            options={options as ChartOptions<"bar">}
-          />
-        ) : (
-          <Pie
-            data={chartData as ChartData<"pie">}
-            options={options as ChartOptions<"pie">}
-          />
-        )}
+         ) : (
+          <>
+            {chartType === "bar" && (
+              <Bar
+                data={chartData as ChartData<"bar">}
+                options={options as ChartOptions<"bar">}
+                key={generateChartId()}
+              />
+            )}
+            {chartType === "line" && (
+              <Line
+                data={chartData as ChartData<"line">}
+                options={options as ChartOptions<"line">}
+                key={generateChartId()}
+
+              />
+            )}
+            {chartType === "pie" && (
+              <Pie
+                data={chartData as ChartData<"pie">}
+                options={options as ChartOptions<"pie">}
+                key={generateChartId()}
+              />
+            )}
+          </>
+         )
+        }
       </div>
     </div>
   );
