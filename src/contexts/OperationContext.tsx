@@ -15,6 +15,7 @@ import {
   OperationFilterDto,
 } from "@/services/interfaces/operationDTO";
 import { Operation } from "@/core/model/operation";
+import { id } from "date-fns/locale";
 
 
 // Definir la interfaz para respuestas paginadas con nextPages
@@ -342,6 +343,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
           timeStart: group.timeStart,
           dateEnd: group.dateEnd,
           timeEnd: group.timeEnd,
+          id_task: group.id_task || null,
           workerIds: group.workers || group.workerIds,
         };
       });

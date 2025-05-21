@@ -64,13 +64,23 @@ export const useOperationManagement = ({
 
       // Normalizar grupos para evitar duplicación y usar el formato correcto
       if (data.groups && data.groups.length > 0) {
-        formattedData.groups = data.groups.map((group: any) => ({
-          workerIds: group.workerIds || group.workers || [],
-          dateStart: group.dateStart || null,
-          dateEnd: group.dateEnd || null,
-          timeStart: group.timeStart || null,
-          timeEnd: group.timeEnd || null,
-        }));
+        formattedData.groups = data.groups.map((group: any) => {
+          // Verificar si es un grupo de trabajadores individuales (sin fecha/hora)
+          const isIndividualGroup = !group.dateStart || !group.timeStart;
+
+          return {
+            workerIds: group.workerIds || group.workers || [],
+            dateStart: group.dateStart || null,
+            dateEnd: group.dateEnd || null,
+            timeStart: group.timeStart || null,
+            timeEnd: group.timeEnd || null,
+            // Usar el id_task del grupo si existe, si no, usar el de la operación principal
+            // especialmente para grupos individuales
+            id_task:
+              group.id_task ||
+              (isIndividualGroup ? parseInt(data.id_task) : null),
+          };
+        });
       }
 
       // Añadir campos solo para actualización

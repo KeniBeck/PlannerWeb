@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Worker } from "@/core/model/worker";
+import { id } from "date-fns/locale";
 
 export function useWorkersForm(formData: any, setFormData: any, availableWorkers: Worker[]) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -10,7 +11,8 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
       dateStart: "",
       dateEnd: "",
       timeStart: "",
-      timeEnd: ""
+      timeEnd: "",
+      id_task: null as number | null,
     });
     const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null);
   
@@ -30,45 +32,17 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
     // Trabajadores disponibles para selección individual (excluye a los que están en grupos)
     const workersForIndividualSelection = useMemo(() => {
       return availableWorkers.filter(worker => 
-        worker.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !workersInGroups.has(worker.id)
+        worker.name.toLowerCase().includes(searchTerm.toLowerCase())  
+        // && !workersInGroups.has(worker.id)
       );
     }, [availableWorkers, searchTerm, workersInGroups]);
     
-    // Trabajadores disponibles para grupos (excluye a los seleccionados individualmente excepto los del grupo actual)
+    // Trabajadores disponibles para grupos (Modificado para incluir todos los trabajadores)
     const workersForGroupSelection = useMemo(() => {
-      // Excluir los que ya están en selección individual o en otros grupos
-      const excludedIds = new Set<number>([...formData.workerIds]);
-  
-        // Excluir los que están en OTROS grupos (no el que estamos editando)
-    formData.groups.forEach((group: any, idx: number) => {
-      // Si NO estamos editando este grupo o si no estamos editando ningún grupo,
-      // excluir todos sus trabajadores
-      if (editingGroupIndex !== idx && Array.isArray(group.workers)) {
-        group.workers.forEach((id: number) => {
-          excludedIds.add(id);
-        });
-      }
-    });
-      
-      // Si estamos editando un grupo, no excluir los trabajadores de ese grupo
-      if (editingGroupIndex !== null) {
-        const groupBeingEdited = formData.groups[editingGroupIndex];
-        if (groupBeingEdited && Array.isArray(groupBeingEdited.workers)) {
-          groupBeingEdited.workers.forEach((id: number) => {
-            excludedIds.delete(id);
-          });
-        }
-      }
-      
-      // No excluir los del grupo actual que estamos creando/editando
-      const availableForCurrentGroup = availableWorkers.filter(worker => 
-        worker.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        (!excludedIds.has(worker.id) || currentGroup.workers.includes(worker.id))
+      return availableWorkers.filter(worker => 
+        worker.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      
-      return availableForCurrentGroup;
-    }, [availableWorkers, searchTerm, formData.workerIds, currentGroup.workers, editingGroupIndex, formData.groups]);
+    }, [availableWorkers, searchTerm]);
   
     // Manejar selección de trabajadores individuales
     const handleWorkerSelection = (workerId: number, selected: boolean) => {
@@ -132,7 +106,8 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
         dateStart: group.dateStart || "",
         dateEnd: group.dateEnd || "",
         timeStart: group.timeStart || "",
-        timeEnd: group.timeEnd || ""
+        timeEnd: group.timeEnd || "",
+        id_task: group.id_task || null,
       });
       setEditingGroupIndex(groupIndex);
       setShowGroupForm(true);
@@ -151,6 +126,7 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
           dateEnd: currentGroup.dateEnd || null,
           timeStart: currentGroup.timeStart,
           timeEnd: currentGroup.timeEnd || null,
+          id_task: currentGroup.id_task || null,
           // No incluir groupId para grupos nuevos, solo para los que estamos editando
           ...(editingGroupIndex !== null && formData.groups[editingGroupIndex]?.groupId 
               ? {groupId: formData.groups[editingGroupIndex].groupId} 
@@ -177,7 +153,8 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
           dateStart: "",
           dateEnd: "",
           timeStart: "",
-          timeEnd: ""
+          timeEnd: "",
+          id_task: null,
         });
         setShowGroupForm(false);
         setEditingGroupIndex(null);
@@ -230,7 +207,8 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
         dateStart: "",
         dateEnd: "",
         timeStart: "",
-        timeEnd: ""
+        timeEnd: "",
+        id_task: null,
       });
       setShowGroupForm(false);
       setEditingGroupIndex(null);
