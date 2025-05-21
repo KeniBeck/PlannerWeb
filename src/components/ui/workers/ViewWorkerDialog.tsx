@@ -225,7 +225,7 @@ export function ViewWorkerDialog({
                   {/* Estado Actual */}
                   <div className="flex">
                     <div className={`min-w-[40px] h-10 bg-white rounded-full flex items-center justify-center mr-4 shadow-sm`}>
-                      <span className={statusConfig.textColor}>{statusConfig.icon.props.children}</span>
+                      <span className={`${statusConfig.textColor} ml-2`}>{statusConfig.icon}</span>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-1">Estado Actual</p>

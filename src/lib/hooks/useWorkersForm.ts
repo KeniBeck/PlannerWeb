@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Worker } from "@/core/model/worker";
-import { id } from "date-fns/locale";
 
 export function useWorkersForm(formData: any, setFormData: any, availableWorkers: Worker[]) {
     const [searchTerm, setSearchTerm] = useState("");
