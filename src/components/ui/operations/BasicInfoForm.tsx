@@ -62,7 +62,7 @@ export default function BasicInfoForm({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Zona <span className="text-red-500">*</span>
+              Zona 
               {isEditMode && <span className="ml-1 text-xs text-amber-600">(No editable)</span>}
             </label>
             <div className="relative">
