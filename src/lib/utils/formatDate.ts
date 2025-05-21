@@ -1,10 +1,7 @@
 import { addDays, addMinutes } from "date-fns";
-
-export const formatDate = (date: string | undefined) => {
-  if (!date) return "Sin fecha";
-
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
 
 /**
  * Formatea una fecha en formato largo (ej: "21 de mayo de 2023")
@@ -115,4 +112,4 @@ export const formatDateTime = (dateTimeStr: string | null | undefined): string =
     return String(dateTimeStr || "Fecha y hora inválidas");
   }
 };
-}
+
