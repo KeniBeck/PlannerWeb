@@ -20,6 +20,7 @@ interface GroupsWorkersTabProps {
   addOrUpdateWorkerGroup: () => void;
   removeWorkerGroup: (index: number) => void;
   cancelGroupEditing: () => void;
+  duplicateWorkerGroup: (index: number) => void;
   errors: any;
 }
 
@@ -41,6 +42,7 @@ export const GroupsWorkersTab: React.FC<GroupsWorkersTabProps> = ({
   addOrUpdateWorkerGroup,
   removeWorkerGroup,
   cancelGroupEditing,
+  duplicateWorkerGroup,
   errors
 }) => {
   return (
@@ -53,6 +55,7 @@ export const GroupsWorkersTab: React.FC<GroupsWorkersTabProps> = ({
         startEditingGroup={startEditingGroup}
         removeWorkerGroup={removeWorkerGroup}
         removeWorkerFromGroup={removeWorkerFromGroup}
+        duplicateWorkerGroup={duplicateWorkerGroup}
         onCreateGroup={() => {
           setCurrentGroup({
             workers: [],

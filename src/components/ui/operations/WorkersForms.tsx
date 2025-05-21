@@ -40,7 +40,8 @@ export default function WorkersForm({
     setEditingGroupIndex,
     setCurrentGroup,
     setShowGroupForm,
-    cancelGroupEditing
+    cancelGroupEditing,
+    duplicateWorkerGroup,
   } = useWorkersForm(formData, setFormData, availableWorkers);
 
   return (
@@ -90,6 +91,7 @@ export default function WorkersForm({
           removeWorkerGroup={removeWorkerGroup}
           cancelGroupEditing={cancelGroupEditing}
           errors={errors}
+          duplicateWorkerGroup={duplicateWorkerGroup}
         />
       )}
     </div>
