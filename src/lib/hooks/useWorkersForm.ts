@@ -97,6 +97,24 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
         setFormData({ ...formData, groups: newGroups });
       }
     };
+
+    const duplicateWorkerGroup = (index: number) => {
+      const groupToDuplicate = { ...formData.groups[index] };
+      
+      // Si el grupo tiene workers como array de objetos, asegúrate de hacer una copia profunda
+      const duplicatedGroup = {
+        ...groupToDuplicate,
+        workers: [...groupToDuplicate.workers], // Copia el array de workers
+        // Opcionalmente puedes modificar algún dato si lo deseas
+        // dateStart: "nueva fecha", // Si quieres cambiar algún valor
+      };
+      
+      // Añadir el grupo duplicado a la lista de grupos
+      setFormData({
+        ...formData,
+        groups: [...formData.groups, duplicatedGroup]
+      });
+    };
   
     // Iniciar la edición de un grupo existente
     const startEditingGroup = (groupIndex: number) => {
@@ -239,5 +257,6 @@ export function useWorkersForm(formData: any, setFormData: any, availableWorkers
     addOrUpdateWorkerGroup,
     removeWorkerGroup,
     getWorkerNameById,
+    duplicateWorkerGroup,
   };
 }
