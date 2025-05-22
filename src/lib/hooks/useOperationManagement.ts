@@ -58,6 +58,9 @@ export const useOperationManagement = ({
         id_area: parseInt(data.id_area),
         id_task: parseInt(data.id_task),
         id_client: parseInt(data.id_client),
+        id_clientProgramming: data.id_clientProgramming
+          ? parseInt(data.id_clientProgramming)
+          : null,
         inChargedIds: data.inChargedIds || [],
         workerIds: [], // Será rellenado a partir de los grupos
       };
@@ -82,7 +85,6 @@ export const useOperationManagement = ({
           };
         });
       }
-
       // Añadir campos solo para actualización
       if (isEdit) {
         formattedData.id = data.id;
@@ -95,8 +97,9 @@ export const useOperationManagement = ({
       // Eliminar campos no utilizados o con valores null/undefined
       Object.keys(formattedData).forEach((key) => {
         if (
-          formattedData[key as keyof OperationCreateData] === null ||
-          formattedData[key as keyof OperationCreateData] === undefined
+          key !== "id_clientProgramming" && // Nunca eliminar id_clientProgramming
+          (formattedData[key as keyof OperationCreateData] === null ||
+            formattedData[key as keyof OperationCreateData] === undefined)
         ) {
           delete formattedData[key as keyof OperationCreateData];
         }

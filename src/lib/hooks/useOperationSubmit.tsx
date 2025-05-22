@@ -1,3 +1,4 @@
+import { id } from "date-fns/locale";
 import { useCallback } from "react";
 import Swal from "sweetalert2";
 
@@ -126,6 +127,7 @@ export function useOperationSubmit(
         id_area: Number(formData.id_area),
         id_task: Number(formData.id_task),
         id_client: Number(formData.id_client),
+        id_clientProgramming: Number(formData.id_clientProgramming),
         groups: normalizedGroups,
         inChargedIds: formData.inChargedIds,
         removedWorkerIds: allRemovedWorkerIds,
