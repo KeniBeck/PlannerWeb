@@ -45,9 +45,10 @@ export interface OperationUpdateData {
   zone?: number;
   motorShip?: string;
   dateStart?: string;
-  timeStrat?: string; // Nota: parece tener un typo en la API
+  timeStrat?: string; 
   dateEnd?: string;
   timeEnd?: string;
+  id_clientProgramming?: number;
   id_group?: string;
   workers?: WorkerRelations;
   inCharged?: PersonnelRelations;
@@ -73,6 +74,7 @@ export interface OperationCreateData {
   id_area: number;
   id_task?: number;
   id_client?: number;
+  id_clientProgramming?: number | null;
   workerIds: number[];
   groups?: WorkerGroup[];
   id_group?: string;

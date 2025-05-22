@@ -3,7 +3,6 @@ import { Programming } from "@/core/model/programming";
 import { ClientProgrammingService } from "@/services/clientProgramming";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { authService } from "@/services/authService";
-import { formatDate } from "@/lib/utils/formatDate";
 
 // Interfaz para el contexto
 interface ProgrammingContextType {

@@ -167,7 +167,6 @@ export default function Feeding() {
     ],
     []
   );
-  console.log('[Feeding] Acciones:', feedings);
 
   // Definir las columnas para exportar a Excel
   const exportColumns: ExcelColumn[] = useMemo(

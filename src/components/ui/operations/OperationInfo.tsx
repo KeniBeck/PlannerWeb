@@ -1,5 +1,5 @@
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+
+import { formatDate, formatDateTime, formatLongDate, formatTime } from "@/lib/utils/formatDate";
 import {
   FaMapMarkerAlt,
   FaClock,
@@ -58,35 +58,6 @@ export const OperationInfo = ({
   createAt,
   updateAt,
 }: OperationInfoProps) => {
-  // Función para formatear fechas
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "No definida";
-    try {
-      return format(new Date(dateStr), "dd 'de' MMMM 'de' yyyy", {
-        locale: es,
-      });
-    } catch (e) {
-      return String(dateStr);
-    }
-  };
-
-  // Función para formatear horas
-  const formatTime = (timeStr: string | null | undefined) => {
-    if (!timeStr) return "No definida";
-    return timeStr;
-  };
-
-  // Función para formatear datetime
-  const formatDateTime = (dateStr: string | undefined) => {
-    if (!dateStr) return "No disponible";
-    try {
-      return format(new Date(dateStr), "dd 'de' MMMM 'de' yyyy, HH:mm", {
-        locale: es,
-      });
-    } catch (e) {
-      return String(dateStr);
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -171,7 +142,7 @@ export const OperationInfo = ({
             </p>
             <p className="text-lg font-medium text-gray-800 flex items-center">
               <FaCalendarAlt className="text-amber-500 mr-2" />
-              {formatDate(dateStart)}
+              {formatLongDate(dateStart)}
             </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-amber-200 transition-all">
@@ -189,7 +160,7 @@ export const OperationInfo = ({
             </p>
             <p className="text-lg font-medium text-gray-800 flex items-center">
               <FaCalendarAlt className="text-amber-500 mr-2" />
-              {formatDate(dateEnd)}
+              {formatLongDate(dateEnd)}
             </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-amber-200 transition-all">
