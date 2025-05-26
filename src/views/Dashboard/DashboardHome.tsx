@@ -15,6 +15,7 @@ import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { BsBuildingsFill } from "react-icons/bs";
 import { useFaults } from "@/contexts/FaultContext";
 import { RecentFaultsTable } from "@/components/ui/dashboard/RecentFaultTable";
+import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
 
 export default function DashboardHome() {
   const { workers } = useWorkers();
@@ -28,7 +29,8 @@ export default function DashboardHome() {
   } = useOperations();
   const { areas } = useAreas();
   const { clients } = useClients();
-  const {faults} = useFaults();
+  const { faults } = useFaults();
+  useOverdueProgrammingNotifications();
 
   const totalOperationsOfDay =
     totalCanceled + totalPending + totalCompleted + totalInProgress;
@@ -36,7 +38,6 @@ export default function DashboardHome() {
   const totalWorkerDeactivated = workers.filter(
     (w) => w.status === WorkerStatus.DEACTIVATED
   ).length;
-
 
   // Calculate key metrics
   const availableWorkers = workers.filter(

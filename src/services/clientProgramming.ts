@@ -8,10 +8,7 @@ export class ClientProgrammingService {
     programation: Omit<Programming, "id">
   ): Promise<Programming> {
     try {
-      const response = await api.post(
-        `/client-programming`,
-        programation
-      );
+      const response = await api.post(`/client-programming`, programation);
 
       if (response.status < 200 || response.status >= 300) {
         StatusCodeAlert(response);
@@ -42,15 +39,11 @@ export class ClientProgrammingService {
 
   async getProgramation(date: string) {
     try {
-      return globalServiceCache.getOrFetch(`programming:${date}`, async () => {
-        const response = await api.get(
-          `/client-programming?date=${date}`
-        );
-        if (response.status < 200 || response.status >= 300) {
-          StatusCodeAlert(response);
-        }
-        return response.data;
-      });
+      const response = await api.get(`/client-programming?date=${date}`);
+      if (response.status < 200 || response.status >= 300) {
+        StatusCodeAlert(response);
+      }
+      return response.data;
     } catch (error) {
       console.error("Error fetching programation:", error);
       throw error;

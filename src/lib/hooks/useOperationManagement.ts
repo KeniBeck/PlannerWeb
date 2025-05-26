@@ -97,7 +97,6 @@ export const useOperationManagement = ({
       // Eliminar campos no utilizados o con valores null/undefined
       Object.keys(formattedData).forEach((key) => {
         if (
-          key !== "id_clientProgramming" && // Nunca eliminar id_clientProgramming
           (formattedData[key as keyof OperationCreateData] === null ||
             formattedData[key as keyof OperationCreateData] === undefined)
         ) {

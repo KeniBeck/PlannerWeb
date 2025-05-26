@@ -2,6 +2,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Workers from "./workers/Workers";
+import { MdNotifications } from "react-icons/md";
 import {
   AiOutlineMenu,
   AiOutlineClose,
@@ -35,6 +36,10 @@ import { jwtDecode } from "jwt-decode";
 import Feeding from "./feedings/Feeding";
 import { PiShippingContainerDuotone } from "react-icons/pi";
 import Containers from "./containers/Containers";
+import Notifications from "./notifications/Notifications";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
+import AlertCards from "@/components/dialog/AlertCards";
 
 const COLORS = {
   darkBlue: "#155dfc", // Azul oscuro
@@ -93,6 +98,8 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState<string>("");
   const location = useLocation();
   const [nameUser, setNameUser] = useState<string>("");
+  const { notifications } = useNotifications();
+  const { overdueCount } = useOverdueProgrammingNotifications();
 
   // Obtener el rol del usuario del token
   useEffect(() => {
@@ -468,6 +475,40 @@ export default function Dashboard() {
                 )}
               </div>
 
+              {/* Notificaciones */}
+              <div>
+                <Link
+                  to="/dashboard/notifications"
+                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all
+                    ${isMenuOpen ? "" : "justify-center"} 
+                    ${
+                      isActive("/dashboard/notifications")
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    } relative`}
+                >
+                  <span
+                    className={`${
+                      isActive("/dashboard/notifications")
+                        ? "text-blue-600"
+                        : ""
+                    } relative`}
+                  >
+                    <MdNotifications size={20} />
+                    {notifications.length > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white shadow-sm">
+                        {notifications.length > 9 ? "9+" : notifications.length}
+                      </span>
+                    )}
+                  </span>
+                  {isMenuOpen && (
+                    <span className="ml-3 text-sm font-medium">
+                      Notificaciones
+                    </span>
+                  )}
+                </Link>
+              </div>
+
               {/* Perfil y cerrar sesión fuera de categorías */}
               <div>
                 <Link
@@ -534,6 +575,7 @@ export default function Dashboard() {
                     Feature.USERS,
                     Feature.SERVICES,
                     Feature.CLIENTS,
+                    Feature.PROGRAMMING,
                   ]}
                 >
                   <DashboardHome />
@@ -592,7 +634,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
             {/* Rutas protegidas con ProtectedRoute */}
             <Route
               path="/services"
@@ -607,7 +648,6 @@ export default function Dashboard() {
                 />
               }
             />
-
             <Route
               path="/faults"
               element={
@@ -616,7 +656,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
             <Route
               path="/containers"
               element={
@@ -625,7 +664,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
             <Route
               path="/clients"
               element={
@@ -663,9 +701,18 @@ export default function Dashboard() {
               }
             />
             <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/notifications"
+              element={
+                <LayeredProviders features={[Feature.PROGRAMMING]}>
+                  <Notifications />
+                </LayeredProviders>
+              }
+            />
           </Routes>
         </main>
       </div>
+      <AlertCards/>
     </div>
   );
 }

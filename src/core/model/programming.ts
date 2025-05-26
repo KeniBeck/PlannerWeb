@@ -6,7 +6,7 @@ export interface Programming {
   timeStart: string;
   ubication: string;
   client: string;
-  status: "COMPLETED" | "INCOMPLETE" | "UNASSIGNED" | "ASSIGNED";
+  status?: "COMPLETED" | "INCOMPLETE" | "UNASSIGNED" | "ASSIGNED";
   id_operation?: number;
   id_user?: number;
 }

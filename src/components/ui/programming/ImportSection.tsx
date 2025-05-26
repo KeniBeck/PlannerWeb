@@ -226,7 +226,6 @@ export function ImportSection({
           timeStart: timeStart,
           ubication: item.ubicacion,
           client: item.cliente,
-          status: "INCOMPLETE"
         };
       });
 
@@ -329,7 +328,7 @@ export function ImportSection({
           <div className="space-y-3 text-sm">
             <p>El archivo Excel debe contener las siguientes columnas:</p>
             <ul className="list-disc list-inside space-y-1 text-gray-700">
-              <li>Solicitud de servicio (opcional)</li>
+              <li>Solicitud de servicio (obligatorio)</li>
               <li>Servicio (obligatorio)</li>
               <li>Fecha inicio (obligatorio)</li>
               <li>Ubicación (obligatorio)</li>

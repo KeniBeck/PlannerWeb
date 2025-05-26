@@ -5,33 +5,39 @@ import { ProtectedRoute } from "./middleware/ProtectedRoute";
 import Forbidden from "./views/Foorbiden";
 import Dashboard from "./views/Dashboard";
 import ServerStatusBanner from "./components/dialog/ServerStatusBanner";
+import { Feature, LayeredProviders } from "./contexts/LayeredProviders";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 const App = () => {
   return (
     <>
-    <ServerStatusBanner/>
-      <Router>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forbidden" element={<Forbidden />} />
-          <Route
-            path="/dashboard/*"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
+      <NotificationProvider>
+        <ServerStatusBanner />
+        <Router>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forbidden" element={<Forbidden />} />
+            <Route
+              path="/dashboard/*"
+              element={
+                <ProtectedRoute>
+                  <LayeredProviders features={[Feature.PROGRAMMING]}>
+                    <Dashboard />
+                  </LayeredProviders>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </>
   );
 };
