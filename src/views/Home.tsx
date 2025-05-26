@@ -1,5 +1,5 @@
 import { authService } from "@/services/authService";
-import { Navigate, replace } from "react-router";
+import { Navigate } from "react-router";
 
 const Home = () => {
   if (authService.isLocallyAuthenticated()) {
