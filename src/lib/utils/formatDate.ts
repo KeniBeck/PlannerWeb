@@ -62,32 +62,116 @@ export const isDateBefore = (date1: Date, date2: Date): boolean => {
   );
 };
 
-export function excelDateToJSDate(excelDate: number) {
-  // Excel epoch (Jan 1, 1900)
-  const epoch = new Date(1899, 11, 30);
-  // Ajuste para el error de Excel con 1900 como año bisiesto
-  const days = excelDate > 60 ? excelDate - 1 : excelDate;
-  // Añadir días a la fecha base
-  const date = addDays(epoch, days);
+/**
+ * Verifica si un año es bisiesto
+ */
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
 
-  // Manejar la parte decimal para las horas
+/**
+ * Obtiene los días del mes según el mes y año
+ */
+function getDaysInMonth(month: number, year: number): number {
+  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  
+  // Ajustar febrero en años bisiestos
+  if (month === 2 && isLeapYear(year)) {
+    return 29;
+  }
+  
+  return daysInMonth[month - 1];
+}
+
+/**
+ * Función mejorada para convertir fechas de Excel a fechas JavaScript
+ * Preserva la hora original y asegura formato hispano para las fechas
+ */
+export function excelDateToJSDate(excelDate: number): Date {
+  // Excel epoch (Jan 1, 1900) - pero Excel tiene un bug que considera 1900 como año bisiesto
+  const epoch = new Date(1899, 11, 30); // 30 de diciembre de 1899
+  
+  // Ajuste para el error de Excel con 1900 como año bisiesto
+  let days = excelDate > 60 ? excelDate - 1 : excelDate;
+  
+  // Crear fecha base
+  let resultDate = addDays(epoch, Math.floor(days));
+  
+  // Preservar la hora original de Excel
   const timeValue = excelDate % 1;
   if (timeValue > 0) {
     const millisInDay = timeValue * 24 * 60 * 60 * 1000;
-    date.setMilliseconds(date.getMilliseconds() + millisInDay);
+    resultDate.setMilliseconds(resultDate.getMilliseconds() + millisInDay);
+  }
+
+  // Verificar y ajustar según el tipo de mes
+  const currentMonth = resultDate.getMonth() + 1; // getMonth() es 0-indexado
+  const currentYear = resultDate.getFullYear();
+  
+  // Obtener días en el mes actual
+  const daysInCurrentMonth = getDaysInMonth(currentMonth, currentYear);
+  
+  // Ajuste específico basado en el tipo de mes
+  if (daysInCurrentMonth === 28) {
+    // Febrero (año no bisiesto) - agregar 1 día
+    resultDate = addDays(resultDate, 1);
+  } else if (daysInCurrentMonth === 29) {
+    // Febrero (año bisiesto) - agregar 1 día
+    resultDate = addDays(resultDate, 1);
+  } else if (daysInCurrentMonth === 30) {
+    // Meses de 30 días (abril, junio, septiembre, noviembre) - agregar 1 día
+    resultDate = addDays(resultDate, 1);
+  } else if (daysInCurrentMonth === 31) {
+    // Meses de 31 días - agregar 1 día
+    resultDate = addDays(resultDate, 1);
   }
 
   // Redondear minutos que terminan en 59 a la siguiente hora
-  const minutes = date.getMinutes();
+  const minutes = resultDate.getMinutes();
   if (minutes === 59) {
-    return addMinutes(date, 1);
+    resultDate = addMinutes(resultDate, 1);
+  } else if (minutes === 29) {
+    resultDate = addMinutes(resultDate, 1);
   }
 
-  if (minutes === 29) {
-    return addMinutes(date, 1);
+  // CONVERSIÓN A FORMATO HISPANO: Solo intercambiar mes y día si es necesario
+  // Preservar la hora y otros componentes intactos
+  const originalMonth = resultDate.getMonth() + 1; // 1-12
+  const originalDay = resultDate.getDate(); // 1-31
+  const originalYear = resultDate.getFullYear();
+  const originalHours = resultDate.getHours();
+  const originalMinutes = resultDate.getMinutes();
+  const originalSeconds = resultDate.getSeconds();
+  const originalMillis = resultDate.getMilliseconds();
+
+  // Solo intercambiar si ambos valores son válidos como mes y día
+  // Y si detectamos que viene en formato US (MM/DD/YYYY)
+  if (originalMonth <= 12 && originalDay <= 12 && originalMonth !== originalDay) {
+    // Verificar que el intercambio sea válido
+    const maxDaysInMonth = getDaysInMonth(originalDay, originalYear);
+    
+    if (originalMonth <= maxDaysInMonth) {
+      // Crear nueva fecha con día y mes intercambiados, preservando hora
+      const hispanicDate = new Date(
+        originalYear,
+        originalDay - 1, // mes (0-indexado)
+        originalMonth,   // día
+        originalHours,
+        originalMinutes,
+        originalSeconds,
+        originalMillis
+      );
+      
+      // Validar que la fecha intercambiada sea válida
+      if (hispanicDate.getMonth() === (originalDay - 1) && 
+          hispanicDate.getDate() === originalMonth) {
+        return hispanicDate;
+      }
+    }
   }
 
-  return date;
+  // Si no se puede o no se debe intercambiar, devolver fecha original
+  return resultDate;
 }
 
 /**
@@ -171,6 +255,6 @@ export const formatLocalTimeToElegant = (localDateStr: string): string => {
 
 // Calcular minutos entre dos fechas
 export const getMinutesBetween = (date1: Date, date2: Date): number => {
-  const diffMs = Math.abs(date1.getTime() - date2.getTime());
+  const diffMs = Math.abs(date1.getTime() - date2.getDate());
   return Math.floor(diffMs / 60000); // Convertir ms a minutos
 };

@@ -24,7 +24,7 @@ export function useOperationForm(
     dateStart: "",
     timeStart: "",
     id_area: "",
-    id_task: "",
+    // id_task: "",
     id_client: "",
     workers: "",
     inCharged: "",
@@ -40,7 +40,7 @@ export function useOperationForm(
     timeStrat: operation?.timeStrat || "",
     timeEnd: operation?.timeEnd || "",
     id_area: operation?.jobArea?.id || "",
-    id_task: operation?.task?.id || "",
+    // id_task: operation?.task?.id || null,
     id_client: operation?.client?.id || "",
     id_clientProgramming: operation?.clientProgramming?.id || "",
     workerIds: operation?.workers?.map((w: any) => w.id) || [],
@@ -217,10 +217,10 @@ export function useOperationForm(
           operation?.id_area?.toString() ||
           operation?.jobArea?.id?.toString() ||
           "",
-        id_task:
-          operation?.id_task?.toString() ||
-          operation?.task?.id?.toString() ||
-          "",
+        // id_task:
+        //   operation?.id_task?.toString() ||
+        //   operation?.task?.id?.toString() ||
+        //   null,
         id_client:
           operation?.id_client?.toString() ||
           operation?.client?.id?.toString() ||
@@ -266,7 +266,7 @@ export function useOperationForm(
         dateStart: "",
         timeStart: "",
         id_area: "",
-        id_task: "",
+        // id_task: "",
         id_client: "",
         workers: "",
         inCharged: "",

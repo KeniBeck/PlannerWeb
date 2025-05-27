@@ -157,36 +157,6 @@ export default function BasicInfoForm({
               </p>
             )}
           </div>
-          {/* Selector de Programación de Cliente */}
-          <div className="md:col-span-3">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Programación de Cliente
-              {isEditMode && (
-                <span className="ml-1 text-xs text-amber-600">
-                  (No editable)
-                </span>
-              )}
-            </label>
-            {isEditMode ? (
-              <div className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-gray-100 border border-gray-200 text-gray-800">
-                {getProgrammingName()}
-              </div>
-            ) : (
-              <select
-                name="id_clientProgramming"
-                value={formData.id_clientProgramming || ""}
-                onChange={handleChange}
-                className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
-              >
-                <option value="">Seleccionar programación</option>
-                {programming.map((prog) => (
-                  <option key={prog.id} value={prog.id}>
-                    {prog.service} - {prog.client}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
         </div>
       </div>
 
@@ -233,7 +203,7 @@ export default function BasicInfoForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Servicio <span className="text-red-500">*</span>
+              Programación de Cliente
               {isEditMode && (
                 <span className="ml-1 text-xs text-amber-600">
                   (No editable)
@@ -242,27 +212,27 @@ export default function BasicInfoForm({
             </label>
             {isEditMode ? (
               <div className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-gray-100 border border-gray-200 text-gray-800">
-                {getServiceName()}
+                {getProgrammingName()}
               </div>
             ) : (
               <select
-                name="id_task"
-                value={formData.id_task}
+                name="id_clientProgramming"
+                value={formData.id_clientProgramming || ""}
                 onChange={handleChange}
                 className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
               >
-                <option value="">Seleccionar servicio</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
+                <option value="">Seleccionar programación</option>
+                {programming.map((prog) => (
+                  <option key={prog.id} value={prog.id}>
+                    {prog.service} - {prog.client}
                   </option>
                 ))}
               </select>
             )}
-            {errors.id_task && (
+            {errors.id_clientProgramming && (
               <p className="mt-1.5 text-sm text-red-500 flex items-center">
                 <span className="mr-1.5">•</span>
-                {errors.id_task}
+                {errors.id_clientProgramming}
               </p>
             )}
           </div>

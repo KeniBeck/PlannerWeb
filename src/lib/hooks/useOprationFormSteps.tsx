@@ -24,7 +24,7 @@ export function useStepNavigation(
         newErrors.dateStart = "";
         newErrors.timeStart = "";
         newErrors.id_area = "";
-        newErrors.id_task = "";
+        // newErrors.id_task = "";
         newErrors.id_client = "";
         break;
       case 3:
@@ -47,10 +47,10 @@ export function useStepNavigation(
           isValid = false;
         }
 
-        if (!formData.id_task) {
-          newErrors.id_task = "La tarea es obligatoria";
-          isValid = false;
-        }
+        // if (!formData.id_task) {
+        //   newErrors.id_task = "La tarea es obligatoria";
+        //   isValid = false;
+        // }
 
         if (!formData.id_client) {
           newErrors.id_client = "El cliente es obligatorio";

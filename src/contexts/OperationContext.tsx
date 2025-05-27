@@ -353,7 +353,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
         zone: parseInt(data.zone),
         dateStart: data.dateStart,
         timeStrat: data.timeStrat,
-        id_task: data.id_task,
+        id_task: data.id_task || null,
         id_area: data.id_area,
         id_client: data.id_client,
         workerIds: data.workerIds,

@@ -39,7 +39,7 @@ export class ClientProgrammingService {
 
   async getProgramation(date: string) {
     try {
-      const response = await api.get(`/client-programming?date=${date}`);
+      const response = await api.get(`/client-programming/filtered?dateStart=${date}`);
       if (response.status < 200 || response.status >= 300) {
         StatusCodeAlert(response);
       }
