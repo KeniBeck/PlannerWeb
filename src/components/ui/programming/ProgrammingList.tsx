@@ -65,7 +65,7 @@ export function ProgrammingList({
   };
 
   // Obtener configuración de estado
-  const getStatusConfig = (status: string) => {
+  const getStatusConfig = (status: string | undefined) => {
     switch (status) {
       case "COMPLETE":
         return {

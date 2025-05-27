@@ -72,7 +72,7 @@ export interface OperationCreateData {
   dateEnd: string;
   timeEnd: string;
   id_area: number;
-  id_task?: number;
+  id_task?: number | null;
   id_client?: number;
   id_clientProgramming?: number | null;
   workerIds: number[];

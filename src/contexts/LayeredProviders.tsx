@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { WorkerProvider } from './WorkerContext';
 import { AreasProvider } from './AreasContext';
 import { FaultProvider } from './FaultContext';
@@ -8,6 +8,7 @@ import { ServicesProvider } from './ServicesContext';
 import { UsersProvider } from './UsersContext';
 import { FeedingProvider } from './FeedingContext';
 import { ProgrammingProvider } from './ProgrammingContext';
+import { NotificationProvider } from './NotificationContext';
 
 export enum Feature {
   WORKERS = 'workers',
@@ -20,6 +21,7 @@ export enum Feature {
   OPERATION = 'operation',
   FEEDINGS = 'feedings',
   PROGRAMMING = "programming",
+  NOTIFICATIONS = "notifications",
 }
 
 type FeatureType = Feature;
@@ -28,6 +30,11 @@ interface LayeredProvidersProps {
   children: ReactNode;
   features: FeatureType[];
 }
+
+// Singleton para el NotificationProvider - Se creará solo una vez
+// No necesitamos usar un estado o localStorage, solo mantener
+// una única instancia del contexto en toda la aplicación
+let globalNotificationProvider: ReactNode | null = null;
 
 export function LayeredProviders({ children, features }: LayeredProvidersProps) {
   // Start with the children
@@ -45,7 +52,7 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         content = <FaultProvider>{content}</FaultProvider>;
         break;
       case Feature.OPERATION:
-       content = <OperationProvider>{content}</OperationProvider>
+        content = <OperationProvider>{content}</OperationProvider>
         break;
       case Feature.AREAS:
         content = <AreasProvider>{content}</AreasProvider>;
@@ -68,8 +75,25 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
       case Feature.PROGRAMMING:
         content = <ProgrammingProvider>{content}</ProgrammingProvider>;
         break;
+      case Feature.NOTIFICATIONS:
+        // Verificar si ya existe la instancia global
+        if (!globalNotificationProvider) {
+          console.log('Creando instancia única de NotificationProvider');
+          // Crear la instancia global solo la primera vez
+          globalNotificationProvider = (
+            <NotificationProvider>{content}</NotificationProvider>
+          );
+          content = globalNotificationProvider;
+        } else {
+          // Si ya existe una instancia, hay que clonarla con el nuevo contenido
+          content = React.cloneElement(
+            globalNotificationProvider as React.ReactElement, 
+            {}, // Sin props adicionales
+            content // El nuevo children
+          );
+        }
+        break;  
       default:
-        // TypeScript debería prevenir este caso gracias al enum
         console.error(`¡Feature desconocida: ${feature}!`);
         break;
     }
@@ -77,4 +101,3 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
   
   return <>{content}</>;
 }
-

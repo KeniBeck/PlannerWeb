@@ -56,7 +56,10 @@ export const useOperationManagement = ({
         dateEnd: data.dateEnd || null,
         timeEnd: data.timeEnd || null,
         id_area: parseInt(data.id_area),
-        id_task: parseInt(data.id_task),
+        // id_task:
+        //   data.id_task && data.id_task !== "" && data.id_task !== "null"
+        //     ? parseInt(data.id_task)
+        //     : null,
         id_client: parseInt(data.id_client),
         id_clientProgramming: data.id_clientProgramming
           ? parseInt(data.id_clientProgramming)
@@ -97,9 +100,8 @@ export const useOperationManagement = ({
       // Eliminar campos no utilizados o con valores null/undefined
       Object.keys(formattedData).forEach((key) => {
         if (
-          key !== "id_clientProgramming" && // Nunca eliminar id_clientProgramming
-          (formattedData[key as keyof OperationCreateData] === null ||
-            formattedData[key as keyof OperationCreateData] === undefined)
+          formattedData[key as keyof OperationCreateData] === null ||
+          formattedData[key as keyof OperationCreateData] === undefined
         ) {
           delete formattedData[key as keyof OperationCreateData];
         }
