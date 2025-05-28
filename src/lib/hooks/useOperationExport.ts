@@ -123,7 +123,7 @@ export const useOperationExport = (workers: Worker[] = []) => {
       const headersWorkers = [
         'ID Operación', 'Estado', 'Área', 'Cliente',
         'Supervisores', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin', 'Horas Trabajadas', 
-        'Embarcación', 'Tarea', 'Turno', 'DNI Trabajador', 'Nombre Trabajador'
+        'Embarcación',  'Turno', 'DNI Trabajador', 'Nombre Trabajador'
       ];
       
       // Aplicar formato a la hoja de reporte por trabajador
@@ -139,7 +139,7 @@ export const useOperationExport = (workers: Worker[] = []) => {
       const headersGeneral = [
         'ID Operación', 'Estado', 'Área', 'Cliente',
         'Supervisores', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin', 'Horas Trabajadas', 
-        'Embarcación', 'Tarea', 'Total Trabajadores', 'Turnos'
+        'Embarcación',  'Total Trabajadores', 'Turnos'
       ];
       
       // Aplicar formato a la hoja de reporte general
@@ -265,7 +265,6 @@ export const useOperationExport = (workers: Worker[] = []) => {
       operation.timeEnd || 'N/A',
       hoursWorked || 'N/A',
       operation.motorShip || 'N/A',
-      operation.task?.name?.toUpperCase() || 'Sin tarea',
       `Turno ${groupIndex + 1}`,
       getWorkerDni(worker.id),
       worker.name
@@ -296,7 +295,6 @@ export const useOperationExport = (workers: Worker[] = []) => {
       operation.timeEnd || 'N/A',
       hoursWorked, 
       operation.motorShip || 'N/A',
-      operation.task?.name?.toUpperCase() || 'Sin tarea',
       '',
       '',
       'Sin trabajadores'
@@ -345,7 +343,6 @@ export const useOperationExport = (workers: Worker[] = []) => {
         operation.timeEnd || 'N/A',
         hoursWorked || 'N/A',
         operation.motorShip || 'N/A',
-        operation.task?.name?.toUpperCase() || 'Sin tarea',
         totalWorkers,
         totalGroups
       ];

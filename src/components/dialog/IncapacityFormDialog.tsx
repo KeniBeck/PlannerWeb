@@ -1,31 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { endOfDay, format } from 'date-fns';
-import { FaHeartbeat, FaCalendarAlt, FaPen, FaExclamationTriangle } from 'react-icons/fa';
-import { Worker } from '@/core/model/worker';
-import { DateFilter } from '../custom/filter/DateFilterProps';
-import { CauseDisability, TypeDisability } from '@/core/model/inability';
+import React, { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { FaHeartbeat, FaExclamationTriangle } from "react-icons/fa";
+import { Worker } from "@/core/model/worker";
+import { DateFilter } from "../custom/filter/DateFilterProps";
+import { CauseDisability, TypeDisability } from "@/core/model/inability";
+import { MdClose } from "react-icons/md";
 
 // Labels para mostrar en la interfaz
 const incapacityTypeLabels = {
-  [TypeDisability.INITIAL]: 'Inicial',
-  [TypeDisability.EXTENSION]: 'Prórroga'
+  [TypeDisability.INITIAL]: "Inicial",
+  [TypeDisability.EXTENSION]: "Prórroga",
 };
 
 const incapacityCauseLabels = {
-  [CauseDisability.LABOR]: 'Accidente Laboral',
-  [CauseDisability.TRANSIT]: 'Accidente de Tránsito',
-  [CauseDisability.DISEASE]: 'Enfermedad General'
+  [CauseDisability.LABOR]: "Accidente Laboral",
+  [CauseDisability.TRANSIT]: "Accidente de Tránsito",
+  [CauseDisability.DISEASE]: "Enfermedad General",
 };
 
 interface IncapacityFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   worker: Worker | null;
-  onSave: (data: { 
-    startDate: string; 
-    endDate: string; 
-    cause: CauseDisability; 
-    type: TypeDisability; 
+  onSave: (data: {
+    startDate: string;
+    endDate: string;
+    cause: CauseDisability;
+    type: TypeDisability;
   }) => void;
   isLoading?: boolean;
 }
@@ -35,14 +36,14 @@ export function IncapacityFormDialog({
   onOpenChange,
   worker,
   onSave,
-  isLoading = false
+  isLoading = false,
 }: IncapacityFormDialogProps) {
   // Estado para los datos del formulario
   const [formData, setFormData] = useState({
     startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
     cause: CauseDisability.DISEASE,
-    type: TypeDisability.INITIAL
+    type: TypeDisability.INITIAL,
   });
 
   // Estado para errores de validación
@@ -50,7 +51,7 @@ export function IncapacityFormDialog({
     startDate: "",
     endDate: "",
     cause: "",
-    type: ""
+    type: "",
   });
 
   // Resetear formulario cuando se abre/cierra el diálogo
@@ -60,7 +61,7 @@ export function IncapacityFormDialog({
         startDate: format(new Date(), "yyyy-MM-dd"),
         endDate: format(new Date(), "yyyy-MM-dd"),
         cause: CauseDisability.DISEASE,
-        type: TypeDisability.INITIAL
+        type: TypeDisability.INITIAL,
       });
       setErrors({ startDate: "", endDate: "", cause: "", type: "" });
     }
@@ -69,11 +70,11 @@ export function IncapacityFormDialog({
   // Manejar cambios en select inputs
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     // Limpiar error
     if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -83,30 +84,28 @@ export function IncapacityFormDialog({
       startDate: "",
       endDate: "",
       cause: "",
-      type: ""
+      type: "",
     };
-    
+
     if (!formData.startDate) {
       newErrors.startDate = "La fecha de inicio es obligatoria";
     }
-    
+
     if (!formData.endDate) {
       newErrors.endDate = "La fecha de finalización es obligatoria";
     }
-    
+
     if (!formData.cause) {
       newErrors.cause = "La causa de incapacidad es obligatoria";
     }
-    
+
     if (!formData.type) {
       newErrors.type = "El tipo de incapacidad es obligatorio";
     }
-    
+
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error);
+    return !Object.values(newErrors).some((error) => error);
   };
-
-
 
   // Manejar envío del formulario
   const handleSubmit = () => {
@@ -115,7 +114,7 @@ export function IncapacityFormDialog({
       startDate: formData.startDate,
       endDate: formData.endDate,
       cause: formData.cause as CauseDisability,
-      type: formData.type as TypeDisability
+      type: formData.type as TypeDisability,
     });
   };
 
@@ -133,11 +132,9 @@ export function IncapacityFormDialog({
             </h3>
             <button
               onClick={() => onOpenChange(false)}
-              className="text-white hover:text-green-200"
+              className="text-white hover:text-green-200 cursor-pointer"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <MdClose className="w-5 h-5 cursor-pointer" />
             </button>
           </div>
         </div>
@@ -174,17 +171,21 @@ export function IncapacityFormDialog({
                   value={formData.type}
                   onChange={handleSelectChange}
                   className={`w-full pl-10 pr-4 py-2 border rounded-lg ${
-                    errors.type ? 'border-red-300' : 'border-gray-300'
+                    errors.type ? "border-red-300" : "border-gray-300"
                   } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
                 >
-                  {Object.entries(incapacityTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  {Object.entries(incapacityTypeLabels).map(
+                    ([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
-              {errors.type && <p className="mt-1 text-sm text-red-500">{errors.type}</p>}
+              {errors.type && (
+                <p className="mt-1 text-sm text-red-500">{errors.type}</p>
+              )}
             </div>
 
             {/* Causa de incapacidad */}
@@ -201,17 +202,21 @@ export function IncapacityFormDialog({
                   value={formData.cause}
                   onChange={handleSelectChange}
                   className={`w-full pl-10 pr-4 py-2 border rounded-lg ${
-                    errors.cause ? 'border-red-300' : 'border-gray-300'
+                    errors.cause ? "border-red-300" : "border-gray-300"
                   } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
                 >
-                  {Object.entries(incapacityCauseLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  {Object.entries(incapacityCauseLabels).map(
+                    ([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
-              {errors.cause && <p className="mt-1 text-sm text-red-500">{errors.cause}</p>}
+              {errors.cause && (
+                <p className="mt-1 text-sm text-red-500">{errors.cause}</p>
+              )}
             </div>
 
             {/* Fecha de inicio */}
@@ -220,14 +225,18 @@ export function IncapacityFormDialog({
                 Fecha de inicio <span className="text-red-500">*</span>
               </label>
               <DateFilter
-                label='Seleccione la fecha de inicio'
+                label="Seleccione la fecha de inicio"
                 value={formData.startDate}
-                onChange={(value) => setFormData(prev => ({ ...prev, startDate: value }))}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, startDate: value }))
+                }
                 className={`w-full border rounded-lg ${
-                  errors.startDate ? 'border-red-300' : 'border-gray-300'
+                  errors.startDate ? "border-red-300" : "border-gray-300"
                 } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
               />
-              {errors.startDate && <p className="mt-1 text-sm text-red-500">{errors.startDate}</p>}
+              {errors.startDate && (
+                <p className="mt-1 text-sm text-red-500">{errors.startDate}</p>
+              )}
             </div>
 
             {/* Fecha de fin */}
@@ -236,14 +245,18 @@ export function IncapacityFormDialog({
                 Fecha de finalización <span className="text-red-500">*</span>
               </label>
               <DateFilter
-                label='Seleccione la fecha de finalización'
+                label="Seleccione la fecha de finalización"
                 value={formData.endDate}
-                onChange={(value) => setFormData(prev => ({ ...prev, endDate: value }))}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, endDate: value }))
+                }
                 className={`w-full border rounded-lg ${
-                  errors.endDate ? 'border-red-300' : 'border-gray-300'
+                  errors.endDate ? "border-red-300" : "border-gray-300"
                 } focus:ring-2 focus:ring-green-500 focus:border-green-500`}
               />
-              {errors.endDate && <p className="mt-1 text-sm text-red-500">{errors.endDate}</p>}
+              {errors.endDate && (
+                <p className="mt-1 text-sm text-red-500">{errors.endDate}</p>
+              )}
             </div>
           </div>
         </div>
@@ -252,14 +265,14 @@ export function IncapacityFormDialog({
         <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-3">
           <button
             onClick={() => onOpenChange(false)}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
             disabled={isLoading}
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none cursor-pointer"
             disabled={isLoading}
           >
             {isLoading ? (

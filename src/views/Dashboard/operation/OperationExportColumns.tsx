@@ -78,11 +78,6 @@ export const getOperationExportColumns = (): ExcelColumn[] => {
       value: (op) => op.motorShip || "N/A",
     },
     {
-      header: "Tarea",
-      field: "task.name",
-      value: (op) => op.task?.name || "Sin tarea",
-    },
-    {
       header: "Estado",
       field: "status",
       value: (op) => getStatusLabel(op.status),
