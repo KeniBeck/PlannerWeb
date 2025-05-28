@@ -2,6 +2,7 @@ import { Programming } from "@/core/model/programming";
 import api from "./client/axiosConfig";
 import { StatusCodeAlert } from "@/components/dialog/AlertsLogin";
 import { globalServiceCache } from "@/lib/utils/requestUtils";
+import { ProgrammingFilterDTO } from "./interfaces/programming";
 
 export class ClientProgrammingService {
   async createProgramation(
@@ -37,13 +38,17 @@ export class ClientProgrammingService {
     }
   }
 
-  async getProgramation(date: string) {
+  async getProgramation(fliter?: ProgrammingFilterDTO): Promise<Programming[]> {
     try {
-      const response = await api.get(`/client-programming/filtered?dateStart=${date}`);
-      if (response.status < 200 || response.status >= 300) {
-        StatusCodeAlert(response);
-      }
-      return response.data;
+      // return globalServiceCache.getOrFetch(
+      //   "programming:all",
+      //   async () => {
+          const response = await api.get(`/client-programming/filtered`, {
+            params: fliter,
+          });
+          return response.data;
+      //   }
+      // );
     } catch (error) {
       console.error("Error fetching programation:", error);
       throw error;

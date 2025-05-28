@@ -15,14 +15,6 @@ import Swal from "sweetalert2";
 import { ImportSection } from "@/components/ui/programming/ImportSection";
 import { ProgrammingList } from "@/components/ui/programming/ProgrammingList";
 
-// Estructura para mostrar solo los campos necesarios desde Excel
-interface ContainerProgramItem {
-  solicitudServicio: string;
-  servicio: string;
-  fechaInicio: string;
-  ubicacion: string;
-  cliente: string;
-}
 
 export default function Containers() {
   // Usar el contexto de programación
@@ -32,34 +24,62 @@ export default function Containers() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("view"); // "view" o "import"
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); // Nuevo estado para filtro de estado
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
-  // Cargar datos al iniciar
+  // Cargar datos SOLO cuando se monta este componente específico
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    if (!hasInitialLoad) {
+      loadInitialData();
+      setHasInitialLoad(true);
+    }
+  }, [hasInitialLoad]);
 
-  // Función para cargar datos iniciales
+  // Función para cargar datos iniciales con fecha de hoy
   const loadInitialData = async () => {
     try {
-      await refreshProgramming();
+      console.log("📅 Containers - Cargando datos iniciales para hoy");
+      const today = new Date();
+      const todayFormatted = format(today, "yyyy-MM-dd");
+      setDateFilter(todayFormatted);
+      await refreshProgramming("", todayFormatted, "");
     } catch (error) {
-      console.error("Error al cargar programación inicial:", error);
+      console.error("❌ Containers - Error al cargar programación inicial:", error);
     }
   };
 
-  // Filtrar programaciones por término de búsqueda
-  const filteredProgramming = programming.filter(item => 
-    item.service?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.service_request?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.ubication?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   // Manejar importación exitosa
   const handleImportSuccess = async () => {
-    await refreshProgramming();
+    await refreshProgramming(searchTerm, dateFilter, statusFilter);
     setActiveTab("view");
     StatusSuccessAlert("Éxito", "Programación importada correctamente");
+  };
+
+  // Función para manejar búsqueda y filtros - ACTUALIZADA
+  const handleFiltersChange = async (newSearchTerm: string, newDateFilter: string, newStatusFilter?: string) => {
+    console.log("🔄 Containers - Cambiando filtros:", { 
+      newSearchTerm, 
+      newDateFilter, 
+      newStatusFilter: newStatusFilter || "(sin filtro de estado)" 
+    });
+    
+    setSearchTerm(newSearchTerm);
+    setDateFilter(newDateFilter);
+    setStatusFilter(newStatusFilter || "");
+    
+    await refreshProgramming(newSearchTerm, newDateFilter, newStatusFilter || "");
+  };
+
+  // Función para limpiar filtros - ACTUALIZADA
+  const handleClearFilters = async () => {
+    console.log("🧹 Containers - Limpiando TODOS los filtros");
+    
+    setSearchTerm("");
+    setDateFilter("");
+    setStatusFilter("");
+    
+    await refreshProgramming("", "", "");
   };
 
   return (
@@ -73,7 +93,7 @@ export default function Containers() {
             subtitle="Gestión de programación de servicios desde clientes"
             btnAddText=""
             handleAddArea={() => {}}
-            refreshData={refreshProgramming}
+            refreshData={async () => { await refreshProgramming(searchTerm, dateFilter, statusFilter); }}
             loading={isLoading || isContextLoading}
             showAddButton={false}
             showDownloadButton={false}
@@ -108,11 +128,15 @@ export default function Containers() {
 
             {activeTab === "view" ? (
               <ProgrammingList 
-                programmingData={filteredProgramming} 
+                programmingData={programming} 
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
                 isLoading={isContextLoading}
-                refreshData={refreshProgramming}
+                refreshData={async () => { await refreshProgramming(searchTerm, dateFilter, statusFilter); }}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={handleClearFilters}
               />
             ) : (
               <ImportSection 

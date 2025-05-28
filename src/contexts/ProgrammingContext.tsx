@@ -3,6 +3,7 @@ import { Programming } from "@/core/model/programming";
 import { ClientProgrammingService } from "@/services/clientProgramming";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { authService } from "@/services/authService";
+import { StatusFilter } from "@/components/custom/filter/StatusFilterProps";
 
 // Interfaz para el contexto
 interface ProgrammingContextType {
@@ -12,13 +13,13 @@ interface ProgrammingContextType {
   lastUpdated: Date | null;
   createProgramming: (data: Omit<Programming, "id">) => Promise<Programming | null>;
   createBulkProgramming: (data: Omit<Programming, "id">[]) => Promise<boolean>;
-  refreshProgramming: () => Promise<void>;
+  refreshProgramming: (searchTerm?: string, dateFilter?: string,status?: string) => Promise<Programming[]>;
 }
 
 // Crear el contexto
 const ProgrammingContext = createContext<ProgrammingContextType | undefined>(undefined);
 
-// Servicio de programación
+// Crear instancia SEPARADA del servicio para este contexto
 const programmingService = new ClientProgrammingService();
 
 // Provider component
@@ -28,16 +29,27 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  
+  // Estado para controlar si ya se inicializó
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
-  // Cargar programación al iniciar
+  // NO cargar datos automáticamente al iniciar
+  // Solo cuando se llame explícitamente desde el componente
   useEffect(() => {
-    if (authService.isLocallyAuthenticated()) {
-      refreshProgramming();
+    if (authService.isLocallyAuthenticated() && !isInitialized) {
+      // Marcar como inicializado pero NO cargar datos automáticamente
+      setIsInitialized(true);
     }
 
     // Manejar eventos de autenticación
-    const handleLogin = () => refreshProgramming();
-    const handleLogout = () => setProgramming([]);
+    const handleLogin = () => {
+      setIsInitialized(true);
+      // NO llamar refreshProgramming automáticamente
+    };
+    const handleLogout = () => {
+      setProgramming([]);
+      setIsInitialized(false);
+    };
 
     window.addEventListener("auth:login_success", handleLogin);
     window.addEventListener("auth:logout", handleLogout);
@@ -48,26 +60,45 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-    // Función para refrescar datos de programación
-  const refreshProgramming = async () => {
+  // Función para refrescar datos de programación con filtros
+  const refreshProgramming = async (searchTerm?: string, dateFilter?: string, status?: string) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Obtener la fecha actual en formato YYYY-MM-DD para la consulta
-      const today = new Date();
-      const formattedDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      console.log("🔍 Context - Llamando API con filtros:", { searchTerm, dateFilter });
       
-      // Realizar la petición al servicio
-      const response = await programmingService.getProgramation(formattedDate);
+      let response: Programming[] = [];
       
-      // Importante: actualizar el estado con los datos recibidos
+      // Determinar qué filtros aplicar
+      const filters: any = {};
+      
+      if (dateFilter && dateFilter.trim() !== "") {
+        filters.dateStart = dateFilter;
+      }
+      
+      if (searchTerm && searchTerm.trim() !== "") {
+        filters.search = searchTerm;
+      }
+
+      if (status && status.trim() !== ""){
+        filters.status = status; // Asegurarse de que sea del tipo correcto
+      }
+      
+      // Hacer llamada directa al API sin caché
+      response = await programmingService.getProgramation(Object.keys(filters).length > 0 ? filters : undefined);
+      
+      console.log("✅ Context - Respuesta recibida:", response.length, "registros");
+      
       setProgramming(response);
       setLastUpdated(new Date());
       
-      return response; // Opcional: devolver los datos para uso directo
+      return response;
     } catch (err) {
-      console.error("Error al cargar programación:", err);
+      console.error("❌ Context - Error al cargar programación:", err);
       setError("Error al cargar programación");
-      return []; // Devolver array vacío en caso de error
+      setProgramming([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +145,6 @@ const createBulkProgramming = async (data: Omit<Programming, "id">[]): Promise<b
       formattedData.map(item => programmingService.createProgramation(item))
     );
     
-    // Resto del código igual...
     const successful = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
     
@@ -171,12 +201,13 @@ function formatDateToISO(dateStr: string): string {
       return date.toISOString().split('T')[0];
     }
     
-    return dateStr; // Si no se puede convertir, devolver el original
+    return dateStr;
   } catch (error) {
     console.error("Error al formatear fecha:", error);
     return dateStr;
   }
 }
+
   // Valor del contexto
   const value: ProgrammingContextType = {
     programming,
