@@ -6,12 +6,15 @@ import { useProgramming } from "@/contexts/ProgrammingContext";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
 import { ImportSection } from "@/components/ui/programming/ImportSection";
 import { ProgrammingList } from "@/components/ui/programming/ProgrammingList";
+import { CreateProgrammingModal } from "@/components/ui/programming/CreateProgrammingModal";
+import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
 
 export default function Containers() {
   // Usar el contexto de programación
   const {
     programming,
     createBulkProgramming,
+    createProgramming,
     isLoading: isContextLoading,
     refreshProgramming,
     deleteProgramming,
@@ -24,6 +27,8 @@ export default function Containers() {
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); // Nuevo estado para filtro de estado
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  useOverdueProgrammingNotifications();
 
   // Cargar datos SOLO cuando se monta este componente específico
   useEffect(() => {
@@ -66,6 +71,30 @@ export default function Containers() {
       }
     } catch (error) {
       console.error("❌ Error al eliminar programación:", error);
+    }
+  };
+
+  const handleCreateProgramming = async (programmingData: any) => {
+    try {
+      setIsLoading(true);
+
+      const success = await createProgramming(programmingData);
+
+      if (success) {
+        setShowCreateModal(false);
+        // Refrescar datos después de crear
+        await refreshProgramming(searchTerm, dateFilter, statusFilter);
+
+        return true;
+      } else {
+        console.log("❌ Containers - Error al crear programación");
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Containers - Error al crear programación:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,13 +141,13 @@ export default function Containers() {
           <SectionHeader
             title="Programación del Cliente"
             subtitle="Gestión de programación de servicios desde clientes"
-            btnAddText=""
-            handleAddArea={() => {}}
+            btnAddText="Nueva Programación"
+            handleAddArea={() => setShowCreateModal(true)}
             refreshData={async () => {
               await refreshProgramming(searchTerm, dateFilter, statusFilter);
             }}
             loading={isLoading || isContextLoading}
-            showAddButton={false}
+            showAddButton={true}
             showDownloadButton={false}
           />
 
@@ -178,6 +207,13 @@ export default function Containers() {
           </div>
         </div>
       </div>
+
+      <CreateProgrammingModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateProgramming}
+        isLoading={isLoading}
+      />
     </>
   );
 }

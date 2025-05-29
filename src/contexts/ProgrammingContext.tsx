@@ -17,9 +17,7 @@ interface ProgrammingContextType {
   isLoading: boolean;
   error: string | null;
   lastUpdated: Date | null;
-  createProgramming: (
-    data: Omit<Programming, "id">
-  ) => Promise<Programming | null>;
+  createProgramming: (data: Omit<Programming, "id">) => Promise<boolean>;
   createBulkProgramming: (data: Omit<Programming, "id">[]) => Promise<boolean>;
   refreshProgramming: (
     searchTerm?: string,
@@ -135,7 +133,7 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
   // Función para crear una programación
   const createProgramming = async (
     data: Omit<Programming, "id">
-  ): Promise<Programming | null> => {
+  ): Promise<boolean> => {
     setIsLoading(true);
     try {
       // Convertir fecha de formato DD/MM/YYYY a YYYY-MM-DD
@@ -144,17 +142,57 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
         dateStart: formatDateToISO(data.dateStart),
       };
 
-      const response = await programmingService.createProgramation(
-        formattedData
-      );
-      setProgramming((prev) => [...prev, response]);
-      setLastUpdated(new Date());
-      StatusSuccessAlert("Éxito", "Programación guardada correctamente");
-      return response;
+      const results = await Promise.allSettled([
+        programmingService.createProgramation(formattedData),
+      ]);
+      const result = results[0];
+
+      if (result.status === "fulfilled") {
+        setProgramming((prev) => [...prev, result.value]);
+        setLastUpdated(new Date());
+
+        // Mostrar alerta de éxito
+        StatusSuccessAlert("Éxito", "Programación creada correctamente");
+        return true;
+      } else {
+        // ❌ ERROR - Falló la creación (datos duplicados u otro error)
+        console.error("❌ Error al crear programación:", result.reason);
+
+        // Verificar si es error de datos duplicados
+        const errorMessage =
+          result.reason?.response?.data?.message ||
+          result.reason?.message ||
+          "Error desconocido";
+
+        if (
+          errorMessage.toLowerCase().includes("duplicate") ||
+          errorMessage.toLowerCase().includes("duplicado") ||
+          errorMessage.toLowerCase().includes("service alredy exists")
+        ) {
+          // Error específico por datos duplicados
+          StatusSuccessAlert(
+            "Datos Duplicados",
+            "Ya existe una programación con estos datos. Por favor, verifica la información."
+          );
+        } else {
+          // Otro tipo de error
+          StatusSuccessAlert(
+            "Error",
+            `No se pudo crear la programación: ${errorMessage}`
+          );
+        }
+
+        setError("Error al crear programación");
+        return false;
+      }
     } catch (err) {
-      console.error("Error al crear programación:", err);
+      console.error(
+        "❌ Context - Error inesperado al crear programación:",
+        err
+      );
+      StatusSuccessAlert("Error", "Error inesperado al crear la programación");
       setError("Error al crear programación");
-      return null;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -236,7 +274,6 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
-
 
   // Valor del contexto
   const value: ProgrammingContextType = {
