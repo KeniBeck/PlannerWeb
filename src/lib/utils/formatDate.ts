@@ -258,3 +258,32 @@ export const getMinutesBetween = (date1: Date, date2: Date): number => {
   const diffMs = Math.abs(date1.getTime() - date2.getDate());
   return Math.floor(diffMs / 60000); // Convertir ms a minutos
 };
+
+  // Función utilitaria para convertir formato de fecha
+  export const formatDateToISO = (dateStr: string): string => {
+    if (!dateStr) return dateStr;
+
+    // Si ya está en formato ISO (YYYY-MM-DD), devolverlo tal cual
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+
+    try {
+      // Convertir de DD/MM/YYYY a YYYY-MM-DD
+      const [day, month, year] = dateStr.split("/");
+      if (day && month && year) {
+        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      }
+
+      // Intentar parsearlo como Date si no se pudo dividir
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split("T")[0];
+      }
+
+      return dateStr;
+    } catch (error) {
+      console.error("Error al formatear fecha:", error);
+      return dateStr;
+    }
+  };

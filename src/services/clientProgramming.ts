@@ -40,17 +40,25 @@ export class ClientProgrammingService {
 
   async getProgramation(fliter?: ProgrammingFilterDTO): Promise<Programming[]> {
     try {
-      // return globalServiceCache.getOrFetch(
-      //   "programming:all",
-      //   async () => {
           const response = await api.get(`/client-programming/filtered`, {
             params: fliter,
           });
           return response.data;
-      //   }
-      // );
     } catch (error) {
       console.error("Error fetching programation:", error);
+      throw error;
+    }
+  }
+
+  async deleteProgramation(id: number): Promise<void> {
+    try {
+      const response = await api.delete(`/client-programming/${id}`);
+
+      if (response.status < 200 || response.status >= 300) {
+        StatusCodeAlert(response);
+      }
+    } catch (error) {
+      console.error("Error deleting programation:", error);
       throw error;
     }
   }

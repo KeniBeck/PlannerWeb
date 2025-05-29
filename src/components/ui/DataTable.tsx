@@ -298,7 +298,7 @@ export function DataTable<T extends { id: number | string }>({
               />
             ))}
             {actions && actions.length > 0 && (
-              <th className="py-3 px-4 text-right text-sm font-medium text-blue-700">
+              <th className="py-3 px-4 text-right text-sm font-medium text-blue-700 flex justify-center items-center">
                 Acciones
               </th>
             )}

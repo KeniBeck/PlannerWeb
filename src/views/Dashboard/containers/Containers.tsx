@@ -1,25 +1,22 @@
-import { useState, useRef, useEffect } from "react";
-import * as XLSX from "xlsx";
-import { AiOutlineUpload, AiOutlineDelete, AiOutlineSave, AiOutlineSearch } from "react-icons/ai";
-import { FaRegFileExcel, FaClock } from "react-icons/fa";
-import { BsCheckCircle, BsXCircle, BsClockHistory } from "react-icons/bs";
+import { useState, useEffect } from "react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { ShipLoader } from "@/components/dialog/Loading";
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { excelDateToJSDate } from "@/lib/utils/formatDate";
+import { format } from "date-fns";
 import { useProgramming } from "@/contexts/ProgrammingContext";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
-import { Programming } from "@/core/model/programming";
-import Swal from "sweetalert2";
 import { ImportSection } from "@/components/ui/programming/ImportSection";
 import { ProgrammingList } from "@/components/ui/programming/ProgrammingList";
 
-
 export default function Containers() {
   // Usar el contexto de programación
-  const { programming, createBulkProgramming, isLoading: isContextLoading, refreshProgramming } = useProgramming();
-  
+  const {
+    programming,
+    createBulkProgramming,
+    isLoading: isContextLoading,
+    refreshProgramming,
+    deleteProgramming,
+  } = useProgramming();
+
   // Estados locales
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("view"); // "view" o "import"
@@ -45,7 +42,10 @@ export default function Containers() {
       setDateFilter(todayFormatted);
       await refreshProgramming("", todayFormatted, "");
     } catch (error) {
-      console.error("❌ Containers - Error al cargar programación inicial:", error);
+      console.error(
+        "❌ Containers - Error al cargar programación inicial:",
+        error
+      );
     }
   };
 
@@ -56,29 +56,50 @@ export default function Containers() {
     StatusSuccessAlert("Éxito", "Programación importada correctamente");
   };
 
+  // función para manejar eliminación
+  const handleDeleteProgramming = async (id: number) => {
+    try {
+      const success = await deleteProgramming(id);
+      if (success) {
+        // Refrescar datos después de eliminar
+        await refreshProgramming(searchTerm, dateFilter, statusFilter);
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar programación:", error);
+    }
+  };
+
   // Función para manejar búsqueda y filtros - ACTUALIZADA
-  const handleFiltersChange = async (newSearchTerm: string, newDateFilter: string, newStatusFilter?: string) => {
-    console.log("🔄 Containers - Cambiando filtros:", { 
-      newSearchTerm, 
-      newDateFilter, 
-      newStatusFilter: newStatusFilter || "(sin filtro de estado)" 
+  const handleFiltersChange = async (
+    newSearchTerm: string,
+    newDateFilter: string,
+    newStatusFilter?: string
+  ) => {
+    console.log("🔄 Containers - Cambiando filtros:", {
+      newSearchTerm,
+      newDateFilter,
+      newStatusFilter: newStatusFilter || "(sin filtro de estado)",
     });
-    
+
     setSearchTerm(newSearchTerm);
     setDateFilter(newDateFilter);
     setStatusFilter(newStatusFilter || "");
-    
-    await refreshProgramming(newSearchTerm, newDateFilter, newStatusFilter || "");
+
+    await refreshProgramming(
+      newSearchTerm,
+      newDateFilter,
+      newStatusFilter || ""
+    );
   };
 
   // Función para limpiar filtros - ACTUALIZADA
   const handleClearFilters = async () => {
     console.log("🧹 Containers - Limpiando TODOS los filtros");
-    
+
     setSearchTerm("");
     setDateFilter("");
     setStatusFilter("");
-    
+
     await refreshProgramming("", "", "");
   };
 
@@ -93,7 +114,9 @@ export default function Containers() {
             subtitle="Gestión de programación de servicios desde clientes"
             btnAddText=""
             handleAddArea={() => {}}
-            refreshData={async () => { await refreshProgramming(searchTerm, dateFilter, statusFilter); }}
+            refreshData={async () => {
+              await refreshProgramming(searchTerm, dateFilter, statusFilter);
+            }}
             loading={isLoading || isContextLoading}
             showAddButton={false}
             showDownloadButton={false}
@@ -127,20 +150,27 @@ export default function Containers() {
             </div>
 
             {activeTab === "view" ? (
-              <ProgrammingList 
-                programmingData={programming} 
+              <ProgrammingList
+                programmingData={programming}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 dateFilter={dateFilter}
                 setDateFilter={setDateFilter}
                 isLoading={isContextLoading}
-                refreshData={async () => { await refreshProgramming(searchTerm, dateFilter, statusFilter); }}
+                refreshData={async () => {
+                  await refreshProgramming(
+                    searchTerm,
+                    dateFilter,
+                    statusFilter
+                  );
+                }}
                 onFiltersChange={handleFiltersChange}
                 onClearFilters={handleClearFilters}
+                onDelete={handleDeleteProgramming} // AGREGAR esto
               />
             ) : (
-              <ImportSection 
-                setIsLoading={setIsLoading} 
+              <ImportSection
+                setIsLoading={setIsLoading}
                 createBulkProgramming={createBulkProgramming}
                 onImportSuccess={handleImportSuccess}
               />

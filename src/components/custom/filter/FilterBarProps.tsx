@@ -4,6 +4,7 @@ import { StatusFilter } from "./StatusFilterProps";
 import { AreaFilter } from "./AreaFilter";
 import { DateRangeFilter } from "./DateFilterRanger";
 import { SupervisorFilter } from "./SupervisorFilter";
+import { DateFilter } from "./DateFilterProps";
 
 interface FilterBarProps {
   searchTerm: string;
@@ -20,10 +21,12 @@ interface FilterBarProps {
   setAreaFilter: (value: string) => void;
   setEndDateFilter: (value: string) => void;
   statusOptions: Array<{ value: string; label: string }>;
-  areaOptions: Array<{ value: string; label: string }>;
+  areaOptions?: Array<{ value: string; label: string }>;
   clearAllFilters: () => void;
   hasActiveFilters: boolean;
-  useDateRangeFilter?: boolean; // Prop opcional para usar el filtro de rango de fechas
+  useDateRangeFilter?: boolean;
+  searchPlaceholder?: string;
+  onSearchSubmit?: () => void;
 }
 
 export const FilterBar = ({
@@ -38,13 +41,15 @@ export const FilterBar = ({
   areaFilter,
   setAreaFilter,
   statusOptions,
-  areaOptions,
+  areaOptions = [],
   supervisorFilter = "all",
   setSupervisorFilter,
   supervisorOptions = [],
   clearAllFilters,
   hasActiveFilters,
-  useDateRangeFilter = false,
+  useDateRangeFilter = true,
+  searchPlaceholder = "Buscar por area o cliente",
+  onSearchSubmit,
 }: FilterBarProps) => {
   return (
     <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-b-md">
@@ -52,16 +57,20 @@ export const FilterBar = ({
         <SearchFilter
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Buscar por area o cliente"
+          placeholder={searchPlaceholder}
           className="w-80"
+          onSubmit={onSearchSubmit}
         />
 
-        <AreaFilter
-          value={areaFilter}
-          onChange={setAreaFilter}
-          options={areaOptions}
-          className="w-60"
-        />
+        {/* Filtro de area - Usar filtro de area si se especifica */}
+        {areaOptions && areaOptions.length > 0 && (
+          <AreaFilter
+            value={areaFilter}
+            onChange={setAreaFilter}
+            options={areaOptions}
+            className="w-60"
+          />
+        )}
 
         <StatusFilter
           value={statusFilter}
@@ -82,13 +91,23 @@ export const FilterBar = ({
             />
           )}
 
-        <DateRangeFilter
-          startDate={startDateFilter}
-          endDate={endDateFilter}
-          onStartDateChange={setStartDateFilter}
-          onEndDateChange={setEndDateFilter}
-          className="w-60"
-        />
+        {/* Filtro de fecha - Condicional según useDateRangeFilter */}
+        {useDateRangeFilter ? (
+          <DateRangeFilter
+            startDate={startDateFilter}
+            endDate={endDateFilter}
+            onStartDateChange={setStartDateFilter}
+            onEndDateChange={setEndDateFilter}
+            className="w-60"
+          />
+        ) : (
+          <DateFilter
+            label="Filtrar por fecha"
+            value={startDateFilter}
+            onChange={setStartDateFilter}
+            className="w-60"
+          />
+        )}
 
         {/* Botón para limpiar todos los filtros */}
         {hasActiveFilters && (
