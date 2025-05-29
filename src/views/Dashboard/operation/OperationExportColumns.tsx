@@ -56,7 +56,7 @@ export const getOperationExportColumns = (): ExcelColumn[] => {
     },
     {
       header: "Hora Inicio",
-      field: "timeStrat", // Nota: parece que hay un error de ortografía en el campo (timeStrat en lugar de timeStart)
+      field: "timeStrat",
       value: (op) => op.timeStrat || "N/A",
     },
     {
@@ -76,11 +76,6 @@ export const getOperationExportColumns = (): ExcelColumn[] => {
       header: "Embarcación",
       field: "motorShip",
       value: (op) => op.motorShip || "N/A",
-    },
-    {
-      header: "Tarea",
-      field: "task.name",
-      value: (op) => op.task?.name || "Sin tarea",
     },
     {
       header: "Estado",

@@ -302,11 +302,6 @@ export function OperationList({
         },
       },
       {
-        header: "Servicio",
-        accessor: "task.name",
-        cell: (operation) => operation.task?.name || "N/A",
-      },
-      {
         header: "Encargado",
         accessor: "inCharge.name",
         cell: (operation) =>

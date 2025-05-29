@@ -1,65 +1,135 @@
-import { useState, useRef, useEffect } from "react";
-import * as XLSX from "xlsx";
-import { AiOutlineUpload, AiOutlineDelete, AiOutlineSave, AiOutlineSearch } from "react-icons/ai";
-import { FaRegFileExcel, FaClock } from "react-icons/fa";
-import { BsCheckCircle, BsXCircle, BsClockHistory } from "react-icons/bs";
+import { useState, useEffect } from "react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { ShipLoader } from "@/components/dialog/Loading";
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { excelDateToJSDate } from "@/lib/utils/formatDate";
+import { format } from "date-fns";
 import { useProgramming } from "@/contexts/ProgrammingContext";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
-import { Programming } from "@/core/model/programming";
-import Swal from "sweetalert2";
 import { ImportSection } from "@/components/ui/programming/ImportSection";
 import { ProgrammingList } from "@/components/ui/programming/ProgrammingList";
-
-// Estructura para mostrar solo los campos necesarios desde Excel
-interface ContainerProgramItem {
-  solicitudServicio: string;
-  servicio: string;
-  fechaInicio: string;
-  ubicacion: string;
-  cliente: string;
-}
+import { CreateProgrammingModal } from "@/components/ui/programming/CreateProgrammingModal";
+import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
 
 export default function Containers() {
   // Usar el contexto de programación
-  const { programming, createBulkProgramming, isLoading: isContextLoading, refreshProgramming } = useProgramming();
-  
+  const {
+    programming,
+    createBulkProgramming,
+    createProgramming,
+    isLoading: isContextLoading,
+    refreshProgramming,
+    deleteProgramming,
+  } = useProgramming();
+
   // Estados locales
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("view"); // "view" o "import"
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); // Nuevo estado para filtro de estado
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  useOverdueProgrammingNotifications();
 
-  // Cargar datos al iniciar
+  // Cargar datos SOLO cuando se monta este componente específico
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    if (!hasInitialLoad) {
+      loadInitialData();
+      setHasInitialLoad(true);
+    }
+  }, [hasInitialLoad]);
 
-  // Función para cargar datos iniciales
+  // Función para cargar datos iniciales con fecha de hoy
   const loadInitialData = async () => {
     try {
-      await refreshProgramming();
+      console.log("📅 Containers - Cargando datos iniciales para hoy");
+      const today = new Date();
+      const todayFormatted = format(today, "yyyy-MM-dd");
+      setDateFilter(todayFormatted);
+      await refreshProgramming("", todayFormatted, "");
     } catch (error) {
-      console.error("Error al cargar programación inicial:", error);
+      console.error(
+        "❌ Containers - Error al cargar programación inicial:",
+        error
+      );
     }
   };
 
-  // Filtrar programaciones por término de búsqueda
-  const filteredProgramming = programming.filter(item => 
-    item.service?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.service_request?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.ubication?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   // Manejar importación exitosa
   const handleImportSuccess = async () => {
-    await refreshProgramming();
+    await refreshProgramming(searchTerm, dateFilter, statusFilter);
     setActiveTab("view");
     StatusSuccessAlert("Éxito", "Programación importada correctamente");
+  };
+
+  // función para manejar eliminación
+  const handleDeleteProgramming = async (id: number) => {
+    try {
+      const success = await deleteProgramming(id);
+      if (success) {
+        // Refrescar datos después de eliminar
+        await refreshProgramming(searchTerm, dateFilter, statusFilter);
+      }
+    } catch (error) {
+      console.error("❌ Error al eliminar programación:", error);
+    }
+  };
+
+  const handleCreateProgramming = async (programmingData: any) => {
+    try {
+      setIsLoading(true);
+
+      const success = await createProgramming(programmingData);
+
+      if (success) {
+        setShowCreateModal(false);
+        // Refrescar datos después de crear
+        await refreshProgramming(searchTerm, dateFilter, statusFilter);
+
+        return true;
+      } else {
+        console.log("❌ Containers - Error al crear programación");
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Containers - Error al crear programación:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para manejar búsqueda y filtros - ACTUALIZADA
+  const handleFiltersChange = async (
+    newSearchTerm: string,
+    newDateFilter: string,
+    newStatusFilter?: string
+  ) => {
+    console.log("🔄 Containers - Cambiando filtros:", {
+      newSearchTerm,
+      newDateFilter,
+      newStatusFilter: newStatusFilter || "(sin filtro de estado)",
+    });
+
+    setSearchTerm(newSearchTerm);
+    setDateFilter(newDateFilter);
+    setStatusFilter(newStatusFilter || "");
+
+    await refreshProgramming(
+      newSearchTerm,
+      newDateFilter,
+      newStatusFilter || ""
+    );
+  };
+
+  // Función para limpiar filtros - ACTUALIZADA
+  const handleClearFilters = async () => {
+    console.log("🧹 Containers - Limpiando TODOS los filtros");
+
+    setSearchTerm("");
+    setDateFilter("");
+    setStatusFilter("");
+
+    await refreshProgramming("", "", "");
   };
 
   return (
@@ -71,11 +141,13 @@ export default function Containers() {
           <SectionHeader
             title="Programación del Cliente"
             subtitle="Gestión de programación de servicios desde clientes"
-            btnAddText=""
-            handleAddArea={() => {}}
-            refreshData={refreshProgramming}
+            btnAddText="Nueva Programación"
+            handleAddArea={() => setShowCreateModal(true)}
+            refreshData={async () => {
+              await refreshProgramming(searchTerm, dateFilter, statusFilter);
+            }}
             loading={isLoading || isContextLoading}
-            showAddButton={false}
+            showAddButton={true}
             showDownloadButton={false}
           />
 
@@ -107,16 +179,27 @@ export default function Containers() {
             </div>
 
             {activeTab === "view" ? (
-              <ProgrammingList 
-                programmingData={filteredProgramming} 
+              <ProgrammingList
+                programmingData={programming}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
                 isLoading={isContextLoading}
-                refreshData={refreshProgramming}
+                refreshData={async () => {
+                  await refreshProgramming(
+                    searchTerm,
+                    dateFilter,
+                    statusFilter
+                  );
+                }}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={handleClearFilters}
+                onDelete={handleDeleteProgramming} // AGREGAR esto
               />
             ) : (
-              <ImportSection 
-                setIsLoading={setIsLoading} 
+              <ImportSection
+                setIsLoading={setIsLoading}
                 createBulkProgramming={createBulkProgramming}
                 onImportSuccess={handleImportSuccess}
               />
@@ -124,6 +207,13 @@ export default function Containers() {
           </div>
         </div>
       </div>
+
+      <CreateProgrammingModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateProgramming}
+        isLoading={isLoading}
+      />
     </>
   );
 }
