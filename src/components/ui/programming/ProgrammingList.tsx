@@ -3,6 +3,7 @@ import {
   BsCheckCircle,
   BsXCircle,
   BsClockHistory,
+  BsPencil,
 } from "react-icons/bs";
 import { FaRegFileExcel } from "react-icons/fa";
 import { formatDate } from "@/lib/utils/formatDate";
@@ -26,6 +27,7 @@ interface ProgrammingListProps {
   ) => Promise<void>;
   onClearFilters: () => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
+  onEdit?: (programming: Programming) => void;
 }
 
 export function ProgrammingList({
@@ -38,6 +40,7 @@ export function ProgrammingList({
   onFiltersChange,
   onClearFilters,
   onDelete,
+  onEdit,
 }: ProgrammingListProps) {
   // Usar el hook personalizado
   const {
@@ -66,10 +69,16 @@ export function ProgrammingList({
     onDelete,
   });
 
+    const handleEdit = (item: Programming) => {
+    if (onEdit) {
+      onEdit(item);
+    }
+  };
+
   // Obtener configuración de estado
   const getStatusConfig = (status: string | undefined) => {
     switch (status) {
-      case "COMPLETE":
+      case "COMPLETED":
         return {
           bgColor: "bg-green-100",
           textColor: "text-green-800",
@@ -173,17 +182,24 @@ export function ProgrammingList({
     }
   ];
 
-  const actions: TableAction<Programming>[] = onDelete ? [
-    {
+  const actions: TableAction<Programming>[] = [
+    // 🆕 Acción de editar
+    ...(onEdit ? [{
+      icon: <BsPencil className="h-4 w-4 text-blue-600" />,
+      label: "Editar programación",
+      onClick: handleEdit,
+    }] : []),
+    // Acción de eliminar (si existe)
+    ...(onDelete ? [{
       icon: <BsXCircle className="h-4 w-4 text-red-600" />,
       label: "Eliminar programación",
       onClick: handleDelete,
-    }
-  ] : [];
+    }] : [])
+  ];
 
   const statusOptions = [
     { label: "Todos", value: "all" },
-    { label: "Completado", value: "COMPLETE" },
+    { label: "Completado", value: "COMPLETED" },
     { label: "Incompleto", value: "UNASSIGNED" },
     { label: "Asignado", value: "ASSIGNED" },
     { label: "Cancelado", value: "CANCELED" },

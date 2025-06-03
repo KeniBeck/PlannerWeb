@@ -38,6 +38,16 @@ export function FloatingInputSimple({
   if (type === "date") {
     return (
       <div className="flex flex-col">
+        {label && (
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            {label} {required && <span className="text-red-400">*</span>}
+          </label>
+        )}
+
+        {/* Componente DateFilter para tipo "date" */}
         <DateFilter
           label={`${label}${required ? " *" : ""}`}
           value={value}

@@ -35,7 +35,7 @@ import Faults from "./faults/Faults";
 import { jwtDecode } from "jwt-decode";
 import Feeding from "./feedings/Feeding";
 import { PiShippingContainerDuotone } from "react-icons/pi";
-import Containers from "./containers/Containers";
+import Containers from "./programming/Programming";
 import Notifications from "./notifications/Notifications";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
@@ -180,7 +180,7 @@ export default function Dashboard() {
           icon: <MdRestaurantMenu size={18} />,
         },
         {
-          path: "/dashboard/containers",
+          path: "/dashboard/programming",
           label: "Programación del Cliente",
           icon: <PiShippingContainerDuotone size={18} />,
         },
@@ -657,7 +657,7 @@ export default function Dashboard() {
               }
             />
             <Route
-              path="/containers"
+              path="/programming"
               element={
                 <LayeredProviders features={[Feature.PROGRAMMING]}>
                   <Containers />

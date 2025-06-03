@@ -2,19 +2,24 @@ import { useState, useEffect } from "react";
 import { X, Calendar, Clock, User, MapPin, FileText, Briefcase } from "lucide-react";
 import { Programming } from "@/core/model/programming";
 import { FloatingInputSimple } from "@/components/ui/FloatingInputSimple";
+import { cleanDate } from "@/lib/utils/formatDate";
 
 interface CreateProgrammingModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: Omit<Programming, "id">) => Promise<boolean>;
   isLoading: boolean;
+  initialData?: Programming | null; 
+  isEditMode?: boolean;
 }
 
 export function CreateProgrammingModal({
   open,
   onClose,
   onSubmit,
-  isLoading
+  isLoading,
+  initialData = null, // 🆕
+  isEditMode = false // 🆕
 }: CreateProgrammingModalProps) {
   const [formData, setFormData] = useState<Omit<Programming, "id">>({
     service_request: "",
@@ -31,21 +36,36 @@ export function CreateProgrammingModal({
   // Resetear formulario cuando se abre el modal
   useEffect(() => {
     if (open) {
-      const today = new Date();
-      const todayFormatted = today.toISOString().split('T')[0];
-      
-      setFormData({
-        service_request: "",
-        service: "",
-        dateStart: todayFormatted,
-        timeStart: "",
-        ubication: "",
-        client: "",
-        status: "UNASSIGNED"
-      });
+      if (isEditMode && initialData) {
+        // Modo edición: cargar datos existentes
+        console.log("✏️ Modal - Cargando datos para edición:", initialData);
+        setFormData({
+          service_request: initialData.service_request || "",
+          service: initialData.service || "",
+          dateStart: cleanDate(initialData.dateStart || ""),
+          timeStart: initialData.timeStart || "",
+          ubication: initialData.ubication || "",
+          client: initialData.client || "",
+          status: initialData.status || "UNASSIGNED"
+        });
+      } else {
+        // Modo creación: datos por defecto
+        const today = new Date();
+        const todayFormatted = today.toISOString().split('T')[0];
+        
+        setFormData({
+          service_request: "",
+          service: "",
+          dateStart: todayFormatted,
+          timeStart: "",
+          ubication: "",
+          client: "",
+          status: "UNASSIGNED"
+        });
+      }
       setErrors({});
     }
-  }, [open]);
+  }, [open, isEditMode, initialData]);
 
   // Validar formulario
   const validateForm = () => {
@@ -78,6 +98,8 @@ export function CreateProgrammingModal({
   // Manejar cambios en el formulario
   const handleChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    console.log(`✏️ Modal - Cambiando campo ${name}:`, value);
     
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name]) {
@@ -123,7 +145,8 @@ export function CreateProgrammingModal({
         <div className="bg-blue-600 px-6 py-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">
-              Nueva Programación
+              {/* 🆕 Título dinámico */}
+              {isEditMode ? "Editar Programación" : "Nueva Programación"}
             </h3>
             <button
               onClick={onClose}
@@ -146,7 +169,6 @@ export function CreateProgrammingModal({
               icon={<FileText className="h-4 w-4" />}
               error={errors.service_request}
               placeholder="Opcional - Número de solicitud"
-              required
             />
 
             {/* Servicio */}
@@ -163,7 +185,7 @@ export function CreateProgrammingModal({
 
             {/* Fecha y Hora */}
             <div className="grid grid-cols-2 gap-4">
-              <FloatingInputSimple
+                <FloatingInputSimple
                 id="dateStart"
                 label="Fecha"
                 type="date"
@@ -174,9 +196,10 @@ export function CreateProgrammingModal({
                 required
                 minDate={new Date().toISOString().split('T')[0]}
               />
-
+              
               <FloatingInputSimple
                 id="timeStart"
+                label="Hora"
                 type="time"
                 value={formData.timeStart}
                 onChange={(value) => handleChange("timeStart", value)}
@@ -247,10 +270,12 @@ export function CreateProgrammingModal({
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Guardando...
+                    {/* 🆕 Texto dinámico */}
+                    {isEditMode ? "Actualizando..." : "Guardando..."}
                   </>
                 ) : (
-                  "Crear Programación"
+                  /* 🆕 Texto dinámico */
+                  isEditMode ? "Actualizar Programación" : "Crear Programación"
                 )}
               </button>
             </div>
