@@ -25,6 +25,23 @@ export const useOperationExport = (workers: Worker[] = []) => {
     return worker ? worker.dni : "Sin DNI";
   };
 
+  // Función para convertir horas decimales a formato HH:MM
+  const formatHoursToHHMM = (decimalHours: number): string => {
+    if (isNaN(decimalHours) || decimalHours < 0) {
+      return "0:00";
+    }
+    
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.round((decimalHours - hours) * 60);
+    
+    // Si los minutos son 60, ajustar a la siguiente hora
+    if (minutes === 60) {
+      return `${hours + 1}:00`;
+    }
+    
+    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  };
+
   const calculateHoursWorked = (dateStart?: string | Date, timeStart?: string, dateEnd?: string | Date, timeEnd?: string): string => {
     if (!dateStart || !timeStart || !dateEnd || !timeEnd) {
       return "N/A";
@@ -74,14 +91,14 @@ export const useOperationExport = (workers: Worker[] = []) => {
       
       // Si la fecha fin es menor que inicio
       if (diffMs < 0) {
-        return "0";
+        return "0:00";
       }
       
       // Convertir a horas decimales
       const diffHours = diffMs / (1000 * 60 * 60);
       
-      // Formatear a 2 decimales
-      return diffHours.toFixed(2);
+      // Convertir a formato HH:MM
+      return formatHoursToHHMM(diffHours);
     } catch (error) {
       console.error("Error calculando horas trabajadas:", error);
       return "N/A";
@@ -138,8 +155,8 @@ export const useOperationExport = (workers: Worker[] = []) => {
       // Definir encabezados para el reporte general
       const headersGeneral = [
         'ID Operación', 'Estado', 'Área', 'Cliente',
-        'Supervisores', 'Fecha Inicio', 'Hora Inicio', 'Fecha Fin', 'Hora Fin', 'Horas Trabajadas', 
-        'Embarcación', 'Tarea', 'Total Trabajadores', 'Turnos'
+        'Supervisores', 'Fecha Inicio Op.', 'Hora Inicio Op.', 'Fecha Fin Op.', 'Hora Fin Op.', 'Horas Trabajadas Op.', 
+        'Embarcación', 'Total Trabajadores', 'Turnos', 'Detalle de Turnos'
       ];
       
       // Aplicar formato a la hoja de reporte general
@@ -225,7 +242,7 @@ export const useOperationExport = (workers: Worker[] = []) => {
                 rowIsEven = !rowIsEven;
               }
               
-              addWorkerRow(worksheet, operation, worker, groupIndex, rowIsEven);
+              addWorkerRow(worksheet, operation, worker, group, groupIndex, rowIsEven);
               workerAdded = true;
             });
           }
@@ -244,14 +261,18 @@ export const useOperationExport = (workers: Worker[] = []) => {
     });
   };
 
-  // Función para añadir fila de trabajador
-  const addWorkerRow = (worksheet: any, operation: any, worker: any, groupIndex: number, rowIsEven: boolean) => {
-    const hoursWorked = calculateHoursWorked(
-      operation.dateStart,
-      operation.timeStrat,
-      operation.dateEnd,
-      operation.timeEnd
-    );
+  // Función para añadir fila de trabajador - CORREGIDA
+  const addWorkerRow = (worksheet: any, operation: any, worker: any, group: any, groupIndex: number, rowIsEven: boolean) => {
+    // USAR FECHAS Y HORAS DEL GRUPO, NO DE LA OPERACIÓN GENERAL
+    const groupSchedule = group.schedule || {};
+    
+    // Priorizar fechas del grupo, si no existen usar las de la operación
+    const dateStart = groupSchedule.dateStart || operation.dateStart;
+    const timeStart = groupSchedule.timeStart || operation.timeStrat;
+    const dateEnd = groupSchedule.dateEnd || operation.dateEnd;
+    const timeEnd = groupSchedule.timeEnd || operation.timeEnd;
+    
+    const hoursWorked = calculateHoursWorked(dateStart, timeStart, dateEnd, timeEnd);
 
     const rowData: (string | number)[] = [
       operation.id,
@@ -259,13 +280,14 @@ export const useOperationExport = (workers: Worker[] = []) => {
       operation.jobArea?.name || 'Sin área',
       operation.client?.name || 'Sin cliente',
       operation.inCharge?.map((sup: any) => sup.name).join(', ') || 'Sin supervisor',
-      operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
-      operation.timeStrat || 'N/A',
-      operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
-      operation.timeEnd || 'N/A',
+      // USAR FECHAS DEL GRUPO
+      dateStart ? format(new Date(dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
+      timeStart || 'N/A',
+      dateEnd ? format(new Date(dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
+      timeEnd || 'N/A',
       hoursWorked || 'N/A',
       operation.motorShip || 'N/A',
-      operation.task?.name?.toUpperCase() || 'Sin tarea',
+      groupSchedule.task || 'Sin tarea',
       `Turno ${groupIndex + 1}`,
       getWorkerDni(worker.id),
       worker.name
@@ -296,7 +318,7 @@ export const useOperationExport = (workers: Worker[] = []) => {
       operation.timeEnd || 'N/A',
       hoursWorked, 
       operation.motorShip || 'N/A',
-      operation.task?.name?.toUpperCase() || 'Sin tarea',
+      'Sin tarea',
       '',
       '',
       'Sin trabajadores'
@@ -306,7 +328,7 @@ export const useOperationExport = (workers: Worker[] = []) => {
     applyRowStyles(row, rowIsEven);
   };
 
-  // Función para popular la hoja de reporte general
+  // Función para popular la hoja de reporte general - CORREGIDA
   const populateGeneralReport = (worksheet: any, operations: any[]) => {
     let rowIsEven = false;
     
@@ -316,16 +338,31 @@ export const useOperationExport = (workers: Worker[] = []) => {
       // Calcular total de trabajadores y grupos
       let totalWorkers = 0;
       let totalGroups = 0;
+      let groupDetails: string[] = [];
       
       if (operation.workerGroups && operation.workerGroups.length > 0) {
         totalGroups = operation.workerGroups.length;
-        operation.workerGroups.forEach((group: any) => {
+        
+        operation.workerGroups.forEach((group: any, index: number) => {
           if (group.workers && group.workers.length > 0) {
             totalWorkers += group.workers.length;
+            
+            // Crear detalle del turno con fechas específicas
+            const schedule = group.schedule || {};
+            const groupStart = schedule.dateStart ? format(new Date(schedule.dateStart), "dd/MM", { locale: es }) : 'N/A';
+            const groupTimeStart = schedule.timeStart || 'N/A';
+            const groupEnd = schedule.dateEnd ? format(new Date(schedule.dateEnd), "dd/MM", { locale: es }) : 'N/A';
+            const groupTimeEnd = schedule.timeEnd || 'N/A';
+            const task = schedule.task || 'Sin tarea';
+            
+            groupDetails.push(
+              `Turno ${index + 1}: ${group.workers.length} trabajadores (${groupStart} ${groupTimeStart} - ${groupEnd} ${groupTimeEnd}) - ${task}`
+            );
           }
         });
       }
       
+      // Usar fechas generales de operación para el reporte general
       const hoursWorked = calculateHoursWorked(
         operation.dateStart,
         operation.timeStrat,
@@ -339,15 +376,16 @@ export const useOperationExport = (workers: Worker[] = []) => {
         operation.jobArea?.name || 'Sin área',
         operation.client?.name || 'Sin cliente',
         operation.inCharge?.map((sup: any) => sup.name).join(', ') || 'Sin supervisor',
+        // Fechas generales de la operación
         operation.dateStart ? format(new Date(operation.dateStart), "dd/MM/yyyy", { locale: es }) : 'N/A',
         operation.timeStrat || 'N/A',
         operation.dateEnd ? format(new Date(operation.dateEnd), "dd/MM/yyyy", { locale: es }) : 'N/A',
         operation.timeEnd || 'N/A',
         hoursWorked || 'N/A',
         operation.motorShip || 'N/A',
-        operation.task?.name?.toUpperCase() || 'Sin tarea',
         totalWorkers,
-        totalGroups
+        totalGroups,
+        groupDetails.join(' | ') || 'Sin turnos'
       ];
       
       const row = worksheet.addRow(rowData);

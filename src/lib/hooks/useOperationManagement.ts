@@ -56,8 +56,14 @@ export const useOperationManagement = ({
         dateEnd: data.dateEnd || null,
         timeEnd: data.timeEnd || null,
         id_area: parseInt(data.id_area),
-        id_task: parseInt(data.id_task),
+        // id_task:
+        //   data.id_task && data.id_task !== "" && data.id_task !== "null"
+        //     ? parseInt(data.id_task)
+        //     : null,
         id_client: parseInt(data.id_client),
+        id_clientProgramming: data.id_clientProgramming
+          ? parseInt(data.id_clientProgramming)
+          : null,
         inChargedIds: data.inChargedIds || [],
         workerIds: [], // Será rellenado a partir de los grupos
       };
@@ -82,7 +88,6 @@ export const useOperationManagement = ({
           };
         });
       }
-
       // Añadir campos solo para actualización
       if (isEdit) {
         formattedData.id = data.id;

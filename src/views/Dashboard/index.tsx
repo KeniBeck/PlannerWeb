@@ -2,6 +2,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Workers from "./workers/Workers";
+import { MdNotifications } from "react-icons/md";
 import {
   AiOutlineMenu,
   AiOutlineClose,
@@ -10,7 +11,14 @@ import {
   AiOutlineDashboard,
   AiOutlineBarChart,
 } from "react-icons/ai";
-import { MdAssignment, MdHomeRepairService, MdKeyboardArrowDown, MdKeyboardArrowRight, MdSecurity, MdRestaurantMenu } from "react-icons/md";
+import {
+  MdAssignment,
+  MdHomeRepairService,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowRight,
+  MdSecurity,
+  MdRestaurantMenu,
+} from "react-icons/md";
 import { PiMapPinSimpleAreaBold } from "react-icons/pi";
 import { BsBuildingsFill, BsLayoutWtf } from "react-icons/bs";
 import { Feature, LayeredProviders } from "@/contexts/LayeredProviders";
@@ -28,7 +36,10 @@ import { jwtDecode } from "jwt-decode";
 import Feeding from "./feedings/Feeding";
 import { PiShippingContainerDuotone } from "react-icons/pi";
 import Containers from "./containers/Containers";
-
+import Notifications from "./notifications/Notifications";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
+import AlertCards from "@/components/dialog/AlertCards";
 
 const COLORS = {
   darkBlue: "#155dfc", // Azul oscuro
@@ -50,7 +61,13 @@ interface MenuCategory {
 }
 
 // Componente para rutas protegidas por rol
-const ProtectedRoute = ({ element, requiredRole }: { element: React.ReactNode, requiredRole: string }) => {
+const ProtectedRoute = ({
+  element,
+  requiredRole,
+}: {
+  element: React.ReactNode;
+  requiredRole: string;
+}) => {
   // Función para verificar si el usuario tiene el rol requerido
   const hasRequiredRole = () => {
     try {
@@ -66,15 +83,23 @@ const ProtectedRoute = ({ element, requiredRole }: { element: React.ReactNode, r
   };
 
   // Si el usuario tiene el rol, muestra el componente, si no, redirige al dashboard
-  return hasRequiredRole() ? <>{element}</> : <Navigate to="/dashboard" replace />;
+  return hasRequiredRole() ? (
+    <>{element}</>
+  ) : (
+    <Navigate to="/dashboard" replace />
+  );
 };
 
 export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['dashboard']);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([
+    "dashboard",
+  ]);
   const [userRole, setUserRole] = useState<string>("");
   const location = useLocation();
   const [nameUser, setNameUser] = useState<string>("");
+  const { notifications } = useNotifications();
+  const { overdueCount } = useOverdueProgrammingNotifications();
 
   // Obtener el rol del usuario del token
   useEffect(() => {
@@ -87,7 +112,9 @@ export default function Dashboard() {
         const nameParts = decodedToken?.name?.split(" ");
         if (nameParts && nameParts.length > 0) {
           const firstLetter = nameParts[0].charAt(0).toUpperCase();
-          const lastName = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+          const lastName = nameParts[nameParts.length - 1]
+            .charAt(0)
+            .toUpperCase();
           setNameUser(`${firstLetter}${lastName}`);
         } else {
           setNameUser(decodedToken?.username || "");
@@ -113,58 +140,103 @@ export default function Dashboard() {
   // Función para expandir/contraer una categoría
   const toggleCategory = (category: string) => {
     if (expandedCategories.includes(category)) {
-      setExpandedCategories(expandedCategories.filter(cat => cat !== category));
+      setExpandedCategories(
+        expandedCategories.filter((cat) => cat !== category)
+      );
     } else {
       setExpandedCategories([...expandedCategories, category]);
     }
   };
 
-
   // Define las categorías del menú y sus elementos
   const menuCategories: MenuCategory[] = [
     {
-      title: 'Operaciones',
+      title: "Operaciones",
       icon: <MdAssignment size={20} />,
       items: [
-        { path: '/dashboard/operations', label: 'Registro de Operaciones', icon: <MdAssignment size={18} /> },
-        { path: '/dashboard/workers', label: 'Trabajadores', icon: <AiOutlineTeam size={18} /> },
-        { path: '/dashboard/graphics', label: 'Gráficas', icon: <AiOutlineBarChart size={18} /> },
-        { path: '/dashboard/faults', label: 'Faltas', icon: <MdAssignment size={18} /> },
-        { path: '/dashboard/feedings', label: 'Alimentación', icon: <MdRestaurantMenu size={18} /> },
-        { path: '/dashboard/containers', label: 'Programación del Cliente', icon: <PiShippingContainerDuotone size={18} /> },
-      ]
+        {
+          path: "/dashboard/operations",
+          label: "Registro de Operaciones",
+          icon: <MdAssignment size={18} />,
+        },
+        {
+          path: "/dashboard/workers",
+          label: "Trabajadores",
+          icon: <AiOutlineTeam size={18} />,
+        },
+        {
+          path: "/dashboard/graphics",
+          label: "Gráficas",
+          icon: <AiOutlineBarChart size={18} />,
+        },
+        {
+          path: "/dashboard/faults",
+          label: "Faltas",
+          icon: <MdAssignment size={18} />,
+        },
+        {
+          path: "/dashboard/feedings",
+          label: "Alimentación",
+          icon: <MdRestaurantMenu size={18} />,
+        },
+        {
+          path: "/dashboard/containers",
+          label: "Programación del Cliente",
+          icon: <PiShippingContainerDuotone size={18} />,
+        },
+      ],
     },
     {
-      title: 'Maestra',
+      title: "Maestra",
       icon: <BsLayoutWtf size={20} />,
       requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
       items: [
-        { path: '/dashboard/clients', label: 'Clientes', icon: <BsBuildingsFill size={18} />, requiredRole: "SUPERADMIN" },
-        { path: '/dashboard/areas', label: 'Áreas', icon: <PiMapPinSimpleAreaBold size={18} />, requiredRole: "SUPERADMIN" },
-        { path: '/dashboard/services', label: 'Servicios', icon: <MdHomeRepairService size={18} />, requiredRole: "SUPERADMIN" }
-      ]
+        {
+          path: "/dashboard/clients",
+          label: "Clientes",
+          icon: <BsBuildingsFill size={18} />,
+          requiredRole: "SUPERADMIN",
+        },
+        {
+          path: "/dashboard/areas",
+          label: "Áreas",
+          icon: <PiMapPinSimpleAreaBold size={18} />,
+          requiredRole: "SUPERADMIN",
+        },
+        {
+          path: "/dashboard/services",
+          label: "Servicios",
+          icon: <MdHomeRepairService size={18} />,
+          requiredRole: "SUPERADMIN",
+        },
+      ],
     },
     {
-      title: 'Seguridad',
+      title: "Seguridad",
       icon: <MdSecurity size={20} />,
       requiredRole: "SUPERADMIN", // Solo visible para rol ADMON_PLATFORM
       items: [
-        { path: '/dashboard/users', label: 'Usuarios', icon: <AiOutlineUser size={18} /> }
-      ]
-    }
+        {
+          path: "/dashboard/users",
+          label: "Usuarios",
+          icon: <AiOutlineUser size={18} />,
+        },
+      ],
+    },
   ];
 
   // Filtra las categorías según el rol del usuario
-  const filteredCategories = menuCategories.filter(category =>
-    !category.requiredRole || category.requiredRole === userRole
+  const filteredCategories = menuCategories.filter(
+    (category) => !category.requiredRole || category.requiredRole === userRole
   );
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Menú lateral */}
       <aside
-        className={`bg-white shadow-lg transition-all duration-300 ease-in-out z-10 ${isMenuOpen ? "w-64" : "w-20"
-          } relative overflow-y-auto h-screen`}
+        className={`bg-white shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isMenuOpen ? "w-64" : "w-20"
+        } relative overflow-y-auto h-screen`}
       >
         {/* Botón de hamburguesa */}
         <button
@@ -220,12 +292,15 @@ export default function Dashboard() {
 
             {/* Logotipo y nombre */}
             <div
-              className={`flex relative z-10 ${isMenuOpen ? "items-center" : "justify-center"
-                }`}
+              className={`flex relative z-10 ${
+                isMenuOpen ? "items-center" : "justify-center"
+              }`}
             >
               {!isMenuOpen && (
                 <div className="flex justify-center items-center w-10 h-10 bg-white bg-opacity-10 rounded-full shadow-lg">
-                  <span className="text-lg font-bold text-blue-500">{nameUser}</span>
+                  <span className="text-lg font-bold text-blue-500">
+                    {nameUser}
+                  </span>
                 </div>
               )}
 
@@ -273,11 +348,15 @@ export default function Dashboard() {
                 to="/dashboard"
                 className={`flex items-center px-3 py-2.5 rounded-lg transition-all
                     ${isMenuOpen ? "" : "justify-center"} 
-                    ${isActive("/dashboard")
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-100"}`}
+                    ${
+                      isActive("/dashboard")
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
               >
-                <span className={`${isActive("/dashboard") ? "text-blue-600" : ""}`}>
+                <span
+                  className={`${isActive("/dashboard") ? "text-blue-600" : ""}`}
+                >
                   <AiOutlineDashboard size={20} />
                 </span>
                 {isMenuOpen && (
@@ -287,39 +366,67 @@ export default function Dashboard() {
 
               {/* Solo mostrar categorías filtradas por rol */}
               {filteredCategories.map((category) => {
-                const isExpanded = expandedCategories.includes(category.title.toLowerCase());
+                const isExpanded = expandedCategories.includes(
+                  category.title.toLowerCase()
+                );
                 // Filtrar items por rol para verificar elementos activos
-                const visibleItems = category.items.filter(item => !item.requiredRole || item.requiredRole === userRole);
-                const hasActiveChild = visibleItems.some(item => isActive(item.path));
+                const visibleItems = category.items.filter(
+                  (item) => !item.requiredRole || item.requiredRole === userRole
+                );
+                const hasActiveChild = visibleItems.some((item) =>
+                  isActive(item.path)
+                );
 
                 return (
                   <li key={category.title} className="mb-1">
                     {/* Cabecera de la categoría */}
                     <button
-                      onClick={() => toggleCategory(category.title.toLowerCase())}
+                      onClick={() =>
+                        toggleCategory(category.title.toLowerCase())
+                      }
                       className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-all cursor-pointer
                         ${isMenuOpen ? "justify-between" : "justify-center"} 
-                        ${hasActiveChild ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-100"}`}
+                        ${
+                          hasActiveChild
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       <div className="flex items-center">
-                        <span className={`${hasActiveChild ? "text-blue-600" : ""}`}>
+                        <span
+                          className={`${hasActiveChild ? "text-blue-600" : ""}`}
+                        >
                           {category.icon}
                         </span>
                         {isMenuOpen && (
-                          <span className="ml-3 text-sm font-medium">{category.title}</span>
+                          <span className="ml-3 text-sm font-medium">
+                            {category.title}
+                          </span>
                         )}
                       </div>
 
                       {isMenuOpen && visibleItems.length > 0 && (
                         <span className="text-gray-500">
-                          {isExpanded ? <MdKeyboardArrowDown size={18} /> : <MdKeyboardArrowRight size={18} />}
+                          {isExpanded ? (
+                            <MdKeyboardArrowDown size={18} />
+                          ) : (
+                            <MdKeyboardArrowRight size={18} />
+                          )}
                         </span>
                       )}
                     </button>
 
                     {/* Elementos del submenú - solo mostrar items permitidos */}
-                    <div className={`${isExpanded ? "max-h-96" : "max-h-0"} overflow-hidden transition-all duration-300`}>
-                      <ul className={`pl-2 space-y-1 mt-1 ${isMenuOpen ? "" : "text-center"}`}>
+                    <div
+                      className={`${
+                        isExpanded ? "max-h-96" : "max-h-0"
+                      } overflow-hidden transition-all duration-300`}
+                    >
+                      <ul
+                        className={`pl-2 space-y-1 mt-1 ${
+                          isMenuOpen ? "" : "text-center"
+                        }`}
+                      >
                         {visibleItems.map((item) => {
                           const itemIsActive = isActive(item.path);
 
@@ -329,15 +436,23 @@ export default function Dashboard() {
                                 to={item.path}
                                 className={`flex items-center py-2 px-3 rounded-lg transition-all
                                   ${isMenuOpen ? "" : "justify-center"} 
-                                  ${itemIsActive
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}
+                                  ${
+                                    itemIsActive
+                                      ? "bg-blue-50 text-blue-700"
+                                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                  }`}
                               >
-                                <span className={`${itemIsActive ? "text-blue-600" : ""}`}>
+                                <span
+                                  className={`${
+                                    itemIsActive ? "text-blue-600" : ""
+                                  }`}
+                                >
                                   {item.icon}
                                 </span>
                                 {isMenuOpen && (
-                                  <span className="ml-3 text-sm">{item.label}</span>
+                                  <span className="ml-3 text-sm">
+                                    {item.label}
+                                  </span>
                                 )}
                               </Link>
                             </li>
@@ -360,17 +475,57 @@ export default function Dashboard() {
                 )}
               </div>
 
+              {/* Notificaciones */}
+              <div>
+                <Link
+                  to="/dashboard/notifications"
+                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all
+                    ${isMenuOpen ? "" : "justify-center"} 
+                    ${
+                      isActive("/dashboard/notifications")
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    } relative`}
+                >
+                  <span
+                    className={`${
+                      isActive("/dashboard/notifications")
+                        ? "text-blue-600"
+                        : ""
+                    } relative`}
+                  >
+                    <MdNotifications size={20} />
+                    {notifications.length > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white shadow-sm">
+                        {notifications.length > 9 ? "9+" : notifications.length}
+                      </span>
+                    )}
+                  </span>
+                  {isMenuOpen && (
+                    <span className="ml-3 text-sm font-medium">
+                      Notificaciones
+                    </span>
+                  )}
+                </Link>
+              </div>
+
               {/* Perfil y cerrar sesión fuera de categorías */}
               <div>
                 <Link
                   to="/dashboard/profile"
                   className={`flex items-center px-3 py-2.5 rounded-lg transition-all
                     ${isMenuOpen ? "" : "justify-center"} 
-                    ${isActive("/dashboard/profile")
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-100"}`}
+                    ${
+                      isActive("/dashboard/profile")
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
                 >
-                  <span className={`${isActive("/dashboard/profile") ? "text-blue-600" : ""}`}>
+                  <span
+                    className={`${
+                      isActive("/dashboard/profile") ? "text-blue-600" : ""
+                    }`}
+                  >
                     <AiOutlineUser size={20} />
                   </span>
                   {isMenuOpen && (
@@ -382,7 +537,9 @@ export default function Dashboard() {
                 <Link
                   to="/login"
                   className={`flex items-center px-3 py-2.5 rounded-lg transition-all
-                    ${isMenuOpen ? "" : "justify-center"} text-gray-600 hover:bg-gray-100`}
+                    ${
+                      isMenuOpen ? "" : "justify-center"
+                    } text-gray-600 hover:bg-gray-100`}
                   onClick={() => {
                     localStorage.removeItem("token");
                     window.location.href = "/login";
@@ -418,6 +575,7 @@ export default function Dashboard() {
                     Feature.USERS,
                     Feature.SERVICES,
                     Feature.CLIENTS,
+                    Feature.PROGRAMMING,
                   ]}
                 >
                   <DashboardHome />
@@ -427,7 +585,13 @@ export default function Dashboard() {
             <Route
               path="/feedings"
               element={
-                <LayeredProviders features={[Feature.OPERATION, Feature.WORKERS, Feature.FEEDINGS]}>
+                <LayeredProviders
+                  features={[
+                    Feature.OPERATION,
+                    Feature.WORKERS,
+                    Feature.FEEDINGS,
+                  ]}
+                >
                   <Feeding />
                 </LayeredProviders>
               }
@@ -453,6 +617,7 @@ export default function Dashboard() {
                     Feature.USERS,
                     Feature.SERVICES,
                     Feature.CLIENTS,
+                    Feature.PROGRAMMING,
                   ]}
                 >
                   <Operation />
@@ -469,7 +634,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
             {/* Rutas protegidas con ProtectedRoute */}
             <Route
               path="/services"
@@ -484,7 +648,6 @@ export default function Dashboard() {
                 />
               }
             />
-
             <Route
               path="/faults"
               element={
@@ -493,7 +656,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
             <Route
               path="/containers"
               element={
@@ -502,7 +664,6 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
-
             <Route
               path="/clients"
               element={
@@ -530,7 +691,9 @@ export default function Dashboard() {
                 <ProtectedRoute
                   requiredRole="SUPERADMIN"
                   element={
-                    <LayeredProviders features={[Feature.AREAS, Feature.WORKERS]}>
+                    <LayeredProviders
+                      features={[Feature.AREAS, Feature.WORKERS]}
+                    >
                       <Areas />
                     </LayeredProviders>
                   }
@@ -538,9 +701,18 @@ export default function Dashboard() {
               }
             />
             <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/notifications"
+              element={
+                <LayeredProviders features={[Feature.PROGRAMMING]}>
+                  <Notifications />
+                </LayeredProviders>
+              }
+            />
           </Routes>
         </main>
       </div>
+      <AlertCards/>
     </div>
   );
 }

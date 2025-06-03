@@ -9,6 +9,7 @@ interface SearchFilterProps {
   className?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   loading?: boolean;
+  onSubmit?: () => void;
 }
 
 export const SearchFilter = ({
@@ -18,6 +19,7 @@ export const SearchFilter = ({
   className = "",
   onKeyDown,
   loading = false,
+  onSubmit,
 }: SearchFilterProps) => {
   // Estado local para el término de búsqueda
   const [localValue, setLocalValue] = useState(value);
@@ -29,13 +31,17 @@ export const SearchFilter = ({
 
   // Manejar cambios en el input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
+    const newValue = e.target.value;
+    onChange(newValue); // Actualizar inmediatamente el estado padre
   };
 
   // Manejar evento de tecla
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      onChange(localValue);
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (onSubmit) {
+        onSubmit();
+      }
     }
     // Llamar al onKeyDown personalizado si existe
     if (onKeyDown) {
@@ -55,7 +61,7 @@ export const SearchFilter = ({
         type="text"
         placeholder={placeholder}
         className="p-2 pl-10 w-full border border-blue-200 bg-blue-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-        value={localValue}
+        value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyPress}
       />

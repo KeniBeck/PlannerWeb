@@ -1,0 +1,121 @@
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Animaciones de palpitación suave */
+@keyframes pulse-soft-urgent {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1), 0 2px 4px -1px rgba(239, 68, 68, 0.06);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.15), 0 4px 6px -2px rgba(239, 68, 68, 0.1);
+  }
+}
+
+@keyframes pulse-soft-medium {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 6px -1px rgba(251, 146, 60, 0.1), 0 2px 4px -1px rgba(251, 146, 60, 0.06);
+  }
+  50% {
+    transform: scale(1.015);
+    box-shadow: 0 8px 12px -2px rgba(251, 146, 60, 0.12), 0 3px 5px -1px rgba(251, 146, 60, 0.08);
+  }
+}
+
+@keyframes pulse-soft-low {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.01);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    background-color: rgb(254 226 226);
+    transform: scale(1);
+  }
+  50% {
+    background-color: rgb(252 165 165);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* Clases de animación */
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-pulse-soft-urgent {
+  animation: pulse-soft-urgent 2.5s ease-in-out infinite;
+}
+
+.animate-pulse-soft-medium {
+  animation: pulse-soft-medium 3s ease-in-out infinite;
+}
+
+.animate-pulse-soft-low {
+  animation: pulse-soft-low 4s ease-in-out infinite;
+}
+
+.animate-pulse-icon {
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.animate-pulse-badge {
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+/* Utilitarios específicos del componente */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
