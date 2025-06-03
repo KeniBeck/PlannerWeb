@@ -25,6 +25,7 @@ interface ProgrammingContextType {
     status?: string
   ) => Promise<Programming[]>;
   deleteProgramming: (id: number) => Promise<boolean>;
+  updateProgramming?: (id: number, data: Programming) => Promise<boolean>;
 }
 
 // Crear el contexto
@@ -275,6 +276,39 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProgramming = async (
+    id: number,
+    data: Programming
+  ): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Convertir fecha de formato DD/MM/YYYY a YYYY-MM-DD
+      const formattedData = {
+        ...data,
+        dateStart: formatDateToISO(data.dateStart),
+      };
+
+      const updatedProgramming = await programmingService.updateProgramation(
+        formattedData
+      );
+
+      // Actualizar el estado local con la programación actualizada
+      setProgramming((prev) =>
+        prev.map((item) => (item.id === id ? updatedProgramming : item))
+      );
+      setLastUpdated(new Date());
+
+      StatusSuccessAlert("Éxito", "Programación actualizada correctamente");
+      return true;
+    } catch (err) {
+      console.error("❌ Error al actualizar programación:", err);
+      setError("Error al actualizar programación");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Valor del contexto
   const value: ProgrammingContextType = {
     programming,
@@ -285,6 +319,7 @@ export function ProgrammingProvider({ children }: { children: ReactNode }) {
     createBulkProgramming,
     refreshProgramming,
     deleteProgramming,
+    updateProgramming,
   };
 
   return (
