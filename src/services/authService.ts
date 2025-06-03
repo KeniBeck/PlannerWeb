@@ -53,6 +53,10 @@ class AuthService {
         return false;
       }
       const response = await api.get(`${this.baseUrl}/login/validation`);
+      if (response.status === 401) {
+        this.logout();
+        return false;
+      }
       return response.status === 200;
     } catch (error) {
       console.error("Error verificando autenticación:", error);

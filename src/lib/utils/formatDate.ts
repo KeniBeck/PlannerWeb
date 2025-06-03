@@ -66,7 +66,7 @@ export const isDateBefore = (date1: Date, date2: Date): boolean => {
  * Verifica si un año es bisiesto
  */
 function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
 /**
@@ -74,12 +74,12 @@ function isLeapYear(year: number): boolean {
  */
 function getDaysInMonth(month: number, year: number): number {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  
+
   // Ajustar febrero en años bisiestos
   if (month === 2 && isLeapYear(year)) {
     return 29;
   }
-  
+
   return daysInMonth[month - 1];
 }
 
@@ -90,13 +90,13 @@ function getDaysInMonth(month: number, year: number): number {
 export function excelDateToJSDate(excelDate: number): Date {
   // Excel epoch (Jan 1, 1900) - pero Excel tiene un bug que considera 1900 como año bisiesto
   const epoch = new Date(1899, 11, 30); // 30 de diciembre de 1899
-  
+
   // Ajuste para el error de Excel con 1900 como año bisiesto
   let days = excelDate > 60 ? excelDate - 1 : excelDate;
-  
+
   // Crear fecha base
   let resultDate = addDays(epoch, Math.floor(days));
-  
+
   // Preservar la hora original de Excel
   const timeValue = excelDate % 1;
   if (timeValue > 0) {
@@ -107,10 +107,10 @@ export function excelDateToJSDate(excelDate: number): Date {
   // Verificar y ajustar según el tipo de mes
   const currentMonth = resultDate.getMonth() + 1; // getMonth() es 0-indexado
   const currentYear = resultDate.getFullYear();
-  
+
   // Obtener días en el mes actual
   const daysInCurrentMonth = getDaysInMonth(currentMonth, currentYear);
-  
+
   // Ajuste específico basado en el tipo de mes
   if (daysInCurrentMonth === 28) {
     // Febrero (año no bisiesto) - agregar 1 día
@@ -146,25 +146,31 @@ export function excelDateToJSDate(excelDate: number): Date {
 
   // Solo intercambiar si ambos valores son válidos como mes y día
   // Y si detectamos que viene en formato US (MM/DD/YYYY)
-  if (originalMonth <= 12 && originalDay <= 12 && originalMonth !== originalDay) {
+  if (
+    originalMonth <= 12 &&
+    originalDay <= 12 &&
+    originalMonth !== originalDay
+  ) {
     // Verificar que el intercambio sea válido
     const maxDaysInMonth = getDaysInMonth(originalDay, originalYear);
-    
+
     if (originalMonth <= maxDaysInMonth) {
       // Crear nueva fecha con día y mes intercambiados, preservando hora
       const hispanicDate = new Date(
         originalYear,
         originalDay - 1, // mes (0-indexado)
-        originalMonth,   // día
+        originalMonth, // día
         originalHours,
         originalMinutes,
         originalSeconds,
         originalMillis
       );
-      
+
       // Validar que la fecha intercambiada sea válida
-      if (hispanicDate.getMonth() === (originalDay - 1) && 
-          hispanicDate.getDate() === originalMonth) {
+      if (
+        hispanicDate.getMonth() === originalDay - 1 &&
+        hispanicDate.getDate() === originalMonth
+      ) {
         return hispanicDate;
       }
     }
@@ -259,31 +265,38 @@ export const getMinutesBetween = (date1: Date, date2: Date): number => {
   return Math.floor(diffMs / 60000); // Convertir ms a minutos
 };
 
-  // Función utilitaria para convertir formato de fecha
-  export const formatDateToISO = (dateStr: string): string => {
-    if (!dateStr) return dateStr;
+//Función simple para limpiar la fecha
+export const cleanDate = (dateStr: string): string => {
+  if (!dateStr) return "";
+  // Si contiene 'T', quitar todo después de la T
+  return dateStr.split("T")[0];
+};
 
-    // Si ya está en formato ISO (YYYY-MM-DD), devolverlo tal cual
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return dateStr;
+// Función utilitaria para convertir formato de fecha
+export const formatDateToISO = (dateStr: string): string => {
+  if (!dateStr) return dateStr;
+
+  // Si ya está en formato ISO (YYYY-MM-DD), devolverlo tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+
+  try {
+    // Convertir de DD/MM/YYYY a YYYY-MM-DD
+    const [day, month, year] = dateStr.split("/");
+    if (day && month && year) {
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
-    try {
-      // Convertir de DD/MM/YYYY a YYYY-MM-DD
-      const [day, month, year] = dateStr.split("/");
-      if (day && month && year) {
-        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-      }
-
-      // Intentar parsearlo como Date si no se pudo dividir
-      const date = new Date(dateStr);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split("T")[0];
-      }
-
-      return dateStr;
-    } catch (error) {
-      console.error("Error al formatear fecha:", error);
-      return dateStr;
+    // Intentar parsearlo como Date si no se pudo dividir
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split("T")[0];
     }
-  };
+
+    return dateStr;
+  } catch (error) {
+    console.error("Error al formatear fecha:", error);
+    return dateStr;
+  }
+};

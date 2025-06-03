@@ -8,6 +8,7 @@ import { ImportSection } from "@/components/ui/programming/ImportSection";
 import { ProgrammingList } from "@/components/ui/programming/ProgrammingList";
 import { CreateProgrammingModal } from "@/components/ui/programming/CreateProgrammingModal";
 import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
+import { Programming } from "@/core/model/programming";
 
 export default function Containers() {
   // Usar el contexto de programación
@@ -15,6 +16,7 @@ export default function Containers() {
     programming,
     createBulkProgramming,
     createProgramming,
+    updateProgramming, // 🆕 Agregar función de actualización
     isLoading: isContextLoading,
     refreshProgramming,
     deleteProgramming,
@@ -22,12 +24,17 @@ export default function Containers() {
 
   // Estados locales
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("view"); // "view" o "import"
+  const [activeTab, setActiveTab] = useState("view");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState(""); // Nuevo estado para filtro de estado
+  const [statusFilter, setStatusFilter] = useState("");
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // 🆕 Estados para edición
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProgramming, setEditingProgramming] = useState<Programming | null>(null);
+  
   useOverdueProgrammingNotifications();
 
   // Cargar datos SOLO cuando se monta este componente específico
@@ -74,6 +81,14 @@ export default function Containers() {
     }
   };
 
+  // 🆕 Función para manejar edición
+  const handleEditProgramming = (programming: Programming) => {
+    console.log("✏️ Containers - Iniciando edición:", programming);
+    setEditingProgramming(programming);
+    setShowEditModal(true);
+  };
+
+  // Función para crear programación
   const handleCreateProgramming = async (programmingData: any) => {
     try {
       setIsLoading(true);
@@ -84,7 +99,6 @@ export default function Containers() {
         setShowCreateModal(false);
         // Refrescar datos después de crear
         await refreshProgramming(searchTerm, dateFilter, statusFilter);
-
         return true;
       } else {
         console.log("❌ Containers - Error al crear programación");
@@ -98,7 +112,38 @@ export default function Containers() {
     }
   };
 
-  // Función para manejar búsqueda y filtros - ACTUALIZADA
+  // 🆕 Función para actualizar programación
+  const handleUpdateProgramming = async (programmingData: any) => {
+    if (!editingProgramming || !updateProgramming) return false;
+
+    try {
+      setIsLoading(true);
+      console.log("🔄 Containers - Actualizando programación:", programmingData);
+
+      const success = await updateProgramming(editingProgramming.id!, {
+        ...programmingData,
+        id: editingProgramming.id,
+      });
+
+      if (success) {
+        setShowEditModal(false);
+        setEditingProgramming(null);
+        // Refrescar datos después de actualizar
+        await refreshProgramming(searchTerm, dateFilter, statusFilter);
+        return true;
+      } else {
+        console.log("❌ Containers - Error al actualizar programación");
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Containers - Error al actualizar programación:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para manejar búsqueda y filtros
   const handleFiltersChange = async (
     newSearchTerm: string,
     newDateFilter: string,
@@ -121,7 +166,7 @@ export default function Containers() {
     );
   };
 
-  // Función para limpiar filtros - ACTUALIZADA
+  // Función para limpiar filtros
   const handleClearFilters = async () => {
     console.log("🧹 Containers - Limpiando TODOS los filtros");
 
@@ -195,7 +240,8 @@ export default function Containers() {
                 }}
                 onFiltersChange={handleFiltersChange}
                 onClearFilters={handleClearFilters}
-                onDelete={handleDeleteProgramming} // AGREGAR esto
+                onDelete={handleDeleteProgramming}
+                onEdit={handleEditProgramming} // 🆕 Pasar función de edición
               />
             ) : (
               <ImportSection
@@ -208,11 +254,25 @@ export default function Containers() {
         </div>
       </div>
 
+      {/* Modal para crear programación */}
       <CreateProgrammingModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateProgramming}
         isLoading={isLoading}
+      />
+
+      {/* 🆕 Modal para editar programación */}
+      <CreateProgrammingModal
+        open={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingProgramming(null);
+        }}
+        onSubmit={handleUpdateProgramming}
+        isLoading={isLoading}
+        initialData={editingProgramming} // 🆕 Pasar datos iniciales
+        isEditMode={true} // 🆕 Indicar que es modo edición
       />
     </>
   );
