@@ -12,6 +12,7 @@ import {
   FaUser,
   FaClipboardList,
 } from "react-icons/fa";
+import { PiClipboardTextFill } from "react-icons/pi";
 
 interface JobArea {
   id: number;
@@ -25,6 +26,13 @@ interface Client {
 interface Task {
   id: number;
   name: string;
+}
+
+interface Site {
+  name: string;
+}
+interface clientProgramming {
+  service: string;
 }
 
 interface OperationInfoProps {
@@ -41,6 +49,8 @@ interface OperationInfoProps {
   task?: Task | null;
   createAt?: string;
   updateAt?: string;
+  Site?: Site | null;
+  clientProgramming?: clientProgramming | null;
 }
 
 export const OperationInfo = ({
@@ -57,6 +67,8 @@ export const OperationInfo = ({
   task,
   createAt,
   updateAt,
+  Site,
+  clientProgramming,
 }: OperationInfoProps) => {
 
   return (
@@ -89,6 +101,13 @@ export const OperationInfo = ({
             <p className="text-lg font-medium text-gray-800 flex items-center">
               <FaTasks className="text-blue-500 mr-2" />
               {task?.name || "No especificada"}
+            </p>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all md:col-span-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Programacion Cliente</p>
+            <p className="text-lg font-medium text-gray-800 flex items-center">
+              <PiClipboardTextFill className="text-blue-500 mr-2" />
+              {clientProgramming?.service || "No especificada"}
             </p>
           </div>
         </div>

@@ -4,6 +4,8 @@ import { Service } from "@/core/model/service";
 import { FaShip } from "react-icons/fa";
 import { DateFilter } from "@/components/custom/filter/DateFilterProps";
 import { useProgramming } from "@/contexts/ProgrammingContext";
+import { useEffect, useState } from "react";
+import { getCurrentColombianDateISO } from "@/lib/utils/formatDate";
 
 interface BasicInfoFormProps {
   formData: any;
@@ -12,7 +14,7 @@ interface BasicInfoFormProps {
   areas: Area[];
   services: Service[];
   clients: Client[];
-  isEditMode?: boolean; // Nueva prop para detectar el modo edición,
+  isEditMode?: boolean;
   isDateStartLocked?: boolean;
   isDateEndLocked?: boolean;
   isTimeStartLocked?: boolean;
@@ -32,7 +34,46 @@ export default function BasicInfoForm({
   isTimeStartLocked = false,
   isTimeEndLocked = false,
 }: BasicInfoFormProps) {
-  const { programming } = useProgramming();
+  const { programming, refreshProgramming } = useProgramming();
+  const [isLoadingProgramming, setIsLoadingProgramming] = useState(false);
+
+  useEffect(() => {
+    const loadProgrammingData = async () => {
+      try {
+        setIsLoadingProgramming(true);
+        console.log("📋 BasicInfoForm - Cargando programaciones...");
+
+        // Cargar todas las programaciones sin filtros específicos
+        await refreshProgramming("", "", "UNASSIGNED");
+
+        console.log("✅ BasicInfoForm - Programaciones cargadas exitosamente");
+      } catch (error) {
+        console.error(
+          "❌ BasicInfoForm - Error al cargar programaciones:",
+          error
+        );
+      } finally {
+        setIsLoadingProgramming(false);
+      }
+    };
+
+    // Solo cargar si programming está vacío
+    if (programming.length === 0) {
+      loadProgrammingData();
+    }
+  }, []);
+
+  // 🆕 Modificación simple: incluir hoy y mañana
+  const todayISO = getCurrentColombianDateISO();
+  const tomorrow = new Date(todayISO);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowISO = tomorrow.toISOString().split('T')[0];
+
+  const programmingDataToday = programming.filter((p) => {
+    if (!p.dateStart) return false;
+    const progDate = p.dateStart.split("T")[0];
+    return progDate === todayISO || progDate === tomorrowISO;
+  });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -203,7 +244,7 @@ export default function BasicInfoForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Programación de Cliente
+              Programación de Cliente (Hoy y Mañana)
               {isEditMode && (
                 <span className="ml-1 text-xs text-amber-600">
                   (No editable)
@@ -222,9 +263,10 @@ export default function BasicInfoForm({
                 className="w-full pl-4 pr-10 py-2.5 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all text-gray-800"
               >
                 <option value="">Seleccionar programación</option>
-                {programming.map((prog) => (
+                {/* 🆕 Usar el filtro actualizado */}
+                {programmingDataToday.map((prog) => (
                   <option key={prog.id} value={prog.id}>
-                    {prog.service} - {prog.client}
+                    {prog.service} - {prog.client} - {prog.dateStart.split("T")[0]}{" "}
                   </option>
                 ))}
               </select>

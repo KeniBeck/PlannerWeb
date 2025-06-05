@@ -493,6 +493,7 @@ export function ViewOperationDialog({
               task={operation.task}
               createAt={operation.createAt}
               updateAt={operation.updateAt}
+              clientProgramming={operation.clientProgramming}
             />
           )}
 
