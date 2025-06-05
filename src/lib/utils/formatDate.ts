@@ -25,6 +25,29 @@ export const formatLongDate = (dateStr: string | null | undefined): string => {
 };
 
 /**
+ * Obtiene la fecha actual en Colombia en formato YYYY-MM-DD (ISO)
+ * @returns string - Fecha actual colombiana en formato 2025-05-21
+ */
+export const getCurrentColombianDateISO = (): string => {
+  try {
+    const now = new Date();
+    const colombianOffset = -5 * 60;
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const colombianTime = new Date(utc + (colombianOffset * 60000));
+    
+    const day = colombianTime.getDate();
+    const month = colombianTime.getMonth() + 1;
+    const year = colombianTime.getFullYear();
+    
+    return `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+  } catch (error) {
+    console.error("Error al obtener fecha colombiana ISO:", error);
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  }
+};
+
+/**
  * Formatea una fecha en formato corto (ej: "21/05/2023")
  */
 export const formatDate = (dateStr: string | null | undefined): string => {

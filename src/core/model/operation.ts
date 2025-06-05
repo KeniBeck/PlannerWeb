@@ -30,6 +30,13 @@ export interface Operation {
     id: number;
     name: string;
   }>;
+  Site: {
+    id: number;
+    name: string;
+  } | null;
+  clientProgramming: {
+    service: string;
+  } | null;
   workerGroups: Array<{
     groupId: number | null;
     schedule: {

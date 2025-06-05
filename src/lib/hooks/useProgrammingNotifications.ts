@@ -302,6 +302,15 @@ export function useOverdueProgrammingNotifications() {
         key: notificationKey,
       });
 
+      addAlert({
+        title: "Servicio no programado a tiempo",
+        message: `El servicio ${prog.service || "Servicio"} (${
+          prog.service_request || "Sin referencia"
+        }) programado para hoy a las ${prog.timeStart || "00:00"} ya pasó.`,
+          type: "error",
+                  key: `alert-today-overdue-${prog.id}`,                          
+      })
+
       notificationCount++;
     });
 
