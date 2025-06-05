@@ -169,7 +169,7 @@ export function WorkerOperationsList({ workerId }: WorkerOperationsListProps) {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center mb-3">
-                      <h5 className="text-lg font-semibold mr-3 text-gray-800">{operation.task.name || 'Operación sin título'}</h5>
+                      <h5 className="text-lg font-semibold mr-3 text-gray-800">{operation.task?.name || operation.client?.name || 'Operación sin título'}</h5>
                       <span className={`px-2 py-1 text-xs rounded-full ${statusConfig.bgColor} ${statusConfig.textColor} border border-opacity-20 shadow-sm flex items-center`}>
                         {statusConfig.icon}
                         <span className="ml-1">{statusConfig.label}</span>

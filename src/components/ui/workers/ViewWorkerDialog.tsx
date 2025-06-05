@@ -18,6 +18,7 @@ import {
 import { WorkerOperationsList } from "./WorkerOperationList"; 
 import { WorkerIncidencesList } from "./WorkerIncidencesList";
 import { faultService } from "@/services/faultService";
+import { formatDate, formatLongDate } from "@/lib/utils/formatDate";
 
 interface ViewWorkerDialogProps {
   open: boolean;
@@ -99,15 +100,6 @@ export function ViewWorkerDialog({
 
   const statusConfig = getStatusConfig(worker.status);
 
-  // Formato de fecha seguro
-  const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return "No especificada";
-    try {
-      return format(new Date(dateString), "dd MMMM yyyy", { locale: es });
-    } catch (error) {
-      return "Fecha inválida";
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500/70">
@@ -240,7 +232,7 @@ export function ViewWorkerDialog({
                     </div>
                     <div>
                       <p className="text-sm font-medium text-emerald-700 mb-1">Fecha de Ingreso</p>
-                      <p className="text-gray-800 font-semibold">{formatDate(worker.createAt)}</p>
+                      <p className="text-gray-800 font-semibold">{formatLongDate(worker.createAt)}</p>
                     </div>
                   </div>
 
@@ -252,7 +244,7 @@ export function ViewWorkerDialog({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-red-700 mb-1">Fecha de Retiro</p>
-                        <p className="text-gray-800 font-semibold">{formatDate(worker.dateRetierment)}</p>
+                        <p className="text-gray-800 font-semibold">{formatLongDate(worker.dateRetierment)}</p>
                       </div>
                     </div>
                   )}
@@ -265,7 +257,7 @@ export function ViewWorkerDialog({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-yellow-700 mb-1">Inicio Incapacidad</p>
-                          <p className="text-gray-800 font-semibold">{formatDate(worker.dateDisableStart)}</p>
+                          <p className="text-gray-800 font-semibold">{formatLongDate(worker.dateDisableStart)}</p>
                         </div>
                       </div>
 
@@ -275,7 +267,7 @@ export function ViewWorkerDialog({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-lime-700 mb-1">Fin Incapacidad</p>
-                          <p className="text-gray-800 font-semibold">{formatDate(worker.dateDisableEnd)}</p>
+                          <p className="text-gray-800 font-semibold">{formatLongDate(worker.dateDisableEnd)}</p>
                         </div>
                       </div>
                     </>

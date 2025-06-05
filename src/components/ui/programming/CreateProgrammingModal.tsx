@@ -98,8 +98,6 @@ export function CreateProgrammingModal({
   // Manejar cambios en el formulario
   const handleChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    console.log(`✏️ Modal - Cambiando campo ${name}:`, value);
     
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name]) {

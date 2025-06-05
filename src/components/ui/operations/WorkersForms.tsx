@@ -61,17 +61,6 @@ export default function WorkersForm({
         />
       </div>
       
-      {selectedTab === "individual" ? (
-        <IndividualWorkersTab 
-          formData={formData}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          handleWorkerSelection={handleWorkerSelection}
-          getWorkerNameById={getWorkerNameById}
-          workersForIndividualSelection={workersForIndividualSelection}
-          errors={errors}
-        />
-      ) : (
         <GroupsWorkersTab 
           formData={formData}
           searchTerm={searchTerm}
@@ -93,7 +82,7 @@ export default function WorkersForm({
           errors={errors}
           duplicateWorkerGroup={duplicateWorkerGroup}
         />
-      )}
+  
     </div>
   );
 }
