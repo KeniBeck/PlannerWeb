@@ -5,6 +5,7 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/CargoPlanner-Web/',
   plugins: [react(), tailwindcss()],
   base: '/', // Asegúrate de que sea '/' para el root del dominio
   resolve: {
