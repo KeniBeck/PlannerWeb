@@ -13,7 +13,7 @@ const App = () => {
     <>
       <NotificationProvider>
         <ServerStatusBanner />
-        <Router>
+        <Router basename="/CargoPlanner-Web">
           <Routes>
             <Route
               path="/"
