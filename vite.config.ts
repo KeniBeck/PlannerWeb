@@ -7,7 +7,6 @@ import path from "path";
 export default defineConfig({
   base: '/CargoPlanner-Web/',
   plugins: [react(), tailwindcss()],
-  base: '/', // Asegúrate de que sea '/' para el root del dominio
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
