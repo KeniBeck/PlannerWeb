@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import {es } from 'date-fns/locale';
 import { AiOutlineUpload, AiOutlineDelete, AiOutlineSave, AiOutlineInfoCircle } from "react-icons/ai";
 import { FaRegFileExcel } from "react-icons/fa";
 import { StatusSuccessAlert } from "@/components/dialog/AlertsLogin";
@@ -24,8 +24,8 @@ interface ImportSectionProps {
   onImportSuccess: () => void;
 }
 
-export function ImportSection({ 
-  setIsLoading, 
+export function ImportSection({
+  setIsLoading,
   createBulkProgramming,
   onImportSuccess
 }: ImportSectionProps) {
@@ -117,16 +117,16 @@ export function ImportSection({
             // Formatear fecha si es número (fecha de Excel)
             let fechaInicio = '';
             const fechaValue = row[mappedHeaders['fechainicio']];
-
             if (fechaValue) {
               if (typeof fechaValue === 'number') {
                 const date = excelDateToJSDate(fechaValue);
-                fechaInicio = format(date, 'dd/MM/yyyy HH:mm', { locale: es });
+                fechaInicio = format(date, 'dd/MM/yyyy HH:mm', { locale: es }); // Usar locale: es
               } else {
                 fechaInicio = fechaValue.toString();
               }
             }
-            
+
+
             // Mapear datos a la estructura simplificada
             const item: ContainerProgramItem = {
               solicitudServicio: row[mappedHeaders['solicitudservicio']]?.toString() || '',
@@ -209,7 +209,7 @@ export function ImportSection({
         // Extraer fecha y hora (si están juntos)
         let dateStart = "";
         let timeStart = "";
-        
+
         if (item.fechaInicio.includes(" ")) {
           const parts = item.fechaInicio.split(" ");
           dateStart = parts[0];
@@ -231,13 +231,13 @@ export function ImportSection({
 
       // Llamar a la función del contexto para guardar en lote
       const success = await createBulkProgramming(programmingData);
-      
+
       if (success) {
         // Limpiar datos después de guardar exitosamente
         setParsedData([]);
         setUploadedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
-        
+
         // Notificar al componente padre que la importación fue exitosa
         onImportSuccess();
       }
@@ -256,12 +256,12 @@ export function ImportSection({
             <FaRegFileExcel className="text-green-600 mr-2" />
             Cargar Archivo Excel
           </h3>
-          
+
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Seleccione un archivo Excel con la programación de servicios. Asegúrese de que contenga las columnas requeridas.
             </p>
-            
+
             <div className="flex flex-wrap gap-3">
               <label
                 htmlFor="file-upload"
@@ -272,7 +272,7 @@ export function ImportSection({
                 <AiOutlineUpload className="mr-2 h-5 w-5 text-blue-500" />
                 Seleccionar archivo
               </label>
-              
+
               {parsedData.length > 0 && (
                 <button
                   onClick={handleSaveData}
@@ -284,7 +284,7 @@ export function ImportSection({
                   Guardar programación
                 </button>
               )}
-              
+
               <input
                 id="file-upload"
                 name="file-upload"
@@ -295,7 +295,7 @@ export function ImportSection({
                 ref={fileInputRef}
               />
             </div>
-            
+
             {uploadedFile && (
               <div className="mt-2 flex items-center p-3 bg-blue-50 rounded-md border border-blue-100">
                 <FaRegFileExcel className="h-5 w-5 text-blue-500 mr-2" />
@@ -317,14 +317,14 @@ export function ImportSection({
             )}
           </div>
         </div>
-        
+
         {/* Panel de instrucciones */}
         <div className="bg-blue-50 p-6 border border-blue-100 rounded-xl">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <AiOutlineInfoCircle className="text-blue-600 mr-2" />
             Instrucciones
           </h3>
-          
+
           <div className="space-y-3 text-sm">
             <p>El archivo Excel debe contener las siguientes columnas:</p>
             <ul className="list-disc list-inside space-y-1 text-gray-700">
@@ -337,7 +337,7 @@ export function ImportSection({
             <div className="bg-white p-3 rounded-md border border-blue-100 mt-4">
               <p className="font-medium text-xs text-blue-800 mb-1">Nota:</p>
               <p className="text-xs text-gray-600">
-                Las fechas pueden estar en formato DD/MM/YYYY o como fechas Excel. 
+                Las fechas pueden estar en formato DD/MM/YYYY o como fechas Excel.
                 Si incluye hora, sepárela con un espacio después de la fecha.
               </p>
             </div>
@@ -376,7 +376,7 @@ export function ImportSection({
                   const dateParts = item.fechaInicio.split(" ");
                   const date = dateParts[0] || "N/A";
                   const time = dateParts[1] || "";
-                  
+
                   return (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-3 py-2 whitespace-nowrap text-gray-700 font-medium">{index + 1}</td>

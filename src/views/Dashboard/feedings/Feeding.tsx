@@ -75,15 +75,7 @@ export default function Feeding() {
           </div>
         ),
       },
-      {
-        header: "Servicio",
-        accessor: "enhancedOperation.task.name",
-        cell: (feeding) => (
-          <div className="flex items-center">
-            {feeding.enhancedOperation?.task?.name || "Sin servicio"}
-          </div>
-        ),
-      },
+    
       {
         header: "Embarcación",
         accessor: "enhancedOperation.motorShip",

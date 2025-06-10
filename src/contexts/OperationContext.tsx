@@ -60,6 +60,7 @@ interface OperationContextType {
     workerId: number,
     data: any
   ) => Promise<Operation | null>;
+  getOperationById: (id: number) => Operation | undefined;
 }
 
 // Crear el contexto
@@ -400,74 +401,11 @@ export function OperationProvider({ children }: OperationProviderProps) {
     try {
       console.log("Datos de actualización:****", data);
 
-      // Formato de datos específico para la actualización
-      const formattedUpdateData = {
-        ...data,
-        // Asegurarnos de que removedWorkerIds existe
-        timeStrat: data.timeStrat || data.timeStart,
-        removedWorkerIds: data.removedWorkerIds || [],
-      };
-
-      // Si no hay trabajadores a remover pero hay campo originalWorkerIds,
-      // podríamos calcular los eliminados comparando con los actuales
-      if (
-        formattedUpdateData.removedWorkerIds.length === 0 &&
-        data.originalWorkerIds &&
-        Array.isArray(data.originalWorkerIds) &&
-        data.originalWorkerIds.length > 0
-      ) {
-        // Recopilamos todos los trabajadores actuales de una forma más completa
-        const allCurrentWorkerIds = new Set();
-
-        // Añadir trabajadores individuales si existen
-        if (data.workerIds && Array.isArray(data.workerIds)) {
-          data.workerIds.forEach((id: number) => allCurrentWorkerIds.add(id));
-        }
-
-        // Añadir trabajadores de grupos
-        if (data.workerGroups && Array.isArray(data.workerGroups)) {
-          data.workerGroups.forEach((group: any) => {
-            // Considerar diferentes formatos de datos de trabajadores
-            if (group.workers && Array.isArray(group.workers)) {
-              group.workers.forEach((w: any) => {
-                const workerId = typeof w === "object" ? w.id : w;
-                allCurrentWorkerIds.add(workerId);
-              });
-            }
-
-            if (group.workerIds && Array.isArray(group.workerIds)) {
-              group.workerIds.forEach((id: number) =>
-                allCurrentWorkerIds.add(id)
-              );
-            }
-          });
-        }
-
-        // También verificar si hay datos dentro de 'groups'
-        if (data.groups && Array.isArray(data.groups)) {
-          data.groups.forEach((group: any) => {
-            if (group.workers && Array.isArray(group.workers)) {
-              group.workers.forEach((id: number) =>
-                allCurrentWorkerIds.add(id)
-              );
-            }
-            if (group.workerIds && Array.isArray(group.workerIds)) {
-              group.workerIds.forEach((id: number) =>
-                allCurrentWorkerIds.add(id)
-              );
-            }
-          });
-        }
-
-        // Encontrar IDs que estaban en los originales pero ya no están en los actuales
-        formattedUpdateData.removedWorkerIds = data.originalWorkerIds.filter(
-          (id: number) => !allCurrentWorkerIds.has(id)
-        );
-      }
+      console.log("Datos de actualización formateados******:", data);
 
       const updatedOperation = await operationService.updateOperation(
         id,
-        formattedUpdateData
+        data
       );
       // Refrescar la lista después de actualizar
       await refreshOperations();
@@ -542,6 +480,13 @@ export function OperationProvider({ children }: OperationProviderProps) {
     };
   }, [itemsPerPage]);
 
+  const getOperationById = useCallback(
+    (id: number): Operation | undefined => {
+      return operations.find((operation) => operation.id === id);
+    },
+    [operations]
+  );
+
   // Valor del contexto
   const value: OperationContextType = {
     operations,
@@ -565,6 +510,7 @@ export function OperationProvider({ children }: OperationProviderProps) {
     lastUpdated,
     preloadNextPages,
     completeIndividualWorker,
+    getOperationById,
   };
 
   return (

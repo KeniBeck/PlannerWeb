@@ -2,9 +2,12 @@ import { HiOutlineSearch, HiX } from "react-icons/hi";
 import { BsPersonPlus } from "react-icons/bs";
 import { HiOutlineUserGroup } from "react-icons/hi";
 import { Worker } from "@/core/model/worker";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DateFilter } from "@/components/custom/filter/DateFilterProps";
 import { useServices } from "@/contexts/ServicesContext";
+import { useAreas } from "@/contexts/AreasContext";
+import { ServiceSelector } from "./ServiceSelector";
+import { AreaFilter } from "@/components/custom/filter/AreaFilter";
 
 interface GroupFormProps {
   currentGroup: any;
@@ -33,8 +36,62 @@ export const GroupForm: React.FC<GroupFormProps> = ({
 }) => {
   // Estado para controlar el panel activo (fechas o trabajadores)
   const [activePanel, setActivePanel] = useState<"dates" | "workers">("dates");
+  
+  // Estado para el filtro de área
+  const [areaFilter, setAreaFilter] = useState<string>("all");
 
   const { services } = useServices();
+  const { areas } = useAreas();
+
+  // Preparar opciones para el filtro de área
+  const areaOptions = useMemo(() => {
+    const options = [{ value: "all", label: "Todas las áreas" }];
+    
+    // Filtrar solo áreas activas
+    const activeAreas = areas.filter(area => area.status === "ACTIVE");
+    
+    activeAreas.forEach(area => {
+      options.push({
+        value: area.id.toString(),
+        label: area.name
+      });
+    });
+    
+    return options;
+  }, [areas]);
+
+  // Filtrar trabajadores por área y término de búsqueda
+  const filteredWorkers = useMemo(() => {
+    let filtered = workersForGroupSelection;
+
+    // Filtrar por área si se ha seleccionado una específica
+    if (areaFilter !== "all") {
+      filtered = filtered.filter(worker => 
+        worker.jobArea?.id.toString() === areaFilter
+      );
+    }
+
+    // Filtrar por término de búsqueda
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(worker =>
+        worker.name.toLowerCase().includes(searchLower) ||
+        worker.dni?.toLowerCase().includes(searchLower) ||
+        worker.code?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filtered;
+  }, [workersForGroupSelection, areaFilter, searchTerm]);
+
+  // Función para limpiar filtros
+  const clearFilters = () => {
+    setAreaFilter("all");
+    setSearchTerm("");
+  };
+
+  // Verificar si hay filtros activos
+  const hasActiveFilters = areaFilter !== "all" || searchTerm.trim() !== "";
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible mt-4">
@@ -144,25 +201,20 @@ export const GroupForm: React.FC<GroupFormProps> = ({
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Servicio/Tarea <span className="text-red-500">*</span>
+                Servicio <span className="text-red-500">*</span>
               </label>
-              <select
-                value={currentGroup.id_task || ""}
-                onChange={(e) =>
+              <ServiceSelector
+                services={services}
+                value={currentGroup.id_task}
+                onChange={(serviceId) =>
                   setCurrentGroup({
                     ...currentGroup,
-                    id_task: e.target.value ? parseInt(e.target.value) : null,
+                    id_task: serviceId,
                   })
                 }
-                className="w-full px-3 py-2 text-sm rounded-lg bg-gray-50 border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-              >
-                <option value="">Seleccionar servicio</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Buscar y seleccionar servicio"
+                required
+              />
             </div>
           </div>
         ) : (
@@ -205,31 +257,79 @@ export const GroupForm: React.FC<GroupFormProps> = ({
               </div>
             )}
 
-            {/* Buscar trabajadores */}
-            <div className="relative mb-2">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <HiOutlineSearch className="h-5 w-5 text-gray-400" />
+            {/* Filtros de búsqueda y área */}
+            <div className="space-y-3 mb-4">
+              {/* Fila de filtros */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Buscar trabajadores */}
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <HiOutlineSearch className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar por nombre, DNI o código..."
+                    className="pl-10 pr-3 py-2 w-full text-sm rounded-lg bg-white border border-gray-300 focus:ring-1 focus:ring-blue-200 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Filtro por área */}
+                <div className="w-full sm:w-64">
+                  <AreaFilter
+                    value={areaFilter}
+                    onChange={setAreaFilter}
+                    options={areaOptions}
+                    className="w-full text-xs h-10"
+                  />
+                </div>
               </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar trabajadores..."
-                className="pl-10 pr-3 py-2 w-full text-sm rounded-lg bg-white border border-gray-300 focus:ring-1 focus:ring-blue-200 focus:border-blue-500"
-              />
+
+              {/* Indicadores de filtros activos */}
+              {hasActiveFilters && (
+                <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <span className="font-medium">Filtros activos:</span>
+                    
+                    {areaFilter !== "all" && (
+                      <span className="bg-white px-2 py-1 rounded text-xs border border-blue-200">
+                        Área: {areaOptions.find(opt => opt.value === areaFilter)?.label}
+                      </span>
+                    )}
+                    
+                    {searchTerm.trim() && (
+                      <span className="bg-white px-2 py-1 rounded text-xs border border-blue-200">
+                        Búsqueda: "{searchTerm.trim()}"
+                      </span>
+                    )}
+                    
+                    <span className="text-blue-600 font-medium">
+                      ({filteredWorkers.length} trabajador{filteredWorkers.length !== 1 ? 'es' : ''})
+                    </span>
+                  </div>
+                  
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded transition-colors"
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Lista de trabajadores con scroll único y controlado */}
-            <div className="border border-gray-200 rounded-lg mt-2">
+            <div className="border border-gray-200 rounded-lg">
               <div className="max-h-64 overflow-y-auto">
-                {workersForGroupSelection.length > 0 ? (
+                {filteredWorkers.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {workersForGroupSelection.map((worker) => (
+                    {filteredWorkers.map((worker) => (
                       <label
                         key={worker.id}
-                        className={`flex items-center p-2 border-b border-gray-100 transition cursor-pointer ${
+                        className={`flex items-center p-3 border-b border-gray-100 transition cursor-pointer ${
                           currentGroup.workers.includes(worker.id)
-                            ? "bg-blue-50"
+                            ? "bg-blue-50 border-l-4 border-l-blue-500"
                             : "hover:bg-gray-50"
                         }`}
                       >
@@ -244,21 +344,57 @@ export const GroupForm: React.FC<GroupFormProps> = ({
                           }
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
-                        <span className="ml-2 text-sm truncate">
-                          {worker.name}
-                        </span>
+                        <div className="ml-3 flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {worker.name}
+                          </div>
+                          <div className="text-xs text-gray-500 flex items-center gap-2">
+                            <span>DNI: {worker.dni}</span>
+                            {worker.jobArea && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate">{worker.jobArea.name}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </label>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-4 text-center text-gray-500 text-sm">
-                    {searchTerm
-                      ? "No se encontraron trabajadores con ese nombre"
-                      : "No hay trabajadores disponibles"}
+                  <div className="py-8 text-center text-gray-500">
+                    <div className="space-y-2">
+                      <div className="text-lg">🔍</div>
+                      <div className="text-sm font-medium">
+                        {hasActiveFilters 
+                          ? "No se encontraron trabajadores" 
+                          : "No hay trabajadores disponibles"}
+                      </div>
+                      <div className="text-xs">
+                        {hasActiveFilters 
+                          ? "Intenta ajustar los filtros de búsqueda"
+                          : "Los trabajadores disponibles aparecerán aquí"}
+                      </div>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearFilters}
+                          className="text-xs text-blue-600 hover:text-blue-800 underline mt-2"
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Información adicional */}
+            {filteredWorkers.length > 0 && (
+              <div className="mt-3 text-xs text-gray-500 text-center">
+                Mostrando {filteredWorkers.length} de {workersForGroupSelection.length} trabajadores disponibles
+              </div>
+            )}
           </div>
         )}
 

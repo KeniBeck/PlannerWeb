@@ -113,19 +113,8 @@ class OperationService {
         update: [],
       };
 
-      // Crear estructura base para los datos a enviar
-      const dataFmt: any = {
-        dateStart: updateData.dateStart || "",
-        timeStrat: updateData.timeStart || updateData.timeStrat || "",
-        inCharged: updateData.inChargedIds || [],
-        status: updateData.status || null,
-        zone: updateData.zone || null,
-      };
-
-      // Agregar campos opcionales si existen
-      if (updateData.timeEnd) dataFmt.timeEnd = updateData.timeEnd;
-      if (updateData.dateEnd) dataFmt.dateEnd = updateData.dateEnd;
-      if (updateData.motorShip) dataFmt.motorShip = updateData.motorShip;
+    
+   
 
       // Procesar workerGroups si existen
       if (updateData.workerGroups && Array.isArray(updateData.workerGroups)) {
@@ -181,12 +170,9 @@ class OperationService {
       
       }
 
-      // Solo incluir workers en el payload si hay algo para conectar, desconectar o actualizar
-      if (workers.connect.length > 0 || workers.disconnect.length > 0 || workers.update.length > 0) {
-        dataFmt.workers = workers;
-      }
+    
 
-      const response = await api.patch(`/operation/${id}`, dataFmt);
+      const response = await api.patch(`/operation/${id}`, updateData);
       return response.data;
     } catch (error) {
       handleApiError(error);
@@ -210,7 +196,7 @@ class OperationService {
 
   async getOperationByIdWithWorkers(id: number): Promise<any> {
     try {
-      const response = await api.get(`/operation/by-worker/${id}`);
+      const response = await api.get(`/operation/${id}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {

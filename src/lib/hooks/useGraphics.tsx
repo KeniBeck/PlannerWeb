@@ -107,7 +107,6 @@ export const useGraphics = () => {
             };
         }
 
-        console.log("LLEGA AQUI*****")
 
         return {
             labels: workerDistribution.distribution.map((slot: any) => slot.hour),
