@@ -3,7 +3,9 @@ import { useGLTF, OrbitControls, Environment, Stage, PerspectiveCamera } from '@
 import { Suspense } from 'react';
 
 function Model() {
-  const { scene } = useGLTF('/assets/logo-container.glb');
+  // const { scene } = useGLTF('/assets/logo-container.glb');
+   const modelUrl = import.meta.env.BASE_URL + 'assets/logo-container.glb';
+  const { scene } = useGLTF(modelUrl);
   
   return (
     <group>

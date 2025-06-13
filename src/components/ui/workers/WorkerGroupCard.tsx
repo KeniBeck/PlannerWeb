@@ -171,7 +171,7 @@ export const WorkerGroupCard = ({
                   {initials.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-800 truncate">
+                  <p className="font-medium text-gray-800 ">
                     {worker.name}
                   </p>
                   <p className="text-xs text-gray-500">ID: {worker.id}</p>

@@ -80,7 +80,7 @@ export function ViewOperationDialog({
     return format(date, 'yyyy-MM-dd');
   };
 
-  // Función para completar toda la operación
+  // Función para completar toda la operación - ACTUALIZADA
   const handleCompleteOperation = async () => {
     const now = new Date();
     const formattedDate = formatDateForApi(now);
@@ -120,27 +120,75 @@ export function ViewOperationDialog({
     try {
       setIsCompleting(true);
 
-      // Construir el body para la API
-      const body = {
+      // Completar todos los grupos primero, uno por uno
+      if (operation.workerGroups && operation.workerGroups.length > 0) {
+  
+        
+        for (let i = 0; i < operation.workerGroups.length; i++) {
+          const group = operation.workerGroups[i];
+          
+          // Solo completar grupos que no estén ya completados
+          const isGroupCompleted = group.schedule?.dateEnd && group.schedule?.timeEnd;
+          
+          if (!isGroupCompleted) {
+            
+            // Obtener los IDs de los trabajadores en el grupo
+            const workerIds = group.workers.map((w: any) => w.id);
+            
+            // Usar fechas del grupo si existen, sino usar las de la operación
+            const groupStartDate = group.schedule?.dateStart || 
+              (operation.dateStart ? operation.dateStart.toString().split("T")[0] : formattedDate);
+            const groupStartTime = group.schedule?.timeStart || 
+              operation.timeStrat || "00:00";
+
+            // Construir el body para completar este grupo
+            const groupBody = {
+              workers: {
+                update: [
+                  {
+                    workerIds: workerIds,
+                    dateStart: groupStartDate,
+                    timeStart: groupStartTime,
+                    dateEnd: formValues.endDate,
+                    timeEnd: formValues.endTime,
+                    id_group: group.groupId || null,
+                  }
+                ]
+              }
+            };
+
+            // Actualizar el grupo
+            await updateOperation(operation.id, groupBody);
+            ;
+          }
+        }
+      }
+
+      // Finalmente, marcar toda la operación como completada
+   
+      const operationBody = {
         status: 'COMPLETED',
         dateEnd: formValues.endDate,
         timeEnd: formValues.endTime,
         dateStart: operation.dateStart.toString().split("T")[0],
-        timeStart: operation.timeStrat || operation.timeStrat ,
+        timeStrat: operation.timeStrat || operation.timeStrat,
         zone: operation.zone,
       };
 
-      // Usar el contexto para actualizar la operación
-      await updateOperation(operation.id, body);
+      await updateOperation(operation.id, operationBody);
 
       Swal.fire({
         icon: 'success',
         title: 'Operación completada',
-        text: 'La operación ha sido marcada como completada exitosamente'
+        text: 'La operación y todos sus grupos han sido marcados como completados exitosamente',
+        timer: 3000,
+        showConfirmButton: true
       });
 
-      // Cerrar diálogo
+      // Cerrar diálogo y refrescar
       onOpenChange(false);
+      await refreshOperations();
+      
     } catch (error) {
       console.error("Error al completar operación:", error);
       Swal.fire({
@@ -153,191 +201,61 @@ export function ViewOperationDialog({
     }
   };
 
-  
-    // método para completar trabajador individual
-  const handleCompleteIndividualWorker = async (worker: any, group: any) => {
-    const now = new Date();
-    const formattedDate = formatDateForApi(now);
-    const formattedTime = format(now, 'HH:mm');
-  
-    // Para trabajador individual, usamos la fecha de inicio de la operación
-    const operationStartDate = operation.dateStart ? 
-      (typeof operation.dateStart === 'string' ? operation.dateStart.split('T')[0] : format(new Date(operation.dateStart), 'yyyy-MM-dd')) : 
-      formattedDate;
+  // Función para verificar si quedan grupos sin completar
+  const getRemainingIncompleteGroups = () => {
+    if (!operation.workerGroups) return [];
     
-    const operationStartTime = operation.timeStrat || operation.timeStrat  || formattedTime;
-  
-    const { value: formValues } = await Swal.fire({
-      title: 'Completar trabajador',
-      html: `
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="start-date">Fecha de inicio (Operación)</label>
-          <input id="start-date" type="date" value="${operationStartDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 bg-gray-100" readonly>
-        </div>
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="start-time">Hora de inicio (Operación)</label>
-          <input id="start-time" type="time" value="${operationStartTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 bg-gray-100" readonly>
-        </div>
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="end-date">Fecha de finalización</label>
-          <input id="end-date" type="date" value="${formattedDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="end-time">Hora de finalización</label>
-          <input id="end-time" type="time" value="${formattedTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-      `,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Completar',
-      cancelButtonText: 'Cancelar',
-      preConfirm: () => {
-        const startDate = (document.getElementById('start-date') as HTMLInputElement).value;
-        const startTime = (document.getElementById('start-time') as HTMLInputElement).value;
-        const endDate = (document.getElementById('end-date') as HTMLInputElement).value;
-        const endTime = (document.getElementById('end-time') as HTMLInputElement).value;
-  
-        if (!startDate || !startTime || !endDate || !endTime) {
-          Swal.showValidationMessage('Por favor complete todos los campos');
-          return false;
-        }
-  
-        return { startDate, startTime, endDate, endTime };
-      }
-    });
-  
-    if (!formValues) return; // Usuario canceló
-  
-    try {
-      setIsCompleting(true);
-  
-      // Construir el body para la API - usando solo el ID del trabajador seleccionado
-      const body = {
-        workers: {
-          disconnect: [{ id: worker.id }]
-        }
-      };
+    return operation.workerGroups.filter(group => 
+      !(group.schedule?.dateEnd && group.schedule?.timeEnd)
+    );
+  };
 
-
-       // Verificar si era el último trabajador en la operación
-       const remainingWorkers = operation.workerGroups
-       .flatMap(g => g.workers)
-       .filter(w => w.id !== worker.id);
-     
-     if (remainingWorkers.length === 0) {
-       setIsCompleting(false); // Asegurar que no esté en "loading" mientras se muestra el diálogo
-       
-       // Si era el último trabajador, preguntar si desea completar toda la operación
-       const { isConfirmed } = await Swal.fire({
-         icon: 'question',
-         title: 'Completar operación',
-         text: 'Este era el último trabajador. ¿Desea marcar toda la operación como completada?',
-         showCancelButton: true,
-         confirmButtonText: 'Sí, completar operación',
-         cancelButtonText: 'No, solo quitar trabajador',
-         allowOutsideClick: false, // Evitar que se cierre al hacer clic fuera
-         allowEscapeKey: false, // Evitar que se cierre con la tecla ESC
-         backdrop: `rgba(0,0,0,0.4)` // Oscurecer más el fondo para resaltar la importancia
-       });
-     
-       if (isConfirmed) {
-         // Completar toda la operación
-         setIsCompleting(true); // Volver a activar el estado de carga
-         await handleCompleteOperation();
-         return;
-       }
-     }
-  
-      // Usar el contexto en vez del servicio directo
-      await completeIndividualWorker(operation.id, body);
-  
-      Swal.fire({
-        icon: 'success',
-        title: 'Trabajador completado',
-        text: `${worker.name} ha sido completado exitosamente`
-      });
-  
-     
-    } catch (error) {
-      console.error("Error al completar trabajador:", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo completar el trabajador. Intente nuevamente.'
-      });
-    } finally {
-      setIsCompleting(false);
-    }
+  // Función para verificar si es el último grupo
+  const isLastGroup = (currentGroupIndex: number) => {
+    const incompleteGroups = getRemainingIncompleteGroups();
+    return incompleteGroups.length === 1;
   };
   
-  // Y modificar también handleCompleteWorkerGroup para usar el contexto
+ 
+  // Y modificar también handleCompleteWorkerGroup para usar el contexto - ACTUALIZADO
   const handleCompleteWorkerGroup = async (group: any, groupIndex: number) => {
     const now = new Date();
     const formattedDate = formatDateForApi(now);
     const formattedTime = format(now, 'HH:mm');
-  
-    // Verificar si es un grupo sin programación (trabajadores individuales)
-    const isIndividualWorkers = 
-      !group.groupId || 
-      (group.schedule?.dateStart === null && 
-       group.schedule?.timeStart === null && 
-       group.schedule?.dateEnd === null && 
-       group.schedule?.timeEnd === null);
-  
+
     // Para trabajadores individuales, usamos la fecha de inicio de la operación
     const operationStartDate = operation.dateStart ? 
       (typeof operation.dateStart === 'string' ? operation.dateStart.split('T')[0] : format(new Date(operation.dateStart), 'yyyy-MM-dd')) : 
       formattedDate;
     
-    const operationStartTime = operation.timeStrat || operation.timeStrat  || formattedTime;
+    const operationStartTime = operation.timeStrat || operation.timeStrat || formattedTime;
   
     // Determinar valores iniciales para el formulario
-    const startDate = isIndividualWorkers ? operationStartDate : (group.schedule?.dateStart || formattedDate);
-    const startTime = isIndividualWorkers ? operationStartTime : (group.schedule?.timeStart || formattedTime);
+    const startDate = (group.schedule?.dateStart || operationStartDate);
+    const startTime = (group.schedule?.timeStart || operationStartTime);
   
     // Crear el HTML para el formulario
-    const formHtml = isIndividualWorkers ? 
-      // Para trabajadores individuales, solo mostramos fechas inicio/fin pero no editables para inicio
-      `
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="start-date">Fecha de inicio (Operación)</label>
-          <input id="start-date" type="date" value="${operationStartDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 bg-gray-100" readonly>
-        </div>
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="start-time">Hora de inicio (Operación)</label>
-          <input id="start-time" type="time" value="${operationStartTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 bg-gray-100" readonly>
-        </div>
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="end-date">Fecha de finalización</label>
-          <input id="end-date" type="date" value="${formattedDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="end-time">Hora de finalización</label>
-          <input id="end-time" type="time" value="${formattedTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-      ` : 
-      // Para grupos normales, permitimos editar fecha/hora inicio y fin
-      `
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="start-date">Fecha de inicio</label>
-          <input id="start-date" type="date" value="${startDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="start-time">Hora de inicio</label>
-          <input id="start-time" type="time" value="${startTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-        <div class="mb-3">
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="end-date">Fecha de finalización</label>
-          <input id="end-date" type="date" value="${formattedDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1" for="end-time">Hora de finalización</label>
-          <input id="end-time" type="time" value="${formattedTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
-        </div>
-      `;
+    const formHtml = `
+      <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="start-date">Fecha de inicio</label>
+        <input id="start-date" type="date" value="${startDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="start-time">Hora de inicio</label>
+        <input id="start-time" type="time" value="${startTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="end-date">Fecha de finalización</label>
+        <input id="end-date" type="date" value="${formattedDate}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="end-time">Hora de finalización</label>
+        <input id="end-time" type="time" value="${formattedTime}" class="block w-full rounded-md border-gray-300 shadow-sm py-2 px-3">
+      </div>
+    `;
   
     const { value: formValues } = await Swal.fire({
-      title: isIndividualWorkers ? 'Completar trabajadores individuales' : 'Completar grupo de trabajadores',
+      title: 'Completar grupo de trabajadores',
       html: formHtml,
       focusConfirm: false,
       showCancelButton: true,
@@ -372,10 +290,11 @@ export function ViewOperationDialog({
           update: [
             {
               workerIds: workerIds,
-              dateStart: isIndividualWorkers ? operationStartDate : formValues.startDate,
-              timeStart: isIndividualWorkers ? operationStartTime : formValues.startTime,
+              dateStart: formValues.startDate,
+              timeStart: formValues.startTime,
               dateEnd: formValues.endDate,
               timeEnd: formValues.endTime,
+              id_group: group.groupId || null,
             }
           ]
         }
@@ -386,34 +305,57 @@ export function ViewOperationDialog({
   
       Swal.fire({
         icon: 'success',
-        title: isIndividualWorkers ? 'Trabajadores completados' : 'Grupo completado',
-        text: isIndividualWorkers 
-          ? 'Los trabajadores individuales han sido actualizados exitosamente'
-          : 'El grupo de trabajadores ha sido actualizado exitosamente'
+        title: 'Grupo completado',
+        text: 'El grupo de trabajadores ha sido actualizado exitosamente'
       });
-  
-      // Verificar si eran todos los trabajadores en la operación
-      const otherGroupsWorkers = operation.workerGroups
-        .filter((g, idx) => idx !== groupIndex)
-        .flatMap(g => g.workers);
+
+      // Verificar si este era el último grupo incompleto
+      const remainingIncompleteGroups = getRemainingIncompleteGroups().filter((_, idx) => idx !== groupIndex);
       
-      if (otherGroupsWorkers.length === 0) {
-        // Si eran todos los trabajadores, preguntar si desea completar toda la operación
+      if (remainingIncompleteGroups.length === 0) {
+        // Si era el último grupo, preguntar si desea completar toda la operación
         const { isConfirmed } = await Swal.fire({
           icon: 'question',
           title: 'Completar operación',
-          text: 'Estos eran los últimos trabajadores. ¿Desea marcar toda la operación como completada?',
+          text: 'Este era el último grupo incompleto. ¿Desea marcar toda la operación como completada?',
           showCancelButton: true,
           confirmButtonText: 'Sí, completar operación',
-          cancelButtonText: 'No, solo quitar trabajadores'
+          cancelButtonText: 'No, mantener en progreso',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          backdrop: `rgba(0,0,0,0.4)`
         });
   
         if (isConfirmed) {
-          // Completar toda la operación
-          await handleCompleteOperation();
+          // Completar toda la operación usando las mismas fechas del grupo
+          const operationBody = {
+            status: 'COMPLETED',
+            dateEnd: formValues.endDate,
+            timeEnd: formValues.endTime,
+            dateStart: operation.dateStart.toString().split("T")[0],
+            timeStrat: operation.timeStrat || operation.timeStrat,
+            zone: operation.zone,
+          };
+
+          await updateOperation(operation.id, operationBody);
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Operación completada',
+            text: 'La operación ha sido marcada como completada exitosamente',
+            timer: 3000
+          });
+
+          // Cerrar diálogo y refrescar
+          onOpenChange(false);
+          await refreshOperations();
           return;
         }
       }
+
+      // Refrescar para mostrar los cambios
+      await refreshOperations();
+      
     } catch (error) {
       console.error("Error al completar grupo de trabajadores:", error);
       Swal.fire({
@@ -450,7 +392,7 @@ export function ViewOperationDialog({
                   className="text-white bg-green-500 hover:bg-green-600 rounded-lg py-1 px-3 text-sm flex items-center transition-colors disabled:opacity-70"
                 >
                   <FaCheck className="mr-1" />
-                  Completar Operación
+                  {isCompleting ? "Completando..." : "Completar Operación"}
                 </button>
               )}
               <button
@@ -484,7 +426,7 @@ export function ViewOperationDialog({
               id={operation.id}
               dateStart={operation.dateStart}
               dateEnd={operation.dateEnd}
-              timeStart={operation.timeStrat || operation.timeStrat }
+              timeStart={operation.timeStrat || operation.timeStrat}
               timeEnd={operation.timeEnd}
               motorShip={operation.motorShip}
               zone={operation.zone}
@@ -496,7 +438,7 @@ export function ViewOperationDialog({
               clientProgramming={operation.clientProgramming}
             />
           )}
-
+          
           {/* Trabajadores */}
           {activeTab === "workers" && (
             <div className="space-y-6">
@@ -506,35 +448,51 @@ export function ViewOperationDialog({
                   <FaUsers className="mr-3 text-blue-600" />
                   <span>Trabajadores Asignados</span>
                 </h4>
-
+          
                 {operation.workerGroups && operation.workerGroups.length > 0 ? (
                   <div className="space-y-6">
-                    {operation.workerGroups.map((group, index) => (
-                      <div key={index} className="relative">
-                        {/* Botón de Completar Grupo (solo visible si la operación está pendiente o en curso) */}
-                        {canCompleteOperation && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <button
-                              onClick={() => handleCompleteWorkerGroup(group, index)}
-                              disabled={isCompleting}
-                              className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded flex items-center"
-                            >
-                              <FaCheck className="mr-1" />
-                              {(!group.groupId || 
-                                (group.schedule?.dateStart === null && 
-                                 group.schedule?.timeStart === null)) ? 
-                                'Completar Trabajadores' : 'Completar Grupo'}
-                            </button>
-                          </div>
-                        )}
-                        <WorkerGroupCard
-                          group={group}
-                          index={index}
-                          showCompleteButtons={canCompleteOperation}
-                          onCompleteWorker={(worker) => handleCompleteIndividualWorker(worker, group)}
-                        />
-                      </div>
-                    ))}
+                    {operation.workerGroups.map((group, index) => {
+                      // Verificar si el grupo ya está completado
+                      const isGroupCompleted = group.schedule?.dateEnd && group.schedule?.timeEnd;
+                      
+                      return (
+                        <div key={index} className="relative">
+                          {/* Botón de Completar Grupo - solo visible si no está completado y la operación permite completar */}
+                          {canCompleteOperation && !isGroupCompleted && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <button
+                                onClick={() => handleCompleteWorkerGroup(group, index)}
+                                disabled={isCompleting}
+                                className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded flex items-center disabled:opacity-50"
+                              >
+                                <FaCheck className="mr-1" />
+                                {(!group.groupId || 
+                                  (group.schedule?.dateStart === null && 
+                                   group.schedule?.timeStart === null)) ? 
+                                  'Completar Trabajadores' : 'Completar Grupo'}
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Indicador de grupo completado */}
+                          {isGroupCompleted && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded flex items-center">
+                                <FaCheck className="mr-1" />
+                                Completado
+                              </span>
+                            </div>
+                          )}
+                          
+                          <WorkerGroupCard
+                            group={group}
+                            index={index}
+                            showCompleteButtons={canCompleteOperation && !isGroupCompleted}
+                            // onCompleteWorker={(worker) => handleCompleteIndividualWorker(worker, group)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="py-12 text-center border border-dashed border-gray-300 rounded-xl bg-gray-50">
@@ -543,15 +501,13 @@ export function ViewOperationDialog({
                       No hay trabajadores asignados
                     </p>
                     <p className="text-gray-400 text-sm mt-1">
-                      Los trabajadores asignados a esta operación aparecerán
-                      aquí
+                      Los trabajadores asignados a esta operación aparecerán aquí
                     </p>
                   </div>
                 )}
               </div>
             </div>
           )}
-
           {/* Supervisores */}
           {activeTab === "supervisors" && (
             <SupervisorsList supervisors={operation.inCharge || []} />
