@@ -542,7 +542,7 @@ export default function Dashboard() {
                     } text-gray-600 hover:bg-gray-100`}
                   onClick={() => {
                     localStorage.removeItem("token");
-                    window.location.href = "/login";
+                    window.location.href = "/CargoPlanner-Web/login";
                   }}
                 >
                   <span>

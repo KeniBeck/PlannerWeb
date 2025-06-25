@@ -68,11 +68,10 @@ api.interceptors.response.use(
       // Token inválido o expirado
       localStorage.removeItem("token");
       // Redireccionar al login o mostrar mensaje
-      window.location.href = "/login";
+      window.location.href = "/CargoPlanner-Web/login";
     }
     
     return Promise.reject(error);
   }
 );
-
 export default api;
