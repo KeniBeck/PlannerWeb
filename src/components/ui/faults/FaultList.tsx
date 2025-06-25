@@ -118,6 +118,11 @@ export function FaultsList({ filteredFaults, searchTerm }: FaultsListProps) {
         header: "Descripción",
         accessor: "description",
       },
+       {
+        header: "Registrado por",
+        accessor: "user.name",
+        cell: (fault) => fault.user?.name || "N/A",
+      },
       {
         header: "Tipo",
         accessor: "type",
@@ -132,6 +137,7 @@ export function FaultsList({ filteredFaults, searchTerm }: FaultsListProps) {
           );
         },
       },
+     
     ],
     []
   );
