@@ -1,17 +1,8 @@
 import { useState } from "react";
 import { Service } from "@/core/model/service";
 
-// Datos iniciales para simular servicios
-const initialServices: Service[] = [
-  { id: 1, name: "Carga y Descarga" },
-  { id: 2, name: "Estiba y Desestiba" },
-  { id: 3, name: "Almacenamiento" },
-  { id: 4, name: "Transporte Marítimo" },
-  { id: 5, name: "Logística Portuaria" }
-];
-
 export function useServices() {
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   

@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { format } from "date-fns";
+import { format, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { DataTable, TableColumn, TableAction } from "@/components/ui/DataTable";
 import SectionHeader, { ExcelColumn } from "@/components/ui/SectionHeader";
 import { FeedingFilterBar } from "@/components/ui/feedings/FeedingFilterBar";
 import { BsEye } from "react-icons/bs";
-import type { Feeding } from "@/services/interfaces/feedingDTO"; 
+import type { Feeding } from "@/services/interfaces/feedingDTO";
 import { ViewFeedingDialog } from "@/components/ui/feedings/ViewFeedingDialog";
 import { useFeeding } from "@/lib/hooks/useFeeding";
 import { useFeedingExport } from "@/lib/hooks/useFeedingExport";
@@ -43,9 +43,55 @@ export default function Feeding() {
   // Usar el hook de exportación
   const { exportFeedings, isExporting } = useFeedingExport(getWorkerNameById);
 
+  // Función para obtener el servicio del grupo que coincide con la fecha/hora de la alimentación
+  const getServiceName = useMemo(() => {
+    return (feeding: Feeding) => {
+      
+      const workerGroups = feeding?.enhancedOperation?.workerGroups;
+
+      if (!workerGroups || workerGroups.length === 0) {
+        return {
+          serviceName: feeding.enhancedOperation?.task?.name || "Sin servicio",
+          isFromGroup: false
+        };
+      }
+
+      // Buscar el primer grupo que contenga al trabajador
+      for (const group of workerGroups) {
+        
+        // Verificar si el trabajador está en este grupo
+        const isWorkerInGroup = group.workers?.some((worker: any) => {
+          const workerId = worker.id || worker.workerId || worker;
+          const isMatch = Number(workerId) === Number(feeding.id_worker);
+          return isMatch;
+        });
+
+        if (!isWorkerInGroup) {
+          continue;
+        }
+
+
+        // Si encontramos al trabajador en el grupo, obtener el servicio
+        const serviceName = group.schedule?.task || 
+                           (group.schedule?.id_task ? `Servicio ID: ${group.schedule.id_task}` : null) ||
+                           "Servicio del grupo";
+
+        return {
+          serviceName,
+          isFromGroup: true
+        };
+      }
+
+      console.log("No se encontró al trabajador en ningún grupo, usando servicio general");
+      return {
+        serviceName: feeding.enhancedOperation?.task?.name || "Sin servicio",
+        isFromGroup: false
+      };
+    };
+  }, [filteredFeedings]); // Agregar dependencia de los datos
+
   // Función para manejar la exportación
   const handleExport = () => {
-    console.log('[Feeding] Iniciando exportación con filtros:', filters);
     exportFeedings(filters);
   };
 
@@ -62,7 +108,7 @@ export default function Feeding() {
         accessor: "worker.name",
         cell: (feeding) => (
           <div className="flex items-center">
-            {feeding.worker?.name }
+            {feeding.worker?.name}
           </div>
         ),
       },
@@ -75,11 +121,21 @@ export default function Feeding() {
           </div>
         ),
       },
-    
       {
-        header: "Embarcación",
-        accessor: "enhancedOperation.motorShip",
-        cell: (feeding) => feeding.enhancedOperation?.motorShip || "Sin embarcación",
+        header: "Servicio",
+        accessor: "service",
+        cell: (feeding: Feeding) => {
+          const serviceInfo = getServiceName(feeding);
+
+          return (
+            <div className="flex items-center">
+              <span className={serviceInfo.serviceName === "Sin servicio" ? "text-gray-400 italic" : ""}>
+                {serviceInfo.serviceName}
+              </span>
+             
+            </div>
+          );
+        }
       },
       {
         header: "Tipo Alimentación",
@@ -130,7 +186,7 @@ export default function Feeding() {
       {
         header: "Fecha",
         accessor: "dateFeeding",
-        cell: (feeding) =>
+        cell: (feeding: Feeding) =>
           feeding.dateFeeding
             ? format(new Date(feeding.dateFeeding), "dd/MM/yyyy", { locale: es })
             : "N/A",
@@ -144,9 +200,9 @@ export default function Feeding() {
             : "N/A",
       },
     ],
-    []
+    [getServiceName] // Agregar dependencia
   );
-  
+
   // Definir acciones para cada registro
   const actions: TableAction<Feeding>[] = useMemo(
     () => [
@@ -157,67 +213,25 @@ export default function Feeding() {
         className: "text-blue-600",
       },
     ],
-    []
+    [handleViewFeeding]
   );
 
-  // Definir las columnas para exportar a Excel
-  const exportColumns: ExcelColumn[] = useMemo(
-    () => [
-      { header: "ID", field: "id" },
-      {
-        header: "Trabajador",
-        field: "worker.name",
-        value: (feeding) => getWorkerNameById(feeding.worker.name)
-      },
-      { header: "Operación ID", field: "id_operation" },
-      {
-        header: "Servicio",
-        field: "enhancedOperation.task.name",
-        value: (feeding) => feeding.enhancedOperation?.task?.name || "Sin servicio"
-      },
-      {
-        header: "Cliente",
-        field: "enhancedOperation.client.name",
-        value: (feeding) => feeding.enhancedOperation?.client?.name || "Sin cliente"
-      },
-      {
-        header: "Tipo Alimentación",
-        field: "type",
-        value: (feeding) => {
-          switch (feeding.type) {
-            case "BREAKFAST": return "Desayuno";
-            case "LUNCH": return "Almuerzo";
-            case "DINNER": return "Cena";
-            case "MIDNIGHT": return "Media noche";
-            default: return feeding.type || "Desconocido";
-          }
-        }
-      },
-      {
-        header: "Fecha",
-        field: "dateFeeding",
-        value: (feeding) =>
-          feeding.dateFeeding
-            ? format(new Date(feeding.dateFeeding), "dd/MM/yyyy", { locale: es })
-            : "N/A",
-      },
-      {
-        header: "Fecha de registro",
-        field: "createAt",
-        value: (feeding) =>
-          feeding.createAt
-            ? format(new Date(feeding.createAt), "dd/MM/yyyy HH:mm", { locale: es })
-            : "N/A",
-      },
-    ],
-    []
-  );
+  const enhancedFeedingWithService = useMemo(() => {
+    if (!selectedFeeding) return null;
+    return {
+      ...selectedFeeding,
+      enhancedOperation: {
+        ...selectedFeeding.enhancedOperation,
+        serviceName: getServiceName(selectedFeeding)?.serviceName || "Sin servicio"
+      }
+    };
+  }, [selectedFeeding, getServiceName]);
 
   return (
     <>
       {/* Mostrar indicador de carga durante la exportación */}
       {isExporting && <ShipLoader />}
-    
+
       <div className="container mx-auto py-6 space-y-6">
         <div className="rounded-xl shadow-md">
           <SectionHeader
@@ -227,12 +241,11 @@ export default function Feeding() {
             handleAddArea={() => { }}
             refreshData={() => Promise.resolve(refreshFeedings())}
             loading={isLoading || isExporting}
-            exportData={filteredFeedings} // Estos datos no se usarán con customExportFunction
+            exportData={filteredFeedings}
             exportFileName="registros_alimentacion"
-            exportColumns={exportColumns}
             currentView="food"
             showAddButton={false}
-            customExportFunction={handleExport} // Usamos nuestra función personalizada
+            customExportFunction={handleExport}
           />
 
           {/* Filtros */}
@@ -263,21 +276,21 @@ export default function Feeding() {
                   ? `No se encontraron registros para "${filters.search}"`
                   : "No hay registros de alimentación"
               }
-              // Estas propiedades son para la paginación
               totalItems={totalItems}
               currentPage={currentPage}
               onPageChange={setPage}
             />
-          </div>
-        </div>
-      </div>
-      
       {/* Dialog para ver detalles */}
       <ViewFeedingDialog
         open={isViewDialogOpen}
         onOpenChange={setIsViewDialogOpen}
-        feeding={selectedFeeding}
+        feeding={enhancedFeedingWithService || selectedFeeding}
+        serviceName={enhancedFeedingWithService?.enhancedOperation?.serviceName || "Sin servicio"}
       />
+
+          </div>
+        </div>
+      </div>
     </>
   );
 }

@@ -8,12 +8,14 @@ interface ViewFeedingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   feeding: any | null;
+  serviceName: string;
 }
 
 export function ViewFeedingDialog({
   open,
   onOpenChange,
-  feeding
+  feeding,
+  serviceName 
 }: ViewFeedingDialogProps) {
   if (!open || !feeding) return null;
 
@@ -38,11 +40,10 @@ export function ViewFeedingDialog({
   const typeColor = typeColors[displayType as keyof typeof typeColors] || typeColors.default;
 
   // Obtener datos de operación, priorizando ciertos campos
-  const operation = feeding.operation || feeding.enhancedOperation || {};
+  const operation =  feeding.enhancedOperation || {};
   const client = operation.client?.name || "No disponible";
-  const jobArea = operation.jobArea?.name || "No disponible";
+  const jobArea = feeding.enhancedOperation.jobArea?.name || "No disponible";
   const motorShip = operation.motorShip || "No disponible";
-  const service = operation.task?.name || "No disponible";
   const operationStart = operation.dateStart || operation.timeStart || "No disponible";
 
   return (
@@ -91,7 +92,7 @@ export function ViewFeedingDialog({
                   <FaBusinessTime className="mr-1 text-amber-600 w-3 h-3" />
                   Servicio
                 </h4>
-                <p className="text-sm font-medium truncate">{service}</p>
+                <p className="text-sm font-medium truncate">{serviceName.toUpperCase()}</p>
               </div>
             </div>
 

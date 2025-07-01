@@ -63,7 +63,7 @@ export default function BasicInfoForm({
     }
   }, []);
 
-  // 🆕 Modificación simple: incluir hoy y mañana
+  // Modificación simple: incluir hoy y mañana
   const todayISO = getCurrentColombianDateISO();
   const tomorrow = new Date(todayISO);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -88,10 +88,7 @@ export default function BasicInfoForm({
     return area ? area.name : "";
   };
 
-  const getServiceName = () => {
-    const service = services.find((s) => s.id.toString() === formData.id_task);
-    return service ? service.name : "";
-  };
+
 
   const getClientName = () => {
     const client = clients.find((c) => c.id.toString() === formData.id_client);
