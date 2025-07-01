@@ -40,6 +40,8 @@ import Notifications from "./notifications/Notifications";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useOverdueProgrammingNotifications } from "@/lib/hooks/useProgrammingNotifications";
 import AlertCards from "@/components/dialog/AlertCards";
+import { TbRulerMeasure } from "react-icons/tb";
+import UnitMeasure from "./unitMeasure/UnitMeasure";
 
 const COLORS = {
   darkBlue: "#155dfc", // Azul oscuro
@@ -209,6 +211,12 @@ export default function Dashboard() {
           icon: <MdHomeRepairService size={18} />,
           requiredRole: "SUPERADMIN",
         },
+      {
+        path: "/dashboard/unit_measure",
+        label: "Unidades de Medida",
+        icon: <TbRulerMeasure size={18} />,
+        requiredRole: "SUPERADMIN",
+      }
       ],
     },
     {
@@ -606,6 +614,14 @@ export default function Dashboard() {
                 </LayeredProviders>
               }
             />
+            <Route 
+              path="/unit_measure"
+              element={
+                <LayeredProviders features={[Feature.UNIT_MEASURE]}>
+                  <UnitMeasure />
+                </LayeredProviders>
+              }
+              />
             <Route
               path="/operations"
               element={

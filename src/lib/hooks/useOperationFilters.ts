@@ -46,7 +46,6 @@ export function useOperationFilters(OperationFiltersProps: OperationFiltersProps
   // Efecto para aplicar filtros cuando cambian
   useEffect(() => {
     // Verificar si algún filtro cambió realmente para evitar bucles
-    const searchChanged = searchTerm !== prevSearchTermRef.current;
     const statusChanged = statusFilter !== prevStatusFilterRef.current;
     const startDateChanged = startDateFilter !== prevStartDateRef.current;
     const endDateChanged = endDateFilter !== prevEndDateRef.current;

@@ -1,33 +1,21 @@
+import { Operation } from "@/core/model/operation";
+
 export interface Feeding {
-   id: number;
+  id: number;
   id_worker: number;
   id_operation: number;
   dateFeeding: string;
-  type: string; // 'BREAKFAST', 'LUNCH', 'DINNER', 'MIDNIGHT'
+  type: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
   createAt: string;
   updateAt: string;
-  // Referencias opcionales que podrían ser cargadas por relación
-  worker?: {
-    id: number;
-    name: string;
-    // otros campos del trabajador...
-  };
-  operation?: {
-    id: number;
-    jobArea?: {
-      name: string;
-    };
-    client?: {
-      name: string;
-    };
-    task?:{
-      name: string;     
-    };
-    motorShip?: string;
-  };
+  operation: Operation;
+  enhancedOperation?: Operation;
   createdAt: string;
   status: string;
   workerDetails: any;
+  worker: {
+    name: string;
+  }
 }
 
 export interface FeedingFilterParams {

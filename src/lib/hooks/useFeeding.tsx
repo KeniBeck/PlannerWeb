@@ -63,6 +63,7 @@ export function useFeeding() {
     async function loadMissingOperationsData() {
       if (!feedings || feedings.length === 0) return;
 
+
       const missingOperations = feedings.filter(f =>
         f.id_operation && (!f.operation || !f.operation.task)
       ).map(f => f.id_operation);
@@ -154,7 +155,7 @@ export function useFeeding() {
 
     return feedings.map(feeding => ({
       ...feeding,
-      enhancedOperation: feeding.operation || operationsData[feeding.id_operation] || {},
+      enhancedOperation:  operationsData[feeding.id_operation] || feeding.operation || {},
       worker: feeding.worker || workersData[feeding.id_worker] || {}
     }));
   }, [feedings, operationsData, workersData]);
@@ -205,7 +206,7 @@ export function useFeeding() {
     }
 
     // Si no se encuentra, crear versión mejorada manualmente
-    let operationData = feeding.operation || operationsData[feeding.id_operation] || {};
+    let operationData =  operationsData[feeding.id_operation] || feeding.operation || {};
 
     // Cargar operación faltante si es necesario
     if (!operationData.task && feeding.id_operation) {
@@ -223,6 +224,8 @@ export function useFeeding() {
         setLoadingOperations(false);
       }
     }
+
+    
 
     const workerName = feeding.worker?.name || getWorkerNameById(feeding.id_worker);
 

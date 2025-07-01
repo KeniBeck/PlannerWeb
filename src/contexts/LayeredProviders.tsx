@@ -9,6 +9,7 @@ import { UsersProvider } from './UsersContext';
 import { FeedingProvider } from './FeedingContext';
 import { ProgrammingProvider } from './ProgrammingContext';
 import { NotificationProvider } from './NotificationContext';
+import { UnitsMeasureProvider } from './UnitMeasureContext';
 
 export enum Feature {
   WORKERS = 'workers',
@@ -22,6 +23,7 @@ export enum Feature {
   FEEDINGS = 'feedings',
   PROGRAMMING = "programming",
   NOTIFICATIONS = "notifications",
+  UNIT_MEASURE = "unit_measure"
 }
 
 type FeatureType = Feature;
@@ -74,6 +76,9 @@ export function LayeredProviders({ children, features }: LayeredProvidersProps) 
         break;
       case Feature.PROGRAMMING:
         content = <ProgrammingProvider>{content}</ProgrammingProvider>;
+        break;
+      case Feature.UNIT_MEASURE:
+        content = <UnitsMeasureProvider>{content}</UnitsMeasureProvider>;
         break;
       case Feature.NOTIFICATIONS:
         // Verificar si ya existe la instancia global

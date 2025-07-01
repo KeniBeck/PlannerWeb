@@ -96,13 +96,7 @@ export const OperationInfo = ({
               {client?.name || "No especificado"}
             </p>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all md:col-span-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Tarea</p>
-            <p className="text-lg font-medium text-gray-800 flex items-center">
-              <FaTasks className="text-blue-500 mr-2" />
-              {task?.name || "No especificada"}
-            </p>
-          </div>
+         
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 transition-all md:col-span-2">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Programacion Cliente</p>
             <p className="text-lg font-medium text-gray-800 flex items-center">

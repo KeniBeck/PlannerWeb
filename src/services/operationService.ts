@@ -52,7 +52,6 @@ class OperationService {
   async getOperationById(id: number): Promise<any> {
     try {
       const response = await api.get(`/operation/${id}`);
-
       return response.data;
     } catch (error) {
       handleApiError(error);
